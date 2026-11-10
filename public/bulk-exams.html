@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="manifest" href="/manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MARGMOCOTH CBT">
+<meta name="theme-color" content="#2e3192">
+<link rel="apple-touch-icon" href="/icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bulk Exam Actions – MARGMOCOTH CBT</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+body { background:#f1f2fa; font-family:'DM Sans',system-ui,sans-serif; }
+.topbar { background:#0f6b30; color:#fff; padding:14px 24px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; }
+.topbar h1 { font-size:17px; font-weight:800; margin:0; }
+.wrap { max-width:980px; margin:0 auto; padding:22px 16px 80px; }
+.action-bar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:18px; background:#fff; border-radius:12px; padding:14px 18px; border:1px solid #e6e8f3; }
+.action-bar label { font-size:12px; font-weight:700; color:#5b5f80; text-transform:uppercase; }
+.btn { padding:9px 18px; border-radius:8px; font-size:13px; font-weight:700; border:none; cursor:pointer; transition:opacity .15s; }
+.btn:disabled { opacity:.45; cursor:not-allowed; }
+.btn-primary { background:#0f6b30; color:#fff; }
+.btn-danger  { background:#ef4444; color:#fff; }
+.btn-blue  { background:#4448b8; color:#fff; }
+.btn-amber  { background:#f59e0b; color:#fff; }
+.btn-ghost  { background:#f1f2fa; color:#4a4e73; border:1px solid #e6e8f3; }
+.select-all-row { display:flex; align-items:center; gap:8px; font-size:12px; font-weight:600; color:#5b5f80; padding:8px 14px; border-bottom:1px solid #f1f2fa; }
+table { width:100%; border-collapse:collapse; }
+thead th { background:#f6f7fc; padding:11px 14px; text-align:left; font-size:11px; font-weight:800; color:#5b5f80; text-transform:uppercase; letter-spacing:.4px; border-bottom:1px solid #e6e8f3; }
+tbody tr { border-bottom:1px solid #f1f2fa; }
+tbody tr:hover { background:#f6f7fc; }
+tbody td { padding:11px 14px; font-size:13px; color:#1b1e45; }
+tbody tr.selected { background:#f0fdf4; }
+.badge { display:inline-flex; align-items:center; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:700; }
+.badge-green  { background:#dcfce7; color:#166534; }
+.badge-red  { background:#fee2e2; color:#991b1b; }
+.badge-blue  { background:#f0f1ff; color:#2e3192; }
+.table-wrap  { background:#fff; border-radius:14px; overflow:hidden; border:1px solid #e6e8f3; }
+.selected-count { font-size:13px; font-weight:700; color:#0f6b30; }
+.toast { position:fixed; bottom:24px; right:24px; background:#1b1e45; color:#fff; padding:12px 20px; border-radius:10px; font-size:13px; font-weight:600; opacity:0; transition:opacity .3s; z-index:9999; max-width:320px; }
+.toast.show { opacity:1; }
+.confirm-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:9998; align-items:center; justify-content:center; }
+.confirm-modal.show { display:flex; }
+.confirm-box { background:#fff; border-radius:16px; padding:28px 28px 22px; max-width:400px; width:90%; }
+.confirm-box h3 { margin:0 0 10px; font-size:17px; }
+.confirm-box p  { font-size:13px; color:#5b5f80; margin:0 0 20px; }
+.confirm-btns { display:flex; gap:10px; justify-content:flex-end; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+ <h1>Bulk Exam Actions</h1>
+ <a href="create-exam.html" class="btn btn-ghost" style="font-size:12px;padding:6px 14px;">← Back to Exams</a>
+</div>
+
+<div class="wrap">
+
+ <div class="action-bar">
+ <label>With selected:</label>
+ <span class="selected-count" id="selCount">0 selected</span>
+ <div style="flex:1;"></div>
+ <button class="btn btn-blue" id="btnClone"  onclick="bulkAction('clone')"  disabled>Clone</button>
+ <button class="btn btn-amber" id="btnExport" onclick="bulkAction('export_results')" disabled>Export Results CSV</button>
+ <button class="btn btn-danger" id="btnDelete" onclick="confirmDelete()"  disabled>Delete</button>
+ </div>
+
+ <div class="table-wrap">
+ <div class="select-all-row">
+ <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
+ <label for="selectAll">Select All</label>
+ </div>
+ <table>
+ <thead>
+ <tr>
+ <th style="width:36px;"></th>
+ <th>Title</th>
+ <th>Course</th>
+ <th>Access Code</th>
+ <th>Duration</th>
+ <th>Questions</th>
+ <th>Retake</th>
+ <th>Schedule</th>
+ </tr>
+ </thead>
+ <tbody id="examTableBody">
+ <tr><td colspan="8" style="padding:32px;text-align:center;color:#8e92b3;">Loading exams…</td></tr>
+ </tbody>
+ </table>
+ </div>
+
+</div>
+
+<!-- Confirm Delete Modal -->
+<div class="confirm-modal" id="confirmModal">
+ <div class="confirm-box">
+ <h3>Delete Exams</h3>
+ <p id="confirmMsg">Are you sure you want to delete the selected exams? This will also delete all questions and results. This cannot be undone.</p>
+ <div class="confirm-btns">
+ <button class="btn btn-ghost" onclick="closeConfirm()">Cancel</button>
+ <button class="btn btn-danger" onclick="bulkAction('delete')">Yes, Delete</button>
+ </div>
+ </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="js/admin.js"></script>
+<script>
+checkAdmin();
+
+let allExams = [];
+let selected = new Set();
+
+async function loadExams() {
+ const tbody = document.getElementById('examTableBody');
+ try {
+ const data = await apiGet('/api/admin/exams');
+ allExams = (data.exams || data) || [];
+ renderTable();
+ } catch(e) {
+ tbody.innerHTML = `<tr><td colspan="8" style="padding:24px;color:#dc2626;">Error: ${e.message}</td></tr>`;
+ }
+}
+
+function renderTable() {
+ const tbody = document.getElementById('examTableBody');
+ if (!allExams.length) {
+ tbody.innerHTML = '<tr><td colspan="8" style="padding:32px;text-align:center;color:#8e92b3;">No exams found.</td></tr>';
+ return;
+ }
+ tbody.innerHTML = allExams.map(e => {
+ const isSelected = selected.has(e.id || e._id);
+ const hasSchedule = e.start_date || e.end_date;
+ const schedText = hasSchedule
+ ? `<span class="badge badge-blue">Scheduled</span>`
+ : '<span style="color:#8e92b3;">—</span>';
+ return `<tr class="${isSelected ? 'selected' : ''}" data-id="${e.id || e._id}">
+ <td><input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleSelect('${e.id || e._id}', this.checked)"></td>
+ <td style="font-weight:700;">${e.title}</td>
+ <td style="color:#5b5f80;">${e.course_name || '—'}</td>
+ <td><code style="background:#f1f2fa;padding:2px 7px;border-radius:5px;font-size:12px;">${e.access_code}</code></td>
+ <td>${e.duration} min</td>
+ <td>${e.question_count || 0}</td>
+ <td>${e.allow_retake ? '<span class="badge badge-green">Yes</span>' : '<span class="badge" style="background:#f1f2fa;color:#5b5f80;">No</span>'}</td>
+ <td>${schedText}</td>
+ </tr>`;
+ }).join('');
+}
+
+function toggleSelect(id, checked) {
+ if (checked) selected.add(id);
+ else selected.delete(id);
+ updateSelectionUI();
+}
+
+function toggleSelectAll() {
+ const all = document.getElementById('selectAll').checked;
+ if (all) allExams.forEach(e => selected.add(e.id || e._id));
+ else selected.clear();
+ renderTable();
+ updateSelectionUI();
+}
+
+function updateSelectionUI() {
+ const count = selected.size;
+ document.getElementById('selCount').textContent = `${count} selected`;
+ ['btnClone','btnExport','btnDelete'].forEach(id => {
+ document.getElementById(id).disabled = count === 0;
+ });
+ document.getElementById('selectAll').checked = count === allExams.length && allExams.length > 0;
+ renderTable();
+}
+
+function confirmDelete() {
+ if (!selected.size) return;
+ document.getElementById('confirmMsg').textContent =
+ `Are you sure you want to permanently delete ${selected.size} exam(s) along with all their questions and results? This cannot be undone.`;
+ document.getElementById('confirmModal').classList.add('show');
+}
+function closeConfirm() {
+ document.getElementById('confirmModal').classList.remove('show');
+}
+
+async function bulkAction(action) {
+ closeConfirm();
+ if (!selected.size) return;
+ const ids = [...selected];
+
+ if (action === 'export_results') {
+ // Download CSV directly via form POST
+ const form = document.createElement('form');
+ form.method = 'POST';
+ form.action = '/api/admin/exams/bulk';
+ form.style.display = 'none';
+ const addField = (name, val) => {
+ const inp = document.createElement('input');
+ inp.type = 'hidden'; inp.name = name; inp.value = val;
+ form.appendChild(inp);
+ };
+ addField('action', 'export_results');
+ ids.forEach(id => addField('exam_ids[]', id));
+ document.body.appendChild(form);
+ form.submit();
+ document.body.removeChild(form);
+ showToast(' Downloading results CSV…');
+ return;
+ }
+
+ try {
+ const data = await apiPost('/api/admin/exams/bulk', { action, exam_ids: ids });
+ if (data.success) {
+ showToast(` ${data.message}`);
+ selected.clear();
+ await loadExams();
+ updateSelectionUI();
+ } else {
+ showToast(` ${data.message}`);
+ }
+ } catch(e) { showToast(` Error: ${e.message}`); }
+}
+
+function showToast(msg) {
+ const t = document.getElementById('toast');
+ t.textContent = msg;
+ t.classList.add('show');
+ setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+loadExams();
+</script>
+<script src="/pwa.js"></script>
+</body>
+</html>

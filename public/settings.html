@@ -1,0 +1,1670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="manifest" href="/manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MARGMOCOTH CBT">
+<meta name="theme-color" content="#2e3192">
+<link rel="apple-touch-icon" href="/icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Settings – MARGMOCOTH CBT</title>
+<link rel="stylesheet" href="css/style.css">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+.content { font-family: 'DM Sans', sans-serif; }
+
+.settings-hero {
+  background: linear-gradient(135deg, #0f6b30 0%, #166534 50%, #14532d 100%);
+  border-radius: 20px; padding: 32px 28px; margin-bottom: 28px;
+  position: relative; overflow: hidden;
+}
+.settings-hero::before {
+  content: ''; position: absolute; right: 24px; top: 50%; transform: translateY(-50%);
+  font-size: 96px; opacity: .08; pointer-events: none; line-height: 1;
+}
+.settings-hero-tag {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 999px; padding: 4px 14px; font-size: 11px; font-weight: 700;
+  letter-spacing: 1.5px; text-transform: uppercase; color: rgba(255,255,255,0.9);
+  margin-bottom: 14px;
+}
+.settings-hero-tag span { width: 6px; height: 6px; background:#4ade80; border-radius:50%; }
+.settings-hero h1 { font-size: 26px; font-weight: 700; color: #fff; margin: 0 0 6px; letter-spacing: -0.5px; }
+.settings-hero p  { font-size: 14px; color: rgba(255,255,255,.75); margin: 0; }
+
+#alertBox { margin-bottom: 20px; }
+
+.settings-section {
+  background: #ffffff; border-radius: 16px; border: 1px solid #e6e8f3;
+  overflow: hidden; margin-bottom: 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.04), 0 4px 12px rgba(0,0,0,.03);
+}
+.section-head {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 24px; border-bottom: 1px solid #f1f2fa; background: #fafafa;
+}
+.section-head-icon {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 17px; flex-shrink: 0;
+}
+.section-head-text h3 {
+  font-size: 13px; font-weight: 700; color: #0f1230;
+  letter-spacing: .4px; text-transform: uppercase; margin: 0 0 1px;
+}
+.section-head-text p { font-size: 12px; color: #8e92b3; margin: 0; }
+.section-head.danger-head { background: #fff5f5; border-bottom-color: #fee2e2; }
+.section-head.danger-head .section-head-icon { background: #fee2e2; }
+.section-head.danger-head .section-head-text h3 { color: #991b1b; }
+
+.setting-row {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 20px; padding: 18px 24px; border-bottom: 1px solid #f6f7fc; transition: background .15s;
+}
+.setting-row:last-child { border-bottom: none; }
+.setting-row:hover { background: #fafafa; }
+.setting-info { flex: 1; min-width: 0; }
+.setting-title { font-size: 14px; font-weight: 600; color: #1b1e45; margin-bottom: 3px; line-height: 1.3; }
+.setting-desc  { font-size: 12px; color: #8e92b3; line-height: 1.5; }
+
+.status-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 10px; font-weight: 700; letter-spacing: .5px;
+  text-transform: uppercase; padding: 2px 8px; border-radius: 999px;
+  margin-left: 8px; vertical-align: middle; transition: all .2s;
+}
+.status-chip.on  { background: #dcfce7; color: #15803d; }
+.status-chip.off { background: #f1f2fa; color: #8e92b3; }
+
+.toggle-wrap {
+  flex-shrink: 0; width: 48px; height: 26px;
+  position: relative; cursor: pointer; user-select: none; margin-top: 2px;
+}
+.toggle-track {
+  position: absolute; inset: 0; background: #e6e8f3; border-radius: 26px;
+  transition: background .25s cubic-bezier(.4,0,.2,1);
+}
+.toggle-track.on { background: #0f6b30; }
+.toggle-knob {
+  position: absolute; width: 18px; height: 18px; background: #fff;
+  border-radius: 50%; top: 4px; left: 4px;
+  transition: transform .25s cubic-bezier(.4,0,.2,1);
+  box-shadow: 0 1px 4px rgba(0,0,0,.25);
+}
+.toggle-knob.on { transform: translateX(22px); }
+
+.toggle-wrap.portal-toggle { width: 60px; height: 30px; }
+.toggle-wrap.portal-toggle .toggle-knob { width: 22px; height: 22px; }
+.toggle-wrap.portal-toggle .toggle-track.on  { background: #0f6b30; }
+.toggle-wrap.portal-toggle .toggle-track.off { background: #dc2626; }
+.toggle-wrap.portal-toggle .toggle-knob.on   { transform: translateX(30px); }
+
+.portal-status-wrap { display: flex; align-items: center; gap: 16px; flex-shrink: 0; margin-top: 2px; }
+.portal-badge-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 14px; border-radius: 999px; font-size: 12px; font-weight: 700;
+  letter-spacing: .5px; text-transform: uppercase; transition: all .25s;
+}
+.portal-badge-pill.open   { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+.portal-badge-pill.closed { background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; }
+.portal-badge-pill .dot { width: 7px; height: 7px; border-radius: 50%; }
+.portal-badge-pill.open   .dot { background: #22c55e; box-shadow: 0 0 6px #22c55e; }
+.portal-badge-pill.closed .dot { background: #ef4444; }
+
+.settings-select {
+  font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500;
+  background: #f6f7fc; border: 1.5px solid #e6e8f3; border-radius: 10px;
+  padding: 8px 32px 8px 12px; color: #1b1e45; cursor: pointer;
+  appearance: none; flex-shrink: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='m3 5 4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 10px center;
+  transition: border-color .2s, box-shadow .2s;
+}
+.settings-select:focus { outline: none; border-color: #0f6b30; box-shadow: 0 0 0 3px rgba(15,107,48,.1); }
+
+/* Branding */
+.branding-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 20px 24px; }
+@media (max-width: 560px) { .branding-grid { grid-template-columns: 1fr; } }
+.branding-field { display: flex; flex-direction: column; gap: 6px; }
+.branding-field.full { grid-column: 1 / -1; }
+.branding-label { font-size: 11px; font-weight: 700; letter-spacing: .6px; text-transform: uppercase; color: #5b5f80; }
+.branding-input {
+  font-family: 'DM Sans', sans-serif; font-size: 13px; color: #1b1e45;
+  background: #f6f7fc; border: 1.5px solid #e6e8f3; border-radius: 10px; padding: 10px 14px;
+  transition: border-color .2s, box-shadow .2s, background .2s;
+}
+.branding-input:focus { outline: none; border-color: #0f6b30; background: #fff; box-shadow: 0 0 0 3px rgba(15,107,48,.1); }
+.branding-input::placeholder { color: #cdd0e6; }
+.branding-textarea {
+  font-family: 'DM Sans', sans-serif; font-size: 13px; color: #1b1e45;
+  background: #f6f7fc; border: 1.5px solid #e6e8f3; border-radius: 10px;
+  padding: 10px 14px; resize: vertical; min-height: 100px; line-height: 1.6;
+  transition: border-color .2s, box-shadow .2s, background .2s;
+}
+.branding-textarea:focus { outline: none; border-color: #0f6b30; background: #fff; box-shadow: 0 0 0 3px rgba(15,107,48,.1); }
+.branding-save-row {
+  padding: 16px 24px 20px; border-top: 1px solid #f1f2fa;
+  display: flex; align-items: center; gap: 12px;
+}
+.btn-save {
+  background: #0f6b30; color: #fff; border: none; border-radius: 10px;
+  padding: 10px 22px; font-family: 'DM Sans', sans-serif; font-size: 13px;
+  font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; transition: all .2s;
+}
+.btn-save:hover { background: #166534; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(15,107,48,.3); }
+.btn-save:active { transform: scale(.97); }
+.save-hint { font-size: 12px; color: #8e92b3; }
+
+/* Individual Retake */
+.retake-search-wrap { padding: 20px 24px; border-bottom: 1px solid #f1f2fa; }
+.retake-search-row { display: flex; gap: 10px; align-items: stretch; }
+.retake-search-input {
+  flex: 1; font-family: 'DM Sans', sans-serif; font-size: 13px; color: #1b1e45;
+  background: #f6f7fc; border: 1.5px solid #e6e8f3; border-radius: 10px;
+  padding: 10px 14px; transition: border-color .2s, box-shadow .2s;
+}
+.retake-search-input:focus { outline: none; border-color: #0f6b30; box-shadow: 0 0 0 3px rgba(15,107,48,.1); background: #fff; }
+.retake-search-input::placeholder { color: #cdd0e6; }
+.btn-search {
+  background: #0f6b30; color: #fff; border: none; border-radius: 10px;
+  padding: 10px 18px; font-family: 'DM Sans', sans-serif; font-size: 13px;
+  font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px;
+  white-space: nowrap; transition: all .2s; flex-shrink: 0;
+}
+.btn-search:hover { background: #166534; }
+.btn-search:disabled { opacity: .5; cursor: not-allowed; }
+
+.search-results-drop {
+  display: none; margin-top: 8px; background: #fff;
+  border: 1.5px solid #e6e8f3; border-radius: 12px;
+  overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,.08);
+}
+.search-results-drop.show { display: block; }
+.search-result-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px; border-bottom: 1px solid #f1f2fa; cursor: pointer;
+  transition: background .15s; gap: 12px;
+}
+.search-result-item:last-child { border-bottom: none; }
+.search-result-item:hover { background: #f6f7fc; }
+.result-item-info { flex: 1; min-width: 0; }
+.result-item-name   { font-size: 13px; font-weight: 600; color: #1b1e45; }
+.result-item-matric { font-size: 11px; color: #8e92b3; font-family: 'DM Mono', monospace; }
+.result-item-dept   { font-size: 11px; color: #5b5f80; margin-top: 1px; }
+.btn-grant {
+  background: #dcfce7; color: #15803d; border: 1px solid #86efac;
+  border-radius: 8px; padding: 5px 12px; font-family: 'DM Sans', sans-serif;
+  font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap;
+  transition: all .15s; flex-shrink: 0;
+}
+.btn-grant:hover { background: #bbf7d0; }
+.search-empty { padding: 20px; text-align: center; font-size: 13px; color: #8e92b3; }
+
+.granted-list-wrap { padding: 0 24px 20px; }
+.granted-list-title {
+  font-size: 11px; font-weight: 700; letter-spacing: .6px;
+  text-transform: uppercase; color: #5b5f80; margin: 16px 0 10px;
+}
+.granted-empty {
+  font-size: 13px; color: #cdd0e6; text-align: center; padding: 16px;
+  background: #fafafa; border-radius: 10px; border: 1.5px dashed #e6e8f3;
+}
+.granted-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px; background: #f0fdf4; border: 1px solid #bbf7d0;
+  border-radius: 10px; margin-bottom: 8px; gap: 12px;
+  animation: slideIn .2s ease both;
+}
+@keyframes slideIn { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:none} }
+.granted-item-info { flex: 1; min-width: 0; }
+.granted-item-name   { font-size: 13px; font-weight: 600; color: #15803d; }
+.granted-item-matric { font-size: 11px; color: #86efac; font-family: 'DM Mono', monospace; }
+.btn-revoke {
+  background: none; border: 1px solid #fca5a5; color: #dc2626;
+  border-radius: 8px; padding: 4px 10px; font-size: 11px; font-weight: 700;
+  cursor: pointer; transition: all .15s; flex-shrink: 0;
+}
+.btn-revoke:hover { background: #fee2e2; }
+
+.face-anticheat-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: linear-gradient(135deg, #7f1d1d, #991b1b);
+  color: #fca5a5; font-size: 10px; font-weight: 700;
+  letter-spacing: .8px; text-transform: uppercase;
+  padding: 3px 10px; border-radius: 999px; margin-left: 8px;
+  vertical-align: middle;
+}
+.face-anticheat-badge::before { content: ''; font-size: 11px; }
+
+/* Exam rules textarea */
+.rules-wrap { padding: 20px 24px; }
+.rules-label { font-size: 11px; font-weight: 700; letter-spacing: .6px; text-transform: uppercase; color: #5b5f80; margin-bottom: 8px; display: block; }
+.rules-textarea {
+  font-family: 'DM Sans', sans-serif; font-size: 13px; color: #1b1e45;
+  background: #f6f7fc; border: 1.5px solid #e6e8f3; border-radius: 10px;
+  padding: 12px 16px; resize: vertical; min-height: 130px; line-height: 1.7;
+  width: 100%;
+  transition: border-color .2s, box-shadow .2s, background .2s;
+}
+.rules-textarea:focus { outline: none; border-color: #0f6b30; background: #fff; box-shadow: 0 0 0 3px rgba(15,107,48,.1); }
+.rules-textarea::placeholder { color: #cdd0e6; }
+.rules-hint { font-size: 12px; color: #8e92b3; margin-top: 6px; }
+
+/* ── LECTURER ACCOUNTS ─────────────────────────────────────── */
+.lec-form-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
+.lec-form-grid .full { grid-column:1/-1; }
+.lec-input { width:100%; padding:9px 12px; border:1px solid #e6e8f3; border-radius:8px; font-size:13px; background:#fff; box-sizing:border-box; }
+.lec-input:focus { outline:none; border-color:#6366f1; box-shadow:0 0 0 3px rgba(99,102,241,.1); }
+.perm-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:8px; margin-bottom:16px; }
+.perm-item { display:flex; align-items:center; gap:8px; padding:8px 12px; background:#f6f7fc; border:1px solid #e6e8f3; border-radius:8px; cursor:pointer; font-size:13px; user-select:none; }
+.perm-item input[type=checkbox] { accent-color:#6366f1; width:15px; height:15px; flex-shrink:0; }
+.perm-item:hover { background:#eef2ff; border-color:#c7d2fe; }
+.lec-table-wrap { overflow-x:auto; }
+.lec-table { width:100%; border-collapse:collapse; font-size:13px; }
+.lec-table th { background:#f6f7fc; padding:10px 12px; text-align:left; font-weight:600; color:#4a4e73; border-bottom:2px solid #e6e8f3; }
+.lec-table td { padding:10px 12px; border-bottom:1px solid #f1f2fa; color:#334155; vertical-align:top; }
+.lec-table tr:last-child td { border-bottom:none; }
+.lec-table tr:hover td { background:#fafafa; }
+.perm-badge { display:inline-block; padding:2px 8px; background:#eef2ff; color:#4f46e5; border-radius:20px; font-size:11px; margin:2px; }
+.lec-actions { display:flex; gap:6px; }
+.btn-lec-edit { padding:5px 12px; background:#eef2ff; color:#4f46e5; border:none; border-radius:6px; font-size:12px; cursor:pointer; }
+.btn-lec-edit:hover { background:#e0e7ff; }
+.btn-lec-del { padding:5px 12px; background:#fee2e2; color:#dc2626; border:none; border-radius:6px; font-size:12px; cursor:pointer; }
+.btn-lec-del:hover { background:#fecaca; }
+.lec-empty { text-align:center; padding:32px; color:#8e92b3; font-size:13px; }
+.lec-modal-backdrop { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:9999; align-items:center; justify-content:center; }
+.lec-modal-backdrop.open { display:flex; }
+.lec-modal { background:#fff; border-radius:16px; padding:28px; width:100%; max-width:520px; max-height:90vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,.2); }
+.lec-modal h4 { margin:0 0 18px; font-size:16px; color:#1b1e45; }
+.lec-modal-footer { display:flex; gap:10px; justify-content:flex-end; margin-top:16px; }
+@media(max-width:600px){ .lec-form-grid{ grid-template-columns:1fr; } .perm-grid{ grid-template-columns:1fr 1fr; } }
+.dept-reg-row { border:1px solid #e6e8f3; border-radius:12px; padding:14px 16px; margin-bottom:12px; background:#fff; }
+.dept-reg-row:hover { border-color:#ffd4a8; background:#f8fbff; }
+.dept-reg-name { font-size:14px; font-weight:700; color:#1b1e45; margin-bottom:10px; display:flex; align-items:center; gap:8px; }
+.dept-reg-controls { display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; }
+.dept-reg-controls .form-group-sm { display:flex; flex-direction:column; gap:4px; }
+.dept-reg-controls label { font-size:11px; font-weight:600; color:#5b5f80; text-transform:uppercase; letter-spacing:.4px; }
+.dept-reg-controls input[type=datetime-local] { border:1px solid #d1d5db; border-radius:8px; padding:7px 10px; font-size:12px; color:#1b1e45; background:#fafafa; }
+.dept-reg-controls input[type=datetime-local]:focus { outline:none; border-color:#2e3192; background:#fff; }
+.btn-gen-link { background:#2e3192; color:#fff; border:none; border-radius:8px; padding:8px 14px; font-size:12px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:5px; }
+.btn-gen-link:hover { background:#4448b8; }
+.dept-reg-link-box { margin-top:10px; background:#f0fdf4; border:1px solid #86efac; border-radius:8px; padding:8px 12px; display:flex; align-items:center; gap:8px; }
+.dept-reg-link-box code { font-size:11px; color:#166534; word-break:break-all; flex:1; }
+.btn-copy-link { background:#16a34a; color:#fff; border:none; border-radius:6px; padding:5px 10px; font-size:11px; font-weight:700; cursor:pointer; white-space:nowrap; }
+.btn-copy-link:hover { background:#15803d; }
+</style>
+</head>
+<body>
+<div class="admin-layout">
+  <div id="sidebarContainer"></div>
+  <div class="admin-main">
+    <div id="topbarContainer"></div>
+    <div class="content">
+
+      <div id="alertBox"></div>
+
+      <div class="settings-hero">
+        <div class="settings-hero-tag"><span></span>System Configuration</div>
+        <h1>Settings</h1>
+        <p>Control exam behaviour, security, branding and student access from one place.</p>
+      </div>
+
+      <!-- ① PORTAL CONTROL -->
+      <div class="settings-section">
+        <div class="section-head danger-head">
+          <div class="section-head-icon" style="background:#fee2e2;"><svg viewBox="0 0 16 16" fill="none" width="18" height="18"><path d="M8 2L2 13h12L8 2z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M8 6v4M8 11.5v.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div>
+          <div class="section-head-text">
+            <h3>Student Portal Control</h3>
+            <p>Open or close the student login portal instantly</p>
+          </div>
+        </div>
+        <div class="setting-row" style="padding:20px 24px;">
+          <div class="setting-info">
+            <div class="setting-title">Portal Access</div>
+            <div class="setting-desc">When OFF, students cannot login. They will see the maintenance message set in Branding below.</div>
+          </div>
+          <div class="portal-status-wrap">
+            <div class="portal-badge-pill closed" id="portalPill">
+              <span class="dot"></span><span id="portalPillText">CLOSED</span>
+            </div>
+            <div class="toggle-wrap portal-toggle" onclick="toggleSetting('portal_open')">
+              <div class="toggle-track" id="track_portal_open"></div>
+              <div class="toggle-knob" id="knob_portal_open"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Student Self-Registration -->
+      <div class="setting-row" style="margin-top:10px;">
+        <div class="setting-info">
+          <div class="setting-title">
+            Student Self-Registration
+            <span class="status-chip off" id="chip_registration_open">Off</span>
+          </div>
+          <div class="setting-desc">
+            Allow students to register their own accounts at <strong>register.html</strong>.
+            When OFF, only admin-created accounts can log in.
+          </div>
+        </div>
+        <div class="toggle-wrap" onclick="toggleSetting('registration_open')">
+          <div class="toggle-track" id="track_registration_open"></div>
+          <div class="toggle-knob"  id="knob_registration_open"></div>
+        </div>
+      </div>
+
+      <!-- DEPARTMENT REGISTRATION CONTROL -->
+      <div class="settings-section" id="deptRegSection">
+        <div class="section-head" style="background:linear-gradient(135deg,#f0f1ff,#f0f1ff);">
+          <div class="section-head-icon" style="background:#ffd4a8;"></div>
+          <div class="section-head-text">
+            <h3>Department Registration Links</h3>
+            <p>Enable registration per department, set closure time and generate unique links</p>
+          </div>
+        </div>
+        <div class="setting-row" style="padding:18px 24px 4px;">
+          <div style="font-size:12px;color:#5b5f80;background:#f6f7fc;border:1px solid #e6e8f3;border-radius:8px;padding:10px 14px;line-height:1.7;width:100%;">
+            Generate a unique registration link per department. Students who open that link will only see <strong>that department</strong> in the form, and registration will close automatically at the set time.
+          </div>
+        </div>
+        <div id="deptRegRows" style="padding:0 24px 16px;">
+          <div style="text-align:center;padding:24px;color:#8e92b3;font-size:13px;">Loading departments…</div>
+        </div>
+      </div>
+
+      <!-- ② RESULT SETTINGS -->
+      <div class="settings-section">
+        <div class="section-head">
+          <div class="section-head-icon" style="background:#f0f1ff;"></div>
+          <div class="section-head-text">
+            <h3>Result Settings</h3>
+            <p>Control what students see after submitting</p>
+          </div>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-title">Show Results to Students <span class="status-chip off" id="chip_show_results">Off</span></div>
+            <div class="setting-desc">Redirect students to results page after submitting. If OFF, they go back to login.</div>
+          </div>
+          <div class="toggle-wrap" onclick="toggleSetting('show_results')">
+            <div class="toggle-track" id="track_show_results"></div>
+            <div class="toggle-knob" id="knob_show_results"></div>
+          </div>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-title">Show Score Percentage <span class="status-chip off" id="chip_show_percentage">Off</span></div>
+            <div class="setting-desc">Display the percentage score on the results page.</div>
+          </div>
+          <div class="toggle-wrap" onclick="toggleSetting('show_percentage')">
+            <div class="toggle-track" id="track_show_percentage"></div>
+            <div class="toggle-knob" id="knob_show_percentage"></div>
+          </div>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-title">Show Correct / Wrong Count <span class="status-chip off" id="chip_show_score_breakdown">Off</span></div>
+            <div class="setting-desc">Display how many questions were answered correctly and incorrectly.</div>
+          </div>
+          <div class="toggle-wrap" onclick="toggleSetting('show_score_breakdown')">
+            <div class="toggle-track" id="track_show_score_breakdown"></div>
+            <div class="toggle-knob" id="knob_show_score_breakdown"></div>
+          </div>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-title">Show Grade <span class="status-chip off" id="chip_show_grade">Off</span></div>
+            <div class="setting-desc">Display the letter grade (A, B, C, D, E, F) on the results page.</div>
+          </div>
+          <div class="toggle-wrap" onclick="toggleSetting('show_grade')">
+            <div class="toggle-track" id="track_show_grade"></div>
+            <div class="toggle-knob" id="knob_show_grade"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ③ EXAM SETTINGS -->
+      <div class="settings-section">
+        <div class="section-head">
+          <div class="section-head-icon" style="background:#fef9c3;"><svg viewBox="0 0 16 16" fill="none" width="18" height="18"><rect x="2" y="2" width="10" height="12" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M5 6h6M5 9h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div>
+          <div class="section-head-text">
+            <h3>Exam Settings</h3>
+            <p>Configure how exams are presented and controlled</p>
+          </div>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-title">Enable Calculator on Exam Page <span class="status-chip off" id="chip_calculator_enabled">Off</span></div>
+            <div class="setting-desc">Show a built-in calculator widget during the exam. Students can toggle it on/off. Useful for maths and science exams.</div>
+          </div>
+          <div class="toggle-wrap" onclick="toggleSetting('calculator_enabled')">
+            <div class="toggle-track" id="track_calculator_enabled"></div>
+            <div class="toggle-knob" id="knob_calculator_enabled"></div>
+          </div>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-title">Allow Previous Question Navigation <span class="status-chip off" id="chip_allow_prev_question">Off</span></div>
+            <div class="setting-desc">Allow students to go back to previous questions during the exam.</div>
+          </div>
+          <div class="toggle-wrap" onclick="toggleSetting('allow_prev_question')">
+            <div class="toggle-track" id="track_allow_prev_question"></div>
+            <div class="toggle-knob" id="knob_allow_prev_question"></div>
+          </div>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-title">Show Instructions Before Exam <span class="status-chip off" id="chip_show_instructions">Off</span></div>
+            <div class="setting-desc">Display an instructions screen before the exam timer starts.</div>
+          </div>
+          <div class="toggle-wrap" onclick="toggleSetting('show_instructions')">
+            <div class="toggle-track" id="track_show_instructions"></div>
+            <div class="toggle-knob" id="knob_show_instructions"></div>
+          </div>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-title">Max Violations Before Auto-Submit</div>
+            <div class="setting-desc">Number of anti-cheat violations allowed before the exam is force-submitted.</div>
+          </div>
+          <select id="val_max_violations" class="settings-select"
+            onchange="saveValueSetting('max_violations', parseInt(this.value))">
+            <option value="1">1 violation</option>
+            <option value="2">2 violations</option>
+            <option value="3">3 violations</option>
+            <option value="5">5 violations</option>
+            <option value="10">10 violations</option>
+          </select>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-title">Enable Reshuffle Questions After Each Violation <span class="status-chip off" id="chip_reshuffle_on_violation">Off</span></div>
+            <div class="setting-desc">When ON, the question order reshuffles automatically each time a student commits a violation — making it harder to get help from others.</div>
+          </div>
+          <div class="toggle-wrap" onclick="toggleSetting('reshuffle_on_violation')">
+            <div class="toggle-track" id="track_reshuffle_on_violation"></div>
+            <div class="toggle-knob" id="knob_reshuffle_on_violation"></div>
+          </div>
+        </div>
+
+        <!-- Exam Rules / Instructions -->
+        <div class="setting-row" style="flex-direction:column;gap:0;align-items:stretch;">
+          <div style="margin-bottom:12px;">
+            <div class="setting-title">Global Exam Rules &amp; Instructions</div>
+            <div class="setting-desc">These rules are shown to every student before entering any exam (in addition to the per-exam instructions set when creating an exam).</div>
+          </div>
+          <div class="rules-wrap" style="padding:0 0 0 0;">
+            <textarea id="val_exam_rules" class="rules-textarea"
+              placeholder="e.g.&#10;• Do not leave your seat during the exam.&#10;• Mobile phones are strictly prohibited.&#10;• Any form of examination malpractice will lead to disqualification.&#10;• Ensure your webcam is on at all times."></textarea>
+            <div class="rules-hint">These rules are appended to the instructions page the student sees before starting. Supports plain text.</div>
+          </div>
+          <div style="padding:12px 0 0;display:flex;gap:10px;align-items:center;">
+            <button onclick="saveExamRules()" class="btn-save">Save Rules</button>
+            <span class="save-hint" id="rulesSaveHint"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ④ SECURITY SETTINGS -->
+      <div class="settings-section">
+        <div class="section-head">
+          <div class="section-head-icon" style="background:#f0fdf4;"><svg viewBox="0 0 16 16" fill="none" width="18" height="18"><rect x="3" y="7" width="10" height="7" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M5 7V5a3 3 0 016 0v2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="10.5" r="1" fill="currentColor"/></svg></div>
+          <div class="section-head-text">
+            <h3>Security Settings</h3>
+            <p>Manage exam integrity and monitoring</p>
+          </div>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-title">Enable Webcam Monitoring <span class="status-chip off" id="chip_webcam_enabled">Off</span></div>
+            <div class="setting-desc">Capture periodic snapshots from student webcam during exam for proctoring. Also enables face capture before the exam begins.</div>
+          </div>
+          <div class="toggle-wrap" onclick="toggleSetting('webcam_enabled')">
+            <div class="toggle-track" id="track_webcam_enabled"></div>
+            <div class="toggle-knob" id="knob_webcam_enabled"></div>
+          </div>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-title">Enforce Fullscreen Mode <span class="status-chip off" id="chip_fullscreen_enabled">Off</span></div>
+            <div class="setting-desc">Force students into fullscreen. Attempting to go back, close the tab, minimize the window, open the notification bar, or use split-screen will be recorded as a violation.</div>
+          </div>
+          <div class="toggle-wrap" onclick="toggleSetting('fullscreen_enabled')">
+            <div class="toggle-track" id="track_fullscreen_enabled"></div>
+            <div class="toggle-knob" id="knob_fullscreen_enabled"></div>
+          </div>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-title">Enable Anti-Cheat Detection <span class="status-chip off" id="chip_anticheat_enabled">Off</span></div>
+            <div class="setting-desc">Detect and record tab switches, copy/paste attempts, and blocked keyboard shortcuts.</div>
+          </div>
+          <div class="toggle-wrap" onclick="toggleSetting('anticheat_enabled')">
+            <div class="toggle-track" id="track_anticheat_enabled"></div>
+            <div class="toggle-knob" id="knob_anticheat_enabled"></div>
+          </div>
+        </div>
+
+        <!-- Strict Face Anti-Cheat -->
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-title">
+              Enable Strict Face Anti-Cheat
+              <span class="face-anticheat-badge">AI Powered</span>
+              <span class="status-chip off" id="chip_face_anticheat_enabled">Off</span>
+            </div>
+            <div class="setting-desc">
+              Uses AI face detection on the webcam feed in real-time. Triggers a violation when
+              <strong>more than 1 face</strong> is detected, or the student
+              <strong>looks away for 5+ seconds</strong>. Requires webcam to be enabled. Also triggers face capture before the exam.
+            </div>
+          </div>
+          <div class="toggle-wrap" onclick="toggleSetting('face_anticheat_enabled')">
+            <div class="toggle-track" id="track_face_anticheat_enabled"></div>
+            <div class="toggle-knob" id="knob_face_anticheat_enabled"></div>
+          </div>
+        </div>
+
+        <!-- Student Face Capture -->
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-title">
+              Allow Student Face Capture
+              <span class="status-chip off" id="chip_student_capture_enabled">Off</span>
+            </div>
+            <div class="setting-desc">
+              When enabled, students can open the <strong>Face Capture</strong> page on their dashboard and take a reference selfie.
+              Each student can only capture <strong>once</strong> — the page locks after their first upload.
+              Disable this after all students have captured to prevent any further changes.
+              Admins can reset individual students from the <a href="student-profiles.html" style="color:var(--brand-600);font-weight:600;">Student Profiles</a> page.
+            </div>
+          </div>
+          <div class="toggle-wrap" onclick="toggleSetting('student_capture_enabled')">
+            <div class="toggle-track" id="track_student_capture_enabled"></div>
+            <div class="toggle-knob" id="knob_student_capture_enabled"></div>
+          </div>
+        </div>
+
+        <!-- Restrict Side Look -->
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-title">
+              Restrict Side Look
+              <span class="face-anticheat-badge">AI Powered</span>
+              <span class="status-chip off" id="chip_restrict_side_look">Off</span>
+            </div>
+            <div class="setting-desc">
+              When ON, students must maintain eye contact with the exam screen. The AI monitors the webcam —
+              if a student turns their head sideways for more than <strong>3 seconds</strong>, a violation is recorded.
+              Requires webcam to be enabled. Also triggers face capture before the exam.
+            </div>
+          </div>
+          <div class="toggle-wrap" onclick="toggleSetting('restrict_side_look')">
+            <div class="toggle-track" id="track_restrict_side_look"></div>
+            <div class="toggle-knob" id="knob_restrict_side_look"></div>
+          </div>
+        </div>
+
+        <!-- Restrict Voice -->
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-title">
+              Restrict Voice (Mouth Movement Detection)
+              <span class="face-anticheat-badge">AI Powered</span>
+              <span class="status-chip off" id="chip_restrict_voice">Off</span>
+            </div>
+            <div class="setting-desc">
+              When ON, the AI monitors lip/mouth movement via the webcam. If the student's mouth is detected
+              moving (talking or whispering) for more than <strong>3 seconds</strong>, a violation is recorded.
+              Requires webcam to be enabled. Also triggers face capture before the exam.
+            </div>
+          </div>
+          <div class="toggle-wrap" onclick="toggleSetting('restrict_voice')">
+            <div class="toggle-track" id="track_restrict_voice"></div>
+            <div class="toggle-knob" id="knob_restrict_voice"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ⑤ STUDENT SETTINGS -->
+      <div class="settings-section">
+        <div class="section-head">
+          <div class="section-head-icon" style="background:#f0f1ff;"><svg viewBox="0 0 16 16" fill="none" width="18" height="18"><circle cx="6" cy="5" r="2.5" stroke="currentColor" stroke-width="1.4"/><path d="M1 14c0-2.76 2.24-5 5-5s5 2.24 5 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="12" cy="5" r="2" stroke="currentColor" stroke-width="1.2" opacity=".6"/><path d="M15 14c0-2.21-1.34-4.1-3.26-4.74" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity=".6"/></svg></div>
+          <div class="section-head-text">
+            <h3>Student Settings</h3>
+            <p>Global overrides and individual permissions</p>
+          </div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-title">Global Allow Retake <span class="status-chip off" id="chip_global_allow_retake">Off</span></div>
+            <div class="setting-desc">Override all individual exam settings — allow every student to retake any exam.</div>
+          </div>
+          <div class="toggle-wrap" onclick="toggleSetting('global_allow_retake')">
+            <div class="toggle-track" id="track_global_allow_retake"></div>
+            <div class="toggle-knob" id="knob_global_allow_retake"></div>
+          </div>
+        </div>
+
+        <!-- Individual Retake Grant -->
+        <div class="setting-row" style="flex-direction:column;align-items:stretch;gap:0;padding-bottom:0;">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:16px;">
+            <div class="setting-info">
+              <div class="setting-title">Individual Retake Grant</div>
+              <div class="setting-desc">Search for a specific student by name or matric number and grant them a one-time retake permission.</div>
+            </div>
+          </div>
+
+          <div class="retake-search-wrap" style="padding:0 0 16px;">
+            <div class="retake-search-row">
+              <input type="text" id="retakeSearch" class="retake-search-input"
+                placeholder="Search student name or matric…"
+                oninput="onRetakeSearchInput()" autocomplete="off">
+              <button class="btn-search" onclick="searchStudents()">Search</button>
+            </div>
+            <div class="search-results-drop" id="searchResultsDrop"></div>
+          </div>
+        </div>
+
+        <div class="granted-list-wrap">
+          <div class="granted-list-title">Currently Granted Retakes</div>
+          <div id="grantedList"><div class="granted-empty">No individual retakes granted yet.</div></div>
+        </div>
+      </div>
+
+      <!-- ── EXAM ASSIGNMENTS ────────────────────────────────── -->
+      <div class="settings-section" id="examAssignSection">
+        <div class="section-head">
+          <div class="section-head-icon" style="background:#dcfce7;"><svg viewBox="0 0 16 16" fill="none" width="18" height="18"><rect x="3" y="2" width="10" height="12" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M6 1.5h4v2H6v-2z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M5 7h6M5 10h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div>
+          <div class="section-head-text">
+            <h3>Exam Assignments</h3>
+            <p>Assign exams to department lecturers so they can upload questions and generate access codes</p>
+          </div>
+        </div>
+
+        <div class="setting-row" style="flex-direction:column;align-items:stretch;gap:12px;">
+          <!-- Department filter -->
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+            <select id="assignDeptFilter" class="settings-select" style="flex:1;min-width:200px;" onchange="loadAssignmentExams()">
+              <option value="">— Filter by Department —</option>
+            </select>
+            <button class="btn btn-primary" onclick="loadAssignmentExams()" style="white-space:nowrap;">Load Exams</button>
+          </div>
+
+          <!-- Exam list -->
+          <div id="assignExamList" style="display:none;margin-top:8px;">
+            <div style="font-size:13px;font-weight:600;color:#374151;margin-bottom:10px;">Select an exam to manage its assignments:</div>
+            <div id="assignExamCards" style="display:flex;flex-direction:column;gap:8px;"></div>
+          </div>
+
+          <!-- Assignment panel (shown after selecting an exam) -->
+          <div id="assignPanel" style="display:none;margin-top:12px;border:1px solid #e5e7eb;border-radius:12px;padding:16px;background:#f9fafb;">
+            <div style="font-weight:600;color:#0f6b30;font-size:15px;margin-bottom:4px;" id="assignPanelTitle">Assign Lecturers</div>
+            <div style="font-size:13px;color:#6b7280;margin-bottom:14px;" id="assignPanelSub">Tick the lecturers who should be able to add questions to this exam.</div>
+            <div id="assignLecturerList" style="display:flex;flex-direction:column;gap:10px;max-height:260px;overflow-y:auto;"></div>
+            <div style="margin-top:14px;display:flex;gap:10px;">
+              <button class="btn btn-primary" onclick="saveAssignments()">Save Assignments</button>
+              <button class="btn btn-outline" onclick="closeAssignPanel()"> Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ⑥ BRANDING SETTINGS -->
+      <div class="settings-section">
+        <div class="section-head">
+          <div class="section-head-icon" style="background:#f0f1ff;"><svg viewBox="0 0 16 16" fill="none" width="18" height="18"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.4"/><circle cx="5.5" cy="6" r="1" fill="currentColor"/><circle cx="10.5" cy="6" r="1" fill="currentColor"/><circle cx="5.5" cy="10" r="1" fill="currentColor"/><circle cx="10.5" cy="10" r="1" fill="currentColor"/><circle cx="8" cy="5" r="1" fill="currentColor"/></svg></div>
+          <div class="section-head-text">
+            <h3>Branding Settings</h3>
+            <p>Customise your school's identity across the portal</p>
+          </div>
+        </div>
+        <div class="branding-grid">
+          <div class="branding-field">
+            <label class="branding-label">School Name</label>
+            <input type="text" id="val_school_name" class="branding-input" placeholder="MARGMOCOTH CBT">
+          </div>
+          <div class="branding-field">
+            <label class="branding-label">Short Name / Acronym</label>
+            <input type="text" id="val_school_short" class="branding-input" placeholder="MARGMOCOTH CBT">
+          </div>
+          <div class="branding-field">
+            <label class="branding-label">Contact Email</label>
+            <input type="email" id="val_contact_email" class="branding-input" placeholder="admin@yourdomain.com">
+          </div>
+          <div class="branding-field">
+            <label class="branding-label">Contact Phone</label>
+            <input type="text" id="val_contact_phone" class="branding-input" placeholder="e.g. 08012345678">
+          </div>
+          <div class="branding-field full">
+            <label class="branding-label">Footer Marquee Text</label>
+            <input type="text" id="val_marquee_text" class="branding-input" placeholder="MARGMOCOTH CBT | Secure Examination Portal …">
+          </div>
+          <div class="branding-field full">
+            <label class="branding-label">Portal Maintenance Message</label>
+            <input type="text" id="val_maintenance_msg" class="branding-input" placeholder="The exam portal is currently closed. Please check back later.">
+          </div>
+        </div>
+        <div class="branding-save-row">
+          <button onclick="saveBranding()" class="btn-save">Save Branding</button>
+          <span class="save-hint" id="brandingSaveHint"></span>
+        </div>
+      </div>
+
+
+      <!-- ⑦ STAFF ACCOUNTS -->
+      <div class="settings-section">
+        <div class="section-head">
+          <div class="section-head-icon" style="background:#f0f1ff;"><svg viewBox="0 0 16 16" fill="none" width="18" height="18"><path d="M8 3L2 6l6 3 6-3-6-3z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M4 7.5V11c0 1.1 1.79 2 4 2s4-.9 4-2V7.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M14 6v4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div>
+          <div class="section-head-text">
+            <h3>Staff Accounts</h3>
+            <p>Create portal accounts for lecturers, moderators and admins. They log in on the same page as you.</p>
+          </div>
+        </div>
+
+        <!-- Create form -->
+        <div style="margin-bottom:24px;">
+          <p style="font-size:13px;font-weight:600;color:#374151;margin:0 0 14px;">Create New Staff Account</p>
+          <div class="lec-form-grid">
+            <div>
+              <label style="font-size:12px;color:#5b5f80;font-weight:500;display:block;margin-bottom:4px;">Full Name / Display Name <span style="color:#ef4444;">*</span></label>
+              <input id="lec_name" class="lec-input" type="text" placeholder="e.g. Mr. Adeyemi Tunde">
+              <div style="font-size:11px;color:#8e92b3;margin-top:3px;">This name appears on their dashboard</div>
+            </div>
+            <div>
+              <label style="font-size:12px;color:#5b5f80;font-weight:500;display:block;margin-bottom:4px;">Login Username (Email or ID) <span style="color:#ef4444;">*</span></label>
+              <input id="lec_username" class="lec-input" type="text" placeholder="e.g. Margmocoth.examinationsmedia@gmail.com">
+            </div>
+            <div>
+              <label style="font-size:12px;color:#5b5f80;font-weight:500;display:block;margin-bottom:4px;">Role <span style="color:#ef4444;">*</span></label>
+              <select id="lec_role" class="lec-input" onchange="onRoleChange()">
+                <option value="">— Select Role —</option>
+                <option value="lecturer">Lecturer</option>
+                <option value="moderator">Moderator</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:12px;color:#5b5f80;font-weight:500;display:block;margin-bottom:4px;">Department <span style="color:#ef4444;">*</span></label>
+              <select id="lec_department" class="lec-input"><option value="">— Select Department —</option></select>
+            </div>
+            <div>
+              <label style="font-size:12px;color:#5b5f80;font-weight:500;display:block;margin-bottom:4px;">Password <span style="color:#ef4444;">*</span></label>
+              <input id="lec_password" class="lec-input" type="password" placeholder="Min 6 characters">
+            </div>
+            <div>
+              <label style="font-size:12px;color:#5b5f80;font-weight:500;display:block;margin-bottom:4px;">Confirm Password <span style="color:#ef4444;">*</span></label>
+              <input id="lec_password2" class="lec-input" type="password" placeholder="Re-enter password">
+            </div>
+          </div>
+
+          <div id="permSection" style="display:none;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+              <p style="font-size:12px;font-weight:700;color:#374151;margin:0;text-transform:uppercase;letter-spacing:.4px;">Portal Access Permissions</p>
+              <div style="display:flex;gap:6px;">
+                <button type="button" onclick="setAllPerms('createPermGrid',true)" style="font-size:11px;padding:4px 10px;background:#eef2ff;color:#4f46e5;border:none;border-radius:6px;cursor:pointer;font-weight:600;">All On</button>
+                <button type="button" onclick="setAllPerms('createPermGrid',false)" style="font-size:11px;padding:4px 10px;background:#f1f2fa;color:#5b5f80;border:none;border-radius:6px;cursor:pointer;font-weight:600;">All Off</button>
+              </div>
+            </div>
+            <div class="perm-grid" id="createPermGrid"></div>
+          </div>
+
+          <button onclick="createLecturer()" class="btn-save">Create Account</button>
+          <div id="lecCreateAlert" style="margin-top:10px;"></div>
+        </div>
+
+        <!-- Existing staff table -->
+        <p style="font-size:13px;font-weight:600;color:#374151;margin:0 0 12px;">Existing Staff Accounts</p>
+        <div class="lec-table-wrap">
+          <table class="lec-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Username</th>
+                <th>Role</th>
+                <th>Department</th>
+                <th>Permissions</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="lecturerTableBody">
+              <tr><td colspan="6" class="lec-empty">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ⑧ LECTURER ACTIVITY LOG -->
+      <div class="settings-section">
+        <div class="section-head">
+          <div class="section-head-icon" style="background:#fef9c3;"><svg viewBox="0 0 16 16" fill="none" width="18" height="18"><rect x="3" y="2" width="10" height="12" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M6 1.5h4v2H6v-2z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M5 7h6M5 10h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div>
+          <div class="section-head-text">
+            <h3>Lecturer Activity Log</h3>
+            <p>Track actions taken by each lecturer account — exams created, students added, etc.</p>
+          </div>
+        </div>
+        <div style="margin-bottom:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <select id="actLogLecFilter" class="lec-input" style="max-width:260px;" onchange="loadActivityLog()">
+            <option value="">— All Lecturers —</option>
+          </select>
+          <button onclick="loadActivityLog()" class="btn btn-secondary btn-sm">Refresh</button>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="lec-table">
+            <thead><tr>
+              <th>Lecturer</th><th>Action</th><th>Detail</th><th>Time</th>
+            </tr></thead>
+            <tbody id="activityLogBody">
+              <tr><td colspan="4" class="lec-empty">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+
+
+    </div>
+  </div>
+</div>
+
+
+<!-- STAFF EDIT MODAL -->
+<div class="lec-modal-backdrop" id="lecEditModal">
+  <div class="lec-modal">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+      <h4 style="margin:0;">Edit Staff Account</h4>
+      <button onclick="closeLecModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#8e92b3;line-height:1;">×</button>
+    </div>
+    <input type="hidden" id="editLecId">
+    <div class="lec-form-grid">
+      <div class="full">
+        <label style="font-size:12px;color:#5b5f80;font-weight:500;display:block;margin-bottom:4px;">Display Name</label>
+        <input id="editLecName" class="lec-input" type="text" placeholder="Full name">
+        <div style="font-size:11px;color:#8e92b3;margin-top:3px;">Shown on their dashboard header</div>
+      </div>
+      <div>
+        <label style="font-size:12px;color:#5b5f80;font-weight:500;display:block;margin-bottom:4px;">Role</label>
+        <select id="editLecRole" class="lec-input" onchange="onEditRoleChange()">
+          <option value="lecturer">Lecturer</option>
+          <option value="moderator">Moderator</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:12px;color:#5b5f80;font-weight:500;display:block;margin-bottom:4px;">Department</label>
+        <select id="editLecDept" class="lec-input"><option value="">— Select Department —</option></select>
+      </div>
+      <div class="full">
+        <label style="font-size:12px;color:#5b5f80;font-weight:500;display:block;margin-bottom:4px;">New Password <span style="color:#8e92b3;">(leave blank to keep current)</span></label>
+        <input id="editLecPassword" class="lec-input" type="password" placeholder="Enter new password or leave blank">
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+      <p style="font-size:12px;font-weight:700;color:#374151;margin:0;text-transform:uppercase;letter-spacing:.4px;">Permissions</p>
+      <div style="display:flex;gap:6px;">
+        <button type="button" onclick="setAllPerms('editPermGrid',true)" style="font-size:11px;padding:4px 10px;background:#eef2ff;color:#4f46e5;border:none;border-radius:6px;cursor:pointer;font-weight:600;">All On</button>
+        <button type="button" onclick="setAllPerms('editPermGrid',false)" style="font-size:11px;padding:4px 10px;background:#f1f2fa;color:#5b5f80;border:none;border-radius:6px;cursor:pointer;font-weight:600;">All Off</button>
+      </div>
+    </div>
+    <div class="perm-grid" id="editPermGrid"></div>
+    <div id="editLecAlert" style="margin-top:8px;"></div>
+    <div class="lec-modal-footer">
+      <button onclick="closeLecModal()" class="btn btn-secondary btn-sm">Cancel</button>
+      <button onclick="saveLecEdit()" class="btn-save" style="padding:8px 20px;font-size:13px;">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/admin.js"></script>
+<script>
+document.getElementById('sidebarContainer').innerHTML = getSidebarHTML('settings.html');
+document.getElementById('topbarContainer').innerHTML  = getTopbarHTML('Settings');
+checkAdmin();
+requireSuper();
+
+const TOGGLES = {
+  portal_open:             true,
+  registration_open:       false,
+  show_results:            false,
+  show_percentage:         true,
+  show_score_breakdown:    true,
+  show_grade:              true,
+  allow_prev_question:     true,
+  show_instructions:       true,
+  calculator_enabled:      false,
+  webcam_enabled:          true,
+  fullscreen_enabled:      true,
+  anticheat_enabled:       true,
+  face_anticheat_enabled:  false,
+  student_capture_enabled: true,
+  restrict_side_look:      false,
+  reshuffle_on_violation:  false,
+  restrict_voice:          false,
+  global_allow_retake:     false,
+};
+
+const VALUE_DEFAULTS = {
+  max_violations: 3,
+  school_name:    'MARGMOCOTH CBT',
+  school_short:   'MARGMOCOTH CBT',
+  contact_email:  'admin@yourdomain.com',
+  contact_phone:  '',
+  marquee_text:   'MARGMOCOTH CBT | Secure Examination Portal | MARGMOCOTH CBT | Secure Examination Portal',
+  maintenance_msg:'The exam portal is currently closed. Please check back later.'
+};
+
+let currentSettings = {};
+let searchDebounce  = null;
+let allStudents     = [];
+
+async function loadSettings() {
+  try { currentSettings = await apiGet('/api/admin/settings'); }
+  catch(e) { currentSettings = {}; }
+
+  Object.keys(TOGGLES).forEach(key => {
+    const val = key in currentSettings ? currentSettings[key] : TOGGLES[key];
+    applyToggle(key, val);
+  });
+  updatePortalPill(currentSettings.portal_open !== false);
+
+  Object.keys(VALUE_DEFAULTS).forEach(key => {
+    const el = document.getElementById('val_' + key);
+    if (el) el.value = key in currentSettings ? currentSettings[key] : VALUE_DEFAULTS[key];
+  });
+  const vSel = document.getElementById('val_max_violations');
+  if (vSel) vSel.value = currentSettings.max_violations || 3;
+
+  // Exam rules
+  const rulesEl = document.getElementById('val_exam_rules');
+  if (rulesEl) rulesEl.value = currentSettings.exam_rules || '';
+
+  await loadAllStudents();
+  await loadGrantedRetakes();
+}
+
+function applyToggle(key, value) {
+  const track = document.getElementById('track_' + key);
+  const knob  = document.getElementById('knob_'  + key);
+  const chip  = document.getElementById('chip_'  + key);
+  if (track) track.classList.toggle('on', !!value);
+  if (knob)  knob.classList.toggle('on',  !!value);
+  if (key === 'portal_open' && track) track.classList.toggle('off', !value);
+  if (chip) { chip.textContent = value ? 'On' : 'Off'; chip.className = 'status-chip ' + (value ? 'on' : 'off'); }
+}
+
+function updatePortalPill(isOpen) {
+  const pill = document.getElementById('portalPill');
+  const text = document.getElementById('portalPillText');
+  if (!pill || !text) return;
+  pill.className   = 'portal-badge-pill ' + (isOpen ? 'open' : 'closed');
+  text.textContent = isOpen ? 'OPEN' : 'CLOSED';
+}
+
+async function toggleSetting(key) {
+  const current = key in currentSettings ? currentSettings[key] : TOGGLES[key];
+  const newVal  = !current;
+  currentSettings[key] = newVal;
+  applyToggle(key, newVal);
+  if (key === 'portal_open') updatePortalPill(newVal);
+  try {
+    await apiPost('/api/admin/settings', { key, value: newVal });
+    const label = key.replace(/_/g, ' ');
+    showAlert(`<strong>${label}</strong> ${newVal ? 'enabled' : 'disabled'}.`, newVal ? 'success' : 'danger');
+  } catch(e) { showAlert('Failed to save setting.', 'danger'); }
+}
+
+async function saveValueSetting(key, value) {
+  currentSettings[key] = value;
+  try {
+    await apiPost('/api/admin/settings', { key, value });
+    showAlert('Setting saved.', 'success');
+  } catch(e) { showAlert('Failed to save.', 'danger'); }
+}
+
+async function saveExamRules() {
+  const val  = document.getElementById('val_exam_rules').value;
+  const hint = document.getElementById('rulesSaveHint');
+  hint.textContent = 'Saving…';
+  try {
+    await apiPost('/api/admin/settings', { key: 'exam_rules', value: val });
+    currentSettings.exam_rules = val;
+    hint.textContent = 'Saved!';
+    showAlert('Exam rules saved successfully.', 'success');
+    setTimeout(() => { hint.textContent = ''; }, 4000);
+  } catch(e) {
+    hint.textContent = 'Failed.';
+    showAlert('Failed to save rules.', 'danger');
+  }
+}
+
+async function saveBranding() {
+  const keys = ['school_name','school_short','contact_email','contact_phone','marquee_text','maintenance_msg'];
+  const hint = document.getElementById('brandingSaveHint');
+  hint.textContent = 'Saving…';
+  try {
+    for (const key of keys) {
+      const el = document.getElementById('val_' + key);
+      if (el) await apiPost('/api/admin/settings', { key, value: el.value });
+    }
+    hint.textContent = 'Saved!';
+    showAlert('Branding settings saved successfully.', 'success');
+    setTimeout(() => { hint.textContent = ''; }, 4000);
+  } catch(e) {
+    hint.textContent = 'Save failed.';
+    showAlert('Failed to save branding.', 'danger');
+  }
+}
+
+// Individual Retake
+async function loadAllStudents() {
+  try { allStudents = await apiGet('/api/admin/students'); }
+  catch(e) { allStudents = []; }
+}
+
+function onRetakeSearchInput() {
+  clearTimeout(searchDebounce);
+  const q = document.getElementById('retakeSearch').value.trim();
+  if (!q) { hideSearchDrop(); return; }
+  searchDebounce = setTimeout(() => renderSearchResults(q), 200);
+}
+
+async function searchStudents() {
+  const q = document.getElementById('retakeSearch').value.trim();
+  if (!q) return;
+  renderSearchResults(q);
+}
+
+function renderSearchResults(q) {
+  const lower   = q.toLowerCase();
+  const matches = allStudents.filter(s =>
+    s.name.toLowerCase().includes(lower) ||
+    s.matric.toLowerCase().includes(lower)
+  ).slice(0, 8);
+
+  const drop = document.getElementById('searchResultsDrop');
+
+  if (!matches.length) {
+    drop.innerHTML = `<div class="search-empty">No students found for "<strong>${q}</strong>"</div>`;
+    drop.classList.add('show');
+    return;
+  }
+
+  drop.innerHTML = matches.map(s => `
+    <div class="search-result-item">
+      <div class="result-item-info">
+        <div class="result-item-name">${s.name}</div>
+        <div class="result-item-matric">${s.matric}</div>
+        <div class="result-item-dept">${s.department_name || ''} ${s.level_name ? '· Level ' + s.level_name : ''}</div>
+      </div>
+      <button class="btn-grant" onclick="grantRetake('${s.id}', '${s.name}', '${s.matric}')">
+        ＋ Grant Retake
+      </button>
+    </div>
+  `).join('');
+  drop.classList.add('show');
+}
+
+function hideSearchDrop() {
+  document.getElementById('searchResultsDrop').classList.remove('show');
+}
+
+async function grantRetake(studentId, name, matric) {
+  try {
+    const res = await apiPost('/api/admin/retake-grant', { student_id: studentId });
+    if (res.success) {
+      showAlert(`Retake granted to <strong>${name}</strong> (${matric}).`, 'success');
+      hideSearchDrop();
+      document.getElementById('retakeSearch').value = '';
+      await loadGrantedRetakes();
+    } else {
+      showAlert('' + (res.message || 'Already granted or error.'), 'danger');
+    }
+  } catch(e) { showAlert('Failed to grant retake.', 'danger'); }
+}
+
+async function loadGrantedRetakes() {
+  try {
+    const list = await apiGet('/api/admin/retake-grants');
+    renderGrantedList(list);
+  } catch(e) { renderGrantedList([]); }
+}
+
+function renderGrantedList(list) {
+  const el = document.getElementById('grantedList');
+  if (!list.length) {
+    el.innerHTML = '<div class="granted-empty">No individual retakes granted yet.</div>';
+    return;
+  }
+  el.innerHTML = list.map(g => `
+    <div class="granted-item" id="grant-${g.id}">
+      <div class="granted-item-info">
+        <div class="granted-item-name">${g.student_name}</div>
+        <div class="granted-item-matric">${g.matric}</div>
+      </div>
+      <button class="btn-revoke" onclick="revokeRetake('${g.id}', '${g.student_name}')">
+        Revoke
+      </button>
+    </div>
+  `).join('');
+}
+
+async function revokeRetake(grantId, name) {
+  if (!confirmDelete(`Revoke retake permission for ${name}?`)) return;
+  try {
+    await apiDelete(`/api/admin/retake-grant/${grantId}`);
+    showAlert(`Retake revoked for <strong>${name}</strong>.`, 'danger');
+    document.getElementById(`grant-${grantId}`)?.remove();
+    const el = document.getElementById('grantedList');
+    if (el && !el.querySelector('.granted-item'))
+      el.innerHTML = '<div class="granted-empty">No individual retakes granted yet.</div>';
+  } catch(e) { showAlert('Failed to revoke.', 'danger'); }
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.retake-search-wrap')) hideSearchDrop();
+});
+
+loadSettings();
+loadLecturers();
+loadDeptDropdowns();
+loadDeptRegSettings();
+
+// ===== DEPARTMENT REGISTRATION SETTINGS =====
+let _deptRegState = {}; // { dept_id: { enabled, closes_at, token } }
+
+async function loadDeptRegSettings() {
+  try {
+    const [depts, settings] = await Promise.all([
+      apiGet('/api/departments'),
+      apiGet('/api/admin/settings')
+    ]);
+    _deptRegState = settings.dept_reg_settings || {};
+    renderDeptRegRows(depts);
+  } catch(e) {
+    document.getElementById('deptRegRows').innerHTML = '<div style="color:#dc2626;padding:14px;">Failed to load.</div>';
+  }
+}
+
+function renderDeptRegRows(depts) {
+  if (!depts.length) {
+    document.getElementById('deptRegRows').innerHTML = '<div style="text-align:center;padding:24px;color:#8e92b3;font-size:13px;">No departments found. Add departments in Settings → Departments.</div>';
+    return;
+  }
+  document.getElementById('deptRegRows').innerHTML = depts.map(d => {
+    const cfg      = _deptRegState[d.id] || {};
+    const enabled  = cfg.enabled || false;
+    const closesAt = cfg.closes_at || '';
+    const token    = cfg.token || '';
+    const link     = token ? `${location.origin}/register?dept=${d.id}&token=${token}` : '';
+    return `<div class="dept-reg-row" id="drr_${d.id}">
+      <div class="dept-reg-name">
+        ${d.name}
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;margin-left:auto;font-size:12px;font-weight:600;color:${enabled?'#16a34a':'#8e92b3'};">
+          <div class="toggle-wrap" style="transform:scale(.8);transform-origin:right;" onclick="toggleDeptReg('${d.id}','${d.name}')">
+            <div class="toggle-track ${enabled?'on':''}" id="drt_${d.id}"></div>
+            <div class="toggle-knob ${enabled?'on':''}" id="drk_${d.id}"></div>
+          </div>
+          <span id="drl_${d.id}">${enabled?'Open':'Closed'}</span>
+        </label>
+      </div>
+      <div class="dept-reg-controls">
+        <div class="form-group-sm">
+          <label>Closes At (optional)</label>
+          <input type="datetime-local" id="drc_${d.id}" value="${closesAt?closesAt.slice(0,16):''}" onchange="saveDeptRegCfg('${d.id}')">
+        </div>
+        <button class="btn-gen-link" onclick="genDeptRegLink('${d.id}')">Generate Link</button>
+      </div>
+      ${link ? `<div class="dept-reg-link-box" id="drl-box_${d.id}">
+        <code id="drl-code_${d.id}">${link}</code>
+        <button class="btn-copy-link" onclick="copyDeptLink('${d.id}')">Copy</button>
+      </div>` : `<div id="drl-box_${d.id}"></div>`}
+    </div>`;
+  }).join('');
+}
+
+function toggleDeptReg(deptId) {
+  if (!_deptRegState[deptId]) _deptRegState[deptId] = {};
+  _deptRegState[deptId].enabled = !(_deptRegState[deptId].enabled || false);
+  const on = _deptRegState[deptId].enabled;
+  document.getElementById('drt_'+deptId).className = 'toggle-track ' + (on?'on':'');
+  document.getElementById('drk_'+deptId).className = 'toggle-knob ' + (on?'on':'');
+  document.getElementById('drl_'+deptId).textContent = on ? 'Open' : 'Closed';
+  document.getElementById('drl_'+deptId).style.color = on ? '#16a34a' : '#8e92b3';
+  saveDeptRegCfg(deptId);
+}
+
+function saveDeptRegCfg(deptId) {
+  if (!_deptRegState[deptId]) _deptRegState[deptId] = {};
+  const closesEl = document.getElementById('drc_'+deptId);
+  if (closesEl && closesEl.value) {
+    _deptRegState[deptId].closes_at = new Date(closesEl.value).toISOString();
+  } else {
+    _deptRegState[deptId].closes_at = null;
+  }
+  apiPost('/api/admin/settings', { key: 'dept_reg_settings', value: _deptRegState });
+}
+
+async function genDeptRegLink(deptId) {
+  if (!_deptRegState[deptId]) _deptRegState[deptId] = {};
+  const token = Math.random().toString(36).slice(2,10).toUpperCase() +
+                Math.random().toString(36).slice(2,10).toUpperCase();
+  _deptRegState[deptId].token = token;
+  await apiPost('/api/admin/settings', { key: 'dept_reg_settings', value: _deptRegState });
+  const link = `${location.origin}/register?dept=${deptId}&token=${token}`;
+  const box  = document.getElementById('drl-box_'+deptId);
+  box.innerHTML = `<div class="dept-reg-link-box">
+    <code id="drl-code_${deptId}">${link}</code>
+    <button class="btn-copy-link" onclick="copyDeptLink('${deptId}')">Copy</button>
+  </div>`;
+  showAlert('Registration link generated!', 'success');
+}
+
+function copyDeptLink(deptId) {
+  const code = document.getElementById('drl-code_'+deptId);
+  if (!code) return;
+  navigator.clipboard.writeText(code.textContent).then(() => showAlert('Link copied to clipboard!', 'success'));
+}
+
+async function loadDeptDropdowns() {
+  try {
+    const depts = await apiGet('/api/departments');
+    const options = depts.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+    ['lec_department', 'editLecDept'].forEach(id => {
+      const sel = document.getElementById(id);
+      if (sel) sel.innerHTML = '<option value="">— Select Department —</option>' + options;
+    });
+  } catch(e) {}
+}
+
+// ── LECTURER ACCOUNTS ────────────────────────────────────────
+const PERM_LABELS = {
+  manage_exams:     ' Exams',
+  manage_questions: 'Questions',
+  view_results: 'Results',
+  view_violations: 'Violations',
+  view_captures: 'Captures',
+  manage_students:  ' Students',
+  manage_config:    ' Config',
+  manage_own_courses: 'Own Courses',
+};
+
+// Permissions available per role with icons and descriptions
+const ROLE_PERMS = {
+  lecturer: [
+    { value: 'manage_exams',       icon: '', label: 'Create Exams',       desc: 'Create & manage exams in their dept' },
+    { value: 'manage_questions',   icon: '', label: 'Upload Questions',    desc: 'Add / upload question bank entries' },
+    { value: 'view_results',       icon: '', label: 'View Results',        desc: 'See student exam results' },
+    { value: 'manage_own_courses', icon: '', label: 'Manage Own Courses',  desc: 'Edit only their assigned courses' },
+    { value: 'manage_students',    icon: '', label: 'Manage Students',     desc: 'Enrol & update student records' },
+  ],
+  moderator: [
+    { value: 'manage_exams',       icon: '', label: 'Create Exams',       desc: 'Create & manage exams across depts' },
+    { value: 'manage_questions',   icon: '', label: 'Upload Questions',    desc: 'Add / upload question bank entries' },
+    { value: 'view_results',       icon: '', label: 'View Results',        desc: 'View results across all departments' },
+    { value: 'view_violations',    icon: '', label: 'View Violations',     desc: 'Review flagged exam violations' },
+    { value: 'view_captures',      icon: '', label: 'Face Captures',       desc: 'Access face capture logs' },
+    { value: 'manage_students',    icon: '', label: 'Manage Students',     desc: 'Enrol & update student records' },
+  ],
+  admin: [
+    { value: 'manage_exams',       icon: '', label: 'Create Exams',       desc: 'Full exam creation & management' },
+    { value: 'manage_questions',   icon: '', label: 'Upload Questions',    desc: 'Full question bank access' },
+    { value: 'view_results',       icon: '', label: 'View Results',        desc: 'View all results system-wide' },
+    { value: 'view_violations',    icon: '', label: 'View Violations',     desc: 'Review all violations' },
+    { value: 'view_captures',      icon: '', label: 'Face Captures',       desc: 'Access all face capture logs' },
+    { value: 'manage_students',    icon: '', label: 'Manage Students',     desc: 'Full student record management' },
+    { value: 'manage_config',      icon: '', label: 'Courses & Config',    desc: 'Manage courses, depts & levels' },
+  ],
+};
+
+function buildPermGrid(gridId, role, checkedPerms) {
+  const grid = document.getElementById(gridId);
+  if (!grid) return;
+  const perms = ROLE_PERMS[role] || ROLE_PERMS.lecturer;
+  grid.innerHTML = perms.map(p => `
+    <label class="perm-item" title="${p.desc}">
+      <input type="checkbox" value="${p.value}" ${(checkedPerms || []).includes(p.value) ? 'checked' : ''}>
+      <span class="perm-toggle"></span>
+      <span class="perm-icon">${p.icon}</span>
+      <span class="perm-label">${p.label}</span>
+    </label>`).join('');
+}
+
+function getDefaultPerms(role) {
+  return (ROLE_PERMS[role] || []).map(p => p.value);
+}
+
+function setAllPerms(gridId, state) {
+  document.querySelectorAll(`#${gridId} input[type=checkbox]`).forEach(cb => cb.checked = state);
+}
+
+function onRoleChange() {
+  const role = document.getElementById('lec_role').value;
+  const section = document.getElementById('permSection');
+  if (!role) { section.style.display = 'none'; return; }
+  section.style.display = '';
+  buildPermGrid('createPermGrid', role, getDefaultPerms(role));
+}
+
+function onEditRoleChange() {
+  const role = document.getElementById('editLecRole').value;
+  const existingChecked = getCheckedPerms('editPermGrid');
+  buildPermGrid('editPermGrid', role, existingChecked);
+}
+
+
+function lecAlert(containerId, msg, type) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = `<div class="alert alert-${type}" style="margin:0;">${msg}</div>`;
+  setTimeout(() => { if(el) el.innerHTML = ''; }, 5000);
+}
+
+function getCheckedPerms(gridId) {
+  return [...document.querySelectorAll(`#${gridId} input[type=checkbox]:checked`)]
+    .map(cb => cb.value);
+}
+
+async function loadLecturers() {
+  const tbody = document.getElementById('lecturerTableBody');
+  try {
+    const data = await apiGet('/api/admin/lecturers');
+    if (!data.success || !data.lecturers.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="lec-empty">No staff accounts yet. Create one above.</td></tr>';
+      return;
+    }
+    const ROLE_META = {
+      lecturer:  { label: 'Lecturer',  cls: 'lecturer',  icon: '' },
+      moderator: { label: 'Moderator', cls: 'moderator', icon: '' },
+      admin:     { label: 'Admin',     cls: 'admin',     icon: '' },
+      super:     { label: 'Super',     cls: 'super',     icon: '' },
+    };
+    tbody.innerHTML = data.lecturers.map(l => {
+      const meta  = ROLE_META[l.role] || ROLE_META.lecturer;
+      const badges = (l.permissions || []).map(p =>
+        `<span class="perm-badge">${PERM_LABELS[p] || p}</span>`
+      ).join('') || '<span style="color:#8e92b3;font-size:12px;">None</span>';
+      const deptLabel = l.department_name
+        ? `<span style="background:#e0f2fe;color:#0369a1;font-size:11px;font-weight:600;padding:2px 7px;border-radius:10px;">${l.department_name}</span>`
+        : '<span style="color:#8e92b3;font-size:12px;">—</span>';
+      const roleBadge = `<span class="role-badge ${meta.cls}">${meta.icon} ${meta.label}</span>`;
+      return `<tr>
+        <td><strong>${l.display_name || l.username}</strong></td>
+        <td style="color:#5b5f80;font-size:12px;">${l.username}</td>
+        <td>${roleBadge}</td>
+        <td>${deptLabel}</td>
+        <td>${badges}</td>
+        <td>
+          <div class="lec-actions">
+            <button class="btn-lec-edit" onclick='openLecEdit(${JSON.stringify(l)})'> Edit</button>
+            <button class="btn-lec-del"  onclick="deleteLecturer('${l.id}','${l.display_name || l.username}')">Delete</button>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+  } catch(e) {
+    tbody.innerHTML = '<tr><td colspan="6" class="lec-empty">Failed to load accounts.</td></tr>';
+  }
+}
+
+async function createLecturer() {
+  const name        = document.getElementById('lec_name').value.trim();
+  const username    = document.getElementById('lec_username').value.trim();
+  const password    = document.getElementById('lec_password').value;
+  const password2   = document.getElementById('lec_password2').value;
+  const department_id = document.getElementById('lec_department').value;
+  const role        = document.getElementById('lec_role').value;
+  const perms       = getCheckedPerms('createPermGrid');
+
+  if (!name || !username || !password)
+    return lecAlert('lecCreateAlert', 'Name, username and password are required.', 'danger');
+  if (!role)
+    return lecAlert('lecCreateAlert', 'Please select a role.', 'danger');
+  if (!department_id)
+    return lecAlert('lecCreateAlert', 'Please select a department.', 'danger');
+  if (password !== password2)
+    return lecAlert('lecCreateAlert', 'Passwords do not match.', 'danger');
+  if (password.length < 6)
+    return lecAlert('lecCreateAlert', 'Password must be at least 6 characters.', 'danger');
+  if (!perms.length)
+    return lecAlert('lecCreateAlert', 'Select at least one permission.', 'danger');
+
+  try {
+    const res = await apiPost('/api/admin/lecturers', { username, password, display_name: name, permissions: perms, department_id, role });
+    if (!res.success) return lecAlert('lecCreateAlert', '' + res.message, 'danger');
+    lecAlert('lecCreateAlert', `${role.charAt(0).toUpperCase()+role.slice(1)} <strong>${name}</strong> created successfully.`, 'success');
+    document.getElementById('lec_name').value       = '';
+    document.getElementById('lec_username').value   = '';
+    document.getElementById('lec_password').value   = '';
+    document.getElementById('lec_password2').value  = '';
+    document.getElementById('lec_department').value = '';
+    document.getElementById('lec_role').value       = '';
+    document.getElementById('permSection').style.display = 'none';
+    await loadLecturers();
+  } catch(e) { lecAlert('lecCreateAlert', 'Network error.', 'danger'); }
+}
+
+function openLecEdit(lecturer) {
+  document.getElementById('editLecId').value       = lecturer.id;
+  document.getElementById('editLecName').value     = lecturer.display_name || '';
+  document.getElementById('editLecPassword').value = '';
+  document.getElementById('editLecRole').value     = lecturer.role || 'lecturer';
+  // Pre-fill department
+  const deptSel = document.getElementById('editLecDept');
+  deptSel.value = lecturer.department_id || '';
+  // Build perm grid for this role with their existing permissions checked
+  buildPermGrid('editPermGrid', lecturer.role || 'lecturer', lecturer.permissions || []);
+  document.getElementById('lecEditModal').classList.add('open');
+}
+
+function closeLecModal() {
+  document.getElementById('lecEditModal').classList.remove('open');
+  document.getElementById('editLecAlert').innerHTML = '';
+}
+
+async function saveLecEdit() {
+  const id           = document.getElementById('editLecId').value;
+  const display_name = document.getElementById('editLecName').value.trim();
+  const password     = document.getElementById('editLecPassword').value;
+  const department_id = document.getElementById('editLecDept').value;
+  const permissions  = getCheckedPerms('editPermGrid');
+
+  if (!display_name) return lecAlert('editLecAlert', 'Name cannot be empty.', 'danger');
+  if (!department_id) return lecAlert('editLecAlert', 'Please select a department.', 'danger');
+  if (!permissions.length) return lecAlert('editLecAlert', 'Select at least one permission.', 'danger');
+  if (password && password.length < 6) return lecAlert('editLecAlert', 'Password must be at least 6 characters.', 'danger');
+
+  try {
+    const role = document.getElementById('editLecRole').value;
+    const payload = { display_name, permissions, department_id, role };
+    if (password) payload.password = password;
+    const res = await apiPut(`/api/admin/lecturers/${id}`, payload);
+    if (!res.success) return lecAlert('editLecAlert', '' + res.message, 'danger');
+    lecAlert('editLecAlert', 'Changes saved.', 'success');
+    setTimeout(closeLecModal, 1000);
+    await loadLecturers();
+  } catch(e) { lecAlert('editLecAlert', 'Network error.', 'danger'); }
+}
+
+async function deleteLecturer(id, name) {
+  if (!confirmDelete(`Delete lecturer account for "${name}"?`)) return;
+  try {
+    const res = await apiDelete(`/api/admin/lecturers/${id}`);
+    if (!res.success) return showAlert('' + res.message, 'danger');
+    showAlert(`Account <strong>${name}</strong> deleted.`, 'danger');
+    await loadLecturers();
+  } catch(e) { showAlert('Failed to delete.', 'danger'); }
+}
+
+// Close modal on backdrop click
+document.getElementById('lecEditModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('lecEditModal')) closeLecModal();
+});
+
+// ── ACTIVITY LOG ─────────────────────────────────────────────
+async function loadActivityLog() {
+  const tbody = document.getElementById('activityLogBody');
+  if (!tbody) return;
+  const lecId = document.getElementById('actLogLecFilter')?.value || '';
+  tbody.innerHTML = '<tr><td colspan="4" class="lec-empty">Loading…</td></tr>';
+  try {
+    const url = '/api/admin/activity-log' + (lecId ? `?lecturer_id=${lecId}` : '');
+    const logs = await apiGet(url);
+    if (!logs.length) {
+      tbody.innerHTML = '<tr><td colspan="4" class="lec-empty">No activity recorded yet.</td></tr>';
+      return;
+    }
+    const ACTION_LABELS = { create_exam: 'Created Exam', add_student: 'Added Student' };
+    tbody.innerHTML = logs.map(l => `<tr>
+      <td><strong>${l.admin_name}</strong></td>
+      <td>${ACTION_LABELS[l.action] || l.action}</td>
+      <td style="color:#4a4e73;">${l.detail || '—'}</td>
+      <td style="color:#8e92b3;font-size:12px;">${formatDate(l.created_at)}</td>
+    </tr>`).join('');
+  } catch(e) {
+    tbody.innerHTML = '<tr><td colspan="4" class="lec-empty">Failed to load.</td></tr>';
+  }
+}
+
+async function populateActLogFilter() {
+  try {
+    const data = await apiGet('/api/admin/lecturers');
+    const sel  = document.getElementById('actLogLecFilter');
+    if (!sel || !data.success) return;
+    const opts = (data.lecturers || []).map(l =>
+      `<option value="${l.id}">${l.display_name || l.username}</option>`).join('');
+    sel.innerHTML = '<option value="">— All Lecturers —</option>' + opts;
+  } catch(e) {}
+}
+
+populateActLogFilter();
+loadActivityLog();
+
+// ===== EXAM ASSIGNMENTS =====
+let _assignCurrentExamId = null;
+
+async function initExamAssignSection() {
+  if (!isSuper()) {
+    const sec = document.getElementById('examAssignSection');
+    if (sec) sec.style.display = 'none';
+    return;
+  }
+  try {
+    const depts = await apiGet('/api/admin/departments');
+    const sel = document.getElementById('assignDeptFilter');
+    (depts.departments || depts || []).forEach(d => {
+      const o = document.createElement('option');
+      o.value = d.id || d._id; o.textContent = d.name;
+      sel.appendChild(o);
+    });
+  } catch(e) {}
+}
+
+async function loadAssignmentExams() {
+  closeAssignPanel();
+  const deptId = document.getElementById('assignDeptFilter').value;
+  const url = deptId ? `/api/admin/exam-assignments?department_id=${deptId}` : '/api/admin/exam-assignments';
+  try {
+    const res = await apiGet(url);
+    const exams = res.exams || [];
+    const container = document.getElementById('assignExamCards');
+    container.innerHTML = '';
+    if (!exams.length) {
+      container.innerHTML = '<div style="color:#6b7280;font-size:13px;padding:10px 0;">No exams found. Try selecting a department.</div>';
+    } else {
+      exams.forEach(e => {
+        const names = e.assigned_to.map(l => l.display_name || l.username).join(', ') || '<em style="color:#9ca3af;">None assigned</em>';
+        const card = document.createElement('div');
+        card.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;background:#fff;border:1px solid #e5e7eb;border-radius:10px;flex-wrap:wrap;';
+        card.innerHTML = `
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:600;font-size:14px;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${e.title}</div>
+            <div style="font-size:12px;color:#6b7280;margin-top:2px;">Course: ${e.course_name || '—'} &nbsp;|&nbsp; Assigned to: ${names}</div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="openAssignPanel('${e.id}','${e.title.replace(/'/g,"\\'")}')"> Assign</button>`;
+        container.appendChild(card);
+      });
+    }
+    document.getElementById('assignExamList').style.display = 'block';
+  } catch(err) {
+    showAlert('Failed to load exams for assignment.', 'danger');
+  }
+}
+
+async function openAssignPanel(examId, examTitle) {
+  _assignCurrentExamId = examId;
+  document.getElementById('assignPanelTitle').textContent = `Assign Lecturers — ${examTitle}`;
+  const listEl = document.getElementById('assignLecturerList');
+  listEl.innerHTML = '<div style="color:#6b7280;font-size:13px;">Loading lecturers…</div>';
+  document.getElementById('assignPanel').style.display = 'block';
+  document.getElementById('assignPanel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  try {
+    // Fetch all lecturers + current assignments in parallel
+    const [lecRes, assignRes] = await Promise.all([
+      apiGet('/api/admin/lecturers'),
+      apiGet(`/api/admin/exams/${examId}/assignments`)
+    ]);
+    const lecturers = (lecRes.lecturers || lecRes || []).filter(l => l.role === 'lecturer');
+    const assignedIds = new Set((assignRes.assigned_to || []).map(l => l.id));
+
+    if (!lecturers.length) {
+      listEl.innerHTML = '<div style="color:#6b7280;font-size:13px;">No lecturers found. Add lecturers under Staff Accounts first.</div>';
+      return;
+    }
+    listEl.innerHTML = lecturers.map(l => `
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:8px 10px;border-radius:8px;border:1px solid #e5e7eb;background:${assignedIds.has(l.id) ? '#f0fdf4' : '#fff'};">
+        <input type="checkbox" value="${l.id}" ${assignedIds.has(l.id) ? 'checked' : ''}
+          style="width:16px;height:16px;accent-color:#0f6b30;"
+          onchange="this.closest('label').style.background=this.checked?'#f0fdf4':'#fff'">
+        <span style="font-size:14px;font-weight:500;color:#111827;">${l.display_name || l.username}</span>
+        <span style="font-size:12px;color:#6b7280;margin-left:auto;">${l.department_name || ''}</span>
+      </label>`).join('');
+  } catch(e) {
+    listEl.innerHTML = '<div style="color:#dc2626;font-size:13px;">Error loading lecturers.</div>';
+  }
+}
+
+async function saveAssignments() {
+  if (!_assignCurrentExamId) return;
+  const checked = [...document.querySelectorAll('#assignLecturerList input[type=checkbox]:checked')].map(i => i.value);
+  try {
+    const res = await apiPost('/api/admin/exam-assignments', { exam_id: _assignCurrentExamId, lecturer_ids: checked });
+    if (res.success) {
+      showAlert(`Assignments saved. ${checked.length} lecturer(s) assigned.`, 'success');
+      closeAssignPanel();
+      loadAssignmentExams(); // refresh list
+    } else {
+      showAlert(res.message || 'Failed to save.', 'danger');
+    }
+  } catch(e) {
+    showAlert('Error saving assignments.', 'danger');
+  }
+}
+
+function closeAssignPanel() {
+  _assignCurrentExamId = null;
+  document.getElementById('assignPanel').style.display = 'none';
+}
+
+initExamAssignSection();
+
+const token = () => sessionStorage.getItem('adminToken') || '';
+
+function toggleVis(id) {
+  const el = document.getElementById(id);
+  el.type = el.type === 'password' ? 'text' : 'password';
+}
+
+
+</script>
+
+<script src="/pwa.js"></script>
+</body>
+</html>

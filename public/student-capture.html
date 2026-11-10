@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="manifest" href="/manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MARGMOCOTH CBT">
+<meta name="theme-color" content="#2e3192">
+<link rel="apple-touch-icon" href="/icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Face Capture — MARGMOCOTH CBT</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root {
+  --brand: #2e3192;
+  --brand-deep: #4448b8;
+  --brand-light: #f0f1ff;
+  --brand-mid: #4448b8;
+  --bg: #ffffff;
+  --card: #ffffff;
+  --surface: #f9f8f7;
+  --border: #f0f0f0;
+  --text-1: #0f1230;
+  --text-2: #6b6560;
+  --text-3: #a8a29e;
+  --r-xl: 22px;
+  --r-lg: 16px;
+  --r-md: 12px;
+  --r-sm: 8px;
+  --shadow: 0 2px 12px rgba(0,0,0,.07), 0 1px 3px rgba(0,0,0,.04);
+  --shadow-brand: 0 8px 24px rgba(46,49,146,.28);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  background: var(--bg);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  padding-bottom: 40px;
+  color: var(--text-1);
+}
+
+/* ── TOPBAR ─────────────────────────────────────────────────── */
+.topbar {
+  background: #0f1230;
+  padding: 0 16px;
+  height: 60px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 100;
+}
+.topbar-logo { display: flex; align-items: center; gap: 10px; }
+.topbar-logo img {
+  width: 34px; height: 34px; border-radius: 10px;
+  border: 1.5px solid rgba(255,255,255,.12); object-fit: cover;
+}
+.topbar-title { font-size: 14px; font-weight: 800; color: #fff; line-height: 1.2; letter-spacing: -.3px; }
+.topbar-title span { font-size: 10px; font-weight: 500; color: rgba(255,255,255,.45); display: block; letter-spacing: .2px; }
+.back-btn {
+  background: rgba(255,255,255,.1);
+  border: 1.5px solid rgba(255,255,255,.15);
+  color: rgba(255,255,255,.85); border-radius: var(--r-sm);
+  padding: 7px 13px; font-size: 12px; font-weight: 700;
+  cursor: pointer; font-family: 'Plus Jakarta Sans', sans-serif;
+  transition: background .2s; text-decoration: none; display: inline-flex;
+  align-items: center; gap: 6px;
+}
+.back-btn:hover { background: rgba(255,255,255,.18); }
+
+/* ── PAGE ───────────────────────────────────────────────────── */
+.page { max-width: 480px; margin: 0 auto; padding: 20px 14px; }
+
+/* ── PAGE TITLE ─────────────────────────────────────────────── */
+.page-title {
+  margin-bottom: 20px;
+}
+.page-title h1 {
+  font-family: 'Instrument Serif', serif;
+  font-size: 26px; font-weight: 400; color: var(--text-1);
+  line-height: 1.2; margin-bottom: 4px; letter-spacing: -.2px;
+}
+.page-title p {
+  font-size: 13px; color: var(--text-2); line-height: 1.5;
+}
+
+/* ── CARDS ──────────────────────────────────────────────────── */
+.card {
+  background: var(--card); border-radius: var(--r-xl);
+  border: 1px solid var(--border); box-shadow: var(--shadow);
+  overflow: hidden; margin-bottom: 14px;
+}
+.card-header {
+  padding: 16px 20px 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+}
+.card-header-icon {
+  width: 34px; height: 34px; border-radius: 10px;
+  background: var(--brand-light);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; color: var(--brand);
+}
+.card-header-text {
+  font-size: 14px; font-weight: 800; color: var(--text-1); letter-spacing: -.2px;
+}
+.card-header-sub {
+  font-size: 11.5px; color: var(--text-2); margin-top: 1px;
+}
+.card-body { padding: 20px; }
+
+/* ── EXISTING PHOTO ─────────────────────────────────────────── */
+.existing-photo-wrap { text-align: center; margin-bottom: 16px; }
+.existing-photo {
+  width: 96px; height: 96px; border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--brand);
+  box-shadow: var(--shadow-brand);
+  display: block; margin: 0 auto 10px;
+}
+.existing-label { font-size: 12px; color: var(--text-3); font-weight: 600; }
+.no-photo-placeholder {
+  width: 96px; height: 96px; border-radius: 50%;
+  background: var(--surface);
+  border: 2px dashed var(--border);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 10px; color: var(--text-3);
+}
+
+/* ── STEPS ──────────────────────────────────────────────────── */
+.steps-row {
+  display: flex; gap: 6px; margin-bottom: 20px;
+}
+.step {
+  flex: 1; padding: 10px 6px; text-align: center;
+  font-size: 10.5px; font-weight: 700; color: var(--text-3);
+  background: var(--surface); border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  transition: all .3s; display: flex; flex-direction: column;
+  align-items: center; gap: 6px;
+}
+.step-icon {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--border); display: flex;
+  align-items: center; justify-content: center; color: var(--text-3);
+  transition: all .3s;
+}
+.step.active { background: var(--brand-light); color: var(--brand); border-color: rgba(46,49,146,.2); }
+.step.active .step-icon { background: var(--brand); color: #fff; }
+.step.done { background: #f0fdf4; color: #15803d; border-color: #bbf7d0; }
+.step.done .step-icon { background: #22c55e; color: #fff; }
+.step-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; }
+
+/* ── CAMERA ─────────────────────────────────────────────────── */
+.camera-wrap {
+  position: relative; width: 100%; aspect-ratio: 3/4;
+  max-height: 380px; background: #0f1230; border-radius: var(--r-lg);
+  overflow: hidden; margin-bottom: 16px;
+  display: flex; align-items: center; justify-content: center;
+}
+#cameraFeed {
+  width: 100%; height: 100%; object-fit: cover;
+  transform: scaleX(-1);
+  display: none;
+}
+.cam-overlay {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  pointer-events: none;
+}
+.face-oval {
+  width: 55%; aspect-ratio: 3/4;
+  border: 2.5px solid rgba(255,255,255,.5);
+  border-radius: 50%;
+  box-shadow: 0 0 0 2000px rgba(0,0,0,.38);
+  transition: border-color .3s, box-shadow .3s;
+}
+.face-oval.good {
+  border-color: #22c55e;
+  box-shadow: 0 0 0 2000px rgba(0,0,0,.38), 0 0 24px rgba(34,197,94,.5);
+}
+.cam-hint {
+  position: absolute; bottom: 14px; left: 0; right: 0; text-align: center;
+  font-size: 12px; font-weight: 700; color: #fff;
+  text-shadow: 0 1px 4px rgba(0,0,0,.7); letter-spacing: .2px;
+}
+.camera-placeholder {
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  color: var(--text-3); font-size: 13.5px; font-weight: 600;
+  text-align: center; padding: 24px;
+}
+.cam-placeholder-icon {
+  width: 60px; height: 60px; border-radius: 18px;
+  background: rgba(255,255,255,.07);
+  display: flex; align-items: center; justify-content: center;
+  color: rgba(255,255,255,.4);
+}
+.cam-placeholder-sub { font-size: 12px; color: rgba(255,255,255,.3); font-weight: 400; }
+
+/* ── CANVAS ─────────────────────────────────────────────────── */
+#captureCanvas { display: none; }
+
+/* ── PREVIEW ────────────────────────────────────────────────── */
+.preview-wrap {
+  position: relative; width: 140px; height: 140px;
+  margin: 0 auto 20px; display: none;
+}
+#previewImg {
+  width: 140px; height: 140px; border-radius: 50%;
+  object-fit: cover; border: 3px solid var(--brand);
+  box-shadow: var(--shadow-brand); display: block;
+}
+.preview-badge {
+  position: absolute; bottom: 4px; right: 4px;
+  background: #22c55e; color: #fff; border-radius: 50%;
+  width: 28px; height: 28px; display: flex; align-items: center;
+  justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,.2);
+  border: 2px solid #fff;
+}
+
+/* ── BUTTONS ────────────────────────────────────────────────── */
+.btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; padding: 14px; border: none; border-radius: var(--r-md);
+  font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; font-weight: 700;
+  cursor: pointer; transition: all .2s; margin-bottom: 10px;
+}
+.btn:disabled { opacity: .5; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
+.btn-primary {
+  background: var(--brand); color: #fff;
+  box-shadow: var(--shadow-brand);
+}
+.btn-primary:active:not(:disabled) { transform: scale(.98); box-shadow: none; }
+.btn-success {
+  background: #16a34a; color: #fff;
+  box-shadow: 0 6px 20px rgba(22,163,74,.28);
+}
+.btn-success:active:not(:disabled) { transform: scale(.98); box-shadow: none; }
+.btn-ghost {
+  background: var(--surface); color: var(--text-2);
+  border: 1.5px solid var(--border);
+}
+.btn-ghost:active:not(:disabled) { background: var(--border); }
+.btn-danger {
+  background: #fef2f2; color: #dc2626;
+  border: 1.5px solid #fecaca;
+}
+.btn-danger:active:not(:disabled) { background: #fee2e2; }
+
+/* ── ALERTS ─────────────────────────────────────────────────── */
+.alert {
+  padding: 12px 14px; border-radius: var(--r-md); font-size: 13px; font-weight: 600;
+  margin-bottom: 14px; display: flex; align-items: flex-start; gap: 10px;
+  animation: alertIn .3s ease; line-height: 1.5;
+}
+@keyframes alertIn { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:none} }
+.alert-icon { flex-shrink: 0; margin-top: 1px; }
+.alert-err  { background: #fef2f2; color: #dc2626; border-left: 3px solid #dc2626; }
+.alert-ok   { background: #f0fdf4; color: #15803d; border-left: 3px solid #22c55e; }
+.alert-warn { background: #fffbeb; color: #92400e; border-left: 3px solid #f59e0b; }
+.alert-info { background: var(--brand-light); color: var(--brand-deep); border-left: 3px solid var(--brand); }
+
+/* ── TIPS ───────────────────────────────────────────────────── */
+.tips-list { list-style: none; padding: 0; }
+.tips-list li {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 12px 0; border-bottom: 1px solid var(--border);
+  font-size: 13px; color: var(--text-2); line-height: 1.55;
+}
+.tips-list li:last-child { border-bottom: none; }
+.tip-icon {
+  width: 30px; height: 30px; border-radius: var(--r-sm); flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  margin-top: 1px;
+}
+
+/* ── SUCCESS STATE ──────────────────────────────────────────── */
+.success-wrap { text-align: center; padding: 10px 0 4px; display: none; }
+.success-icon-wrap {
+  width: 72px; height: 72px; border-radius: 50%;
+  background: #f0fdf4; border: 2px solid #bbf7d0;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 16px;
+}
+.success-title { font-size: 20px; font-weight: 800; color: var(--text-1); margin-bottom: 6px; }
+.success-sub { font-size: 13.5px; color: var(--text-2); line-height: 1.6; }
+
+@media (max-width: 400px) {
+  .page { padding: 14px 10px; }
+  .welcome-name { font-size: 24px; }
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-logo">
+    <img src="school-logo.png" alt="MARGMOCOTH CBT">
+    <div class="topbar-title">
+      MARGMOCOTH CBT
+      <span>Face Capture</span>
+    </div>
+  </div>
+  <a href="dashboard.html" class="back-btn">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    Dashboard
+  </a>
+</div>
+
+<div class="page">
+
+  <div class="page-title">
+    <h1>Face Registration</h1>
+    <p>Your photo is used to verify identity during exams.</p>
+  </div>
+
+  <div id="alertBox"></div>
+
+  <!-- EXISTING PHOTO -->
+  <div class="card" id="existingCard" style="display:none;">
+    <div class="card-header">
+      <div class="card-header-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </div>
+      <div>
+        <div class="card-header-text">Current Photo</div>
+        <div class="card-header-sub">Your registered face photo</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="existing-photo-wrap">
+        <img id="existingPhoto" class="existing-photo" src="" alt="Current face photo">
+        <div class="existing-label">Registered face photo</div>
+      </div>
+      <div class="alert alert-info">
+        <div class="alert-icon">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        You already have a registered face photo. You can retake it below if needed.
+      </div>
+    </div>
+  </div>
+
+  <!-- CAPTURE CARD -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      </div>
+      <div>
+        <div class="card-header-text">Capture Your Face</div>
+        <div class="card-header-sub">Position your face clearly in the frame</div>
+      </div>
+    </div>
+    <div class="card-body">
+
+      <!-- Steps -->
+      <div class="steps-row">
+        <div class="step active" id="step1">
+          <div class="step-icon">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          </div>
+          <span class="step-label">Camera</span>
+        </div>
+        <div class="step" id="step2">
+          <div class="step-icon">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+          </div>
+          <span class="step-label">Capture</span>
+        </div>
+        <div class="step" id="step3">
+          <div class="step-icon">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <span class="step-label">Save</span>
+        </div>
+      </div>
+
+      <!-- Camera view -->
+      <div class="camera-wrap" id="cameraWrap">
+        <video id="cameraFeed" autoplay playsinline muted></video>
+        <div class="cam-overlay">
+          <div class="face-oval" id="faceOval"></div>
+          <div class="cam-hint" id="camHint">Position your face in the oval</div>
+        </div>
+        <div class="camera-placeholder" id="camPlaceholder">
+          <div class="cam-placeholder-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          </div>
+          <div style="color:rgba(255,255,255,.75);font-size:14px;font-weight:700;">Tap "Open Camera" to begin</div>
+          <div class="cam-placeholder-sub">Allow camera permission when prompted</div>
+        </div>
+      </div>
+
+      <!-- Preview -->
+      <div class="preview-wrap" id="previewWrap">
+        <img id="previewImg" src="" alt="Captured photo">
+        <div class="preview-badge">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+      </div>
+
+      <!-- Hidden canvas -->
+      <canvas id="captureCanvas"></canvas>
+
+      <!-- Buttons -->
+      <div id="btnOpen">
+        <button class="btn btn-primary" onclick="openCamera()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          Open Camera
+        </button>
+      </div>
+      <div id="btnCapture" style="display:none;">
+        <button class="btn btn-primary" onclick="capturePhoto()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+          Take Photo
+        </button>
+      </div>
+      <div id="btnActions" style="display:none;">
+        <button class="btn btn-success" id="saveBtn" onclick="savePhoto()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Save as My Face Photo
+        </button>
+        <button class="btn btn-ghost" onclick="retake()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.83"/></svg>
+          Retake
+        </button>
+      </div>
+
+      <!-- Success state -->
+      <div class="success-wrap" id="successWrap">
+        <div class="success-icon-wrap">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div class="success-title">Face Photo Saved</div>
+        <div class="success-sub">Your face has been registered.<br>It will be used to verify your identity during exams.</div>
+        <button class="btn btn-primary" style="margin-top:22px;" onclick="window.location.href='dashboard.html'">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          Back to Dashboard
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- TIPS CARD -->
+  <div class="card" id="tipsCard">
+    <div class="card-header">
+      <div class="card-header-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      </div>
+      <div>
+        <div class="card-header-text">Tips for a Good Photo</div>
+        <div class="card-header-sub">Follow these for best results</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <ul class="tips-list">
+        <li>
+          <div class="tip-icon" style="background:#fffbeb;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </div>
+          Make sure your face is well-lit — face a window or bright light source
+        </li>
+        <li>
+          <div class="tip-icon" style="background:#f0fdf4;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+          Only your face should be in the frame — no other people visible
+        </li>
+        <li>
+          <div class="tip-icon" style="background:#f0f1ff;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#4448b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+          Keep a neutral expression and look straight at the camera
+        </li>
+        <li>
+          <div class="tip-icon" style="background:#fef2f2;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+          </div>
+          Remove sunglasses, hats, or any face coverings
+        </li>
+        <li>
+          <div class="tip-icon" style="background:var(--brand-light);">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+          </div>
+          Hold the phone at eye level — not from above or below
+        </li>
+        <li>
+          <div class="tip-icon" style="background:#f5f3ff;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </div>
+          This photo is stored securely and only used for exam identity verification
+        </li>
+      </ul>
+    </div>
+  </div>
+
+</div><!-- /page -->
+
+<script>
+// ── Auth guard ─────────────────────────────────────────────────
+const student = JSON.parse(localStorage.getItem('mcht_student') || 'null');
+if (!student || !student.id) { window.location.href = 'login.html'; }
+
+let stream       = null;
+let capturedBlob = null;
+let capturedDataUrl = null;
+
+// ── Load existing photo ────────────────────────────────────────
+async function loadExistingPhoto() {
+  try {
+    const res  = await fetch(`/api/student/profile-photo/${student.id}`);
+    const data = await res.json();
+    if (data.success && data.url) {
+      document.getElementById('existingPhoto').src = data.url;
+      document.getElementById('existingCard').style.display = 'block';
+    }
+  } catch(e) {}
+}
+
+// ── Camera ────────────────────────────────────────────────────
+async function openCamera() {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 640 } },
+      audio: false
+    });
+    const video = document.getElementById('cameraFeed');
+    video.srcObject = stream;
+    video.style.display = 'block';
+    document.getElementById('camPlaceholder').style.display = 'none';
+    document.getElementById('btnOpen').style.display    = 'none';
+    document.getElementById('btnCapture').style.display = 'block';
+    setStep(1);
+    // Start hint animation
+    startHintCycle();
+  } catch(e) {
+    const isDenied = e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError';
+    if (isDenied) {
+      document.getElementById('camPlaceholder').innerHTML = `
+        <div style="padding:16px;text-align:center;">
+          <div style="font-size:40px;margin-bottom:10px;"></div>
+          <div style="font-size:14px;font-weight:800;color:#dc2626;margin-bottom:8px;">Camera Access Denied</div>
+          <div style="font-size:12px;color:#5b5f80;line-height:1.7;margin-bottom:14px;">
+            You must allow camera access to register your face photo.<br><br>
+            <strong>To fix on your phone:</strong><br>
+            1. Tap the  or ⓘ in your browser address bar<br>
+            2. Tap <strong>Permissions → Camera → Allow</strong><br>
+            3. Tap the button below
+          </div>
+          <button class="btn btn-primary" style="width:auto;padding:10px 20px;font-size:13px;" onclick="location.reload()">
+             I've allowed it — Retry
+          </button>
+        </div>
+      `;
+      document.getElementById('camPlaceholder').style.display = 'flex';
+      document.getElementById('camPlaceholder').style.flexDirection = 'column';
+    } else {
+      showAlert('Camera error: ' + e.message + '. Please try again.', 'warn');
+    }
+  }
+}
+
+const hints = [
+  'Position your face in the oval',
+  'Look straight at the camera',
+  'Make sure your face is well lit',
+  'Keep still for best result',
+];
+let hintIdx = 0, hintTimer = null;
+function startHintCycle() {
+  if (hintTimer) return;
+  hintTimer = setInterval(() => {
+    hintIdx = (hintIdx + 1) % hints.length;
+    document.getElementById('camHint').textContent = hints[hintIdx];
+  }, 2500);
+}
+
+function capturePhoto() {
+  const video  = document.getElementById('cameraFeed');
+  const canvas = document.getElementById('captureCanvas');
+  const SIZE   = 480;
+  canvas.width = canvas.height = SIZE;
+  const ctx = canvas.getContext('2d');
+  // Mirror to match what user sees
+  ctx.translate(SIZE, 0);
+  ctx.scale(-1, 1);
+  ctx.drawImage(video, 0, 0, SIZE, SIZE);
+
+  capturedDataUrl = canvas.toDataURL('image/jpeg', 0.92);
+
+  // Show preview
+  document.getElementById('previewImg').src  = capturedDataUrl;
+  document.getElementById('previewWrap').style.display = 'block';
+  document.getElementById('cameraWrap').style.display  = 'none';
+  document.getElementById('btnCapture').style.display  = 'none';
+  document.getElementById('btnActions').style.display  = 'block';
+  if (hintTimer) { clearInterval(hintTimer); hintTimer = null; }
+
+  // Stop camera stream
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+
+  setStep(2);
+}
+
+function retake() {
+  document.getElementById('previewWrap').style.display = 'none';
+  document.getElementById('cameraWrap').style.display  = 'block';
+  document.getElementById('btnActions').style.display  = 'none';
+  document.getElementById('btnCapture').style.display  = 'none';
+  document.getElementById('btnOpen').style.display     = 'block';
+  capturedDataUrl = null;
+  setStep(0);
+}
+
+async function savePhoto() {
+  if (!capturedDataUrl) return;
+  const btn = document.getElementById('saveBtn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+
+  try {
+    const res  = await fetch('/api/student/upload-profile-photo', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ student_id: student.id, photo_data: capturedDataUrl })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      // Update session storage
+      student.profile_photo_url = data.url;
+      localStorage.setItem('mcht_student', JSON.stringify(student));
+
+      // Show success
+      setStep(3);
+      document.getElementById('btnActions').style.display  = 'none';
+      document.getElementById('successWrap').style.display = 'block';
+      document.getElementById('existingCard').style.display = 'none';
+      document.getElementById('tipsCard').style.display    = 'none';
+    } else {
+      showAlert(data.message || 'Save failed. Please try again.', 'err');
+      btn.disabled = false; btn.textContent = 'Save as My Face Photo';
+    }
+  } catch(e) {
+    showAlert('Server error. Please check your connection and retry.', 'err');
+    btn.disabled = false; btn.textContent = 'Save as My Face Photo';
+  }
+}
+
+function setStep(n) {
+  // 0 = none, 1 = Camera, 2 = Capture, 3 = Save
+  const ids = ['step1','step2','step3'];
+  ids.forEach((id, i) => {
+    const el = document.getElementById(id);
+    el.className = 'step';
+    if (i < n)    el.classList.add('done');
+    if (i === n)  el.classList.add('active');
+  });
+}
+
+function showAlert(msg, type = 'err') {
+  const box = document.getElementById('alertBox');
+  box.innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
+  setTimeout(() => { if (box.innerHTML) box.innerHTML = ''; }, 5000);
+}
+
+// ── Init ──────────────────────────────────────────────────────
+async function init() {
+  // 1. Check capture status (enabled globally + locked for this student)
+  try {
+    const res  = await fetch(`/api/student/capture-status?student_id=${student.id}`);
+    const data = await res.json();
+
+    if (!data.enabled) {
+      // Admin has disabled capture globally
+      document.getElementById('alertBox').innerHTML = `
+        <div class="alert alert-warn">
+           Face capture is currently <strong>disabled</strong> by the administrator.
+          Please contact your admin if you need to register your face photo.
+        </div>`;
+      document.getElementById('btnOpen').innerHTML = `<button class="btn btn-ghost" disabled>Capture Disabled</button>`;
+      document.getElementById('tipsCard').style.display = 'none';
+      // Still show existing photo if any
+      if (data.has_photo) await loadExistingPhoto();
+      return;
+    }
+
+    if (data.locked) {
+      // Already captured once — show locked state
+      await loadExistingPhoto();
+      document.getElementById('alertBox').innerHTML = `
+        <div class="alert alert-ok">
+           Your face photo is already registered. Only one capture is allowed.
+          Contact your administrator if you need to retake it.
+        </div>`;
+      document.getElementById('btnOpen').innerHTML = `<button class="btn btn-ghost" disabled>Already Captured</button>`;
+      document.getElementById('tipsCard').style.display = 'none';
+      return;
+    }
+
+    // All good — load existing photo (if any) and allow capture
+    await loadExistingPhoto();
+  } catch(e) {
+    // Network error — still allow attempt
+    await loadExistingPhoto();
+  }
+}
+init();
+</script>
+<script src="/pwa.js"></script>
+</body>
+</html>
+<script src="/pwa.js"></script>
+</body>
+</html>

@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="manifest" href="/manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MARGMOCOTH CBT">
+<meta name="theme-color" content="#2e3192">
+<link rel="apple-touch-icon" href="/icons/icon-180.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Access Code Restrictions – MARGMOCOTH CBT</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+*{box-sizing:border-box;}
+body{background:#f1f2fa;}
+.page{max-width:700px;margin:0 auto;padding:16px 14px 100px;}
+
+/* Back */
+.back-btn{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;
+ color:#5b5f80;text-decoration:none;margin-bottom:20px;padding:8px 14px;
+ background:#fff;border:1px solid #e6e8f3;border-radius:999px;transition:all .15s;}
+.back-btn:hover{background:#f6f7fc;color:#4448b8;}
+
+/* Hero */
+.hero{background:linear-gradient(135deg,#4448b8 0%,#2e3192 100%);
+ border-radius:20px;padding:24px 20px;margin-bottom:20px;color:#fff;
+ box-shadow:0 8px 32px rgba(46,49,146,.25);}
+.hero h1{font-size:20px;font-weight:900;margin:0 0 6px;letter-spacing:-.3px;}
+.hero p{font-size:13px;opacity:.8;margin:0;line-height:1.5;}
+
+/* Exam picker */
+.select-wrap{background:#fff;border-radius:16px;padding:18px;
+ margin-bottom:18px;box-shadow:0 2px 12px rgba(0,0,0,.06);}
+.select-label{font-size:11px;font-weight:800;color:#8e92b3;
+ letter-spacing:.7px;text-transform:uppercase;margin-bottom:10px;}
+.exam-select-styled{position:relative;}
+.exam-select-styled select{width:100%;padding:13px 40px 13px 14px;
+ border:1.5px solid #e6e8f3;border-radius:12px;font-size:14px;
+ font-family:inherit;background:#f6f7fc;color:#1b1e45;
+ appearance:none;-webkit-appearance:none;cursor:pointer;font-weight:600;}
+.exam-select-styled select:focus{border-color:#2e3192;outline:none;background:#fff;}
+.exam-select-styled::after{content:'<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>';position:absolute;right:14px;top:50%;
+ transform:translateY(-55%);font-size:18px;color:#5b5f80;pointer-events:none;}
+
+/* Banner */
+.banner{border-radius:14px;padding:14px 16px;margin-bottom:18px;
+ display:flex;align-items:center;gap:12px;transition:all .3s;}
+.banner.open{background:linear-gradient(135deg,#f0fdf4,#dcfce7);
+ border:1.5px solid #86efac;}
+.banner.lock{background:linear-gradient(135deg,#f0f1ff,#f0f1ff);
+ border:1.5px solid #b9bcf5;}
+.banner-icon{width:42px;height:42px;border-radius:12px;display:flex;
+ align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.banner.open .banner-icon{background:#bbf7d0;}
+.banner.lock .banner-icon{background:#ffd4a8;}
+.banner-text{flex:1;min-width:0;}
+.banner-title{font-size:14px;font-weight:800;color:#1b1e45;}
+.banner-sub{font-size:12px;color:#5b5f80;margin-top:2px;}
+.btn-clear{padding:7px 14px;background:#fff;border:1.5px solid #ef4444;
+ border-radius:999px;font-size:12px;font-weight:700;color:#ef4444;
+ cursor:pointer;white-space:nowrap;transition:all .15s;flex-shrink:0;}
+.btn-clear:hover{background:#fef2f2;}
+
+/* Tabs */
+.tabs-card{background:#fff;border-radius:16px;
+ box-shadow:0 2px 12px rgba(0,0,0,.06);overflow:hidden;margin-bottom:18px;}
+.tabs-nav{display:flex;border-bottom:1.5px solid #f1f2fa;background:#f6f7fc;}
+.tab-btn{flex:1;padding:13px 8px;font-size:13px;font-weight:700;color:#8e92b3;
+ background:none;border:none;border-bottom:2.5px solid transparent;
+ margin-bottom:-1.5px;cursor:pointer;font-family:inherit;transition:all .15s;}
+.tab-btn.active{color:#2e3192;border-bottom-color:#2e3192;background:#fff;}
+.tab-pane{display:none;padding:18px;}
+.tab-pane.active{display:block;}
+
+/* Search bar */
+.search-bar{display:flex;gap:8px;margin-bottom:14px;}
+.search-bar input{flex:1;padding:11px 14px;border:1.5px solid #e6e8f3;
+ border-radius:12px;font-size:14px;font-family:inherit;background:#f6f7fc;color:#1b1e45;}
+.search-bar input:focus{border-color:#2e3192;outline:none;background:#fff;}
+
+/* Bulk row */
+.bulk-row{display:flex;align-items:center;gap:10px;padding:10px 14px;
+ background:#f6f7fc;border-radius:10px;margin-bottom:10px;border:1px solid #f1f2fa;}
+.bulk-label{font-size:13px;font-weight:700;color:#4a4e73;cursor:pointer;flex:1;}
+.apply-btn{padding:9px 22px;background:linear-gradient(135deg,#4448b8,#2e3192);
+ color:#fff;border:none;border-radius:999px;font-size:13px;font-weight:800;
+ cursor:pointer;box-shadow:0 4px 12px rgba(46,49,146,.3);transition:all .2s;}
+.apply-btn:disabled{opacity:.4;cursor:not-allowed;box-shadow:none;}
+.apply-btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 18px rgba(46,49,146,.4);}
+
+/* Student list */
+.student-list{border:1.5px solid #f1f2fa;border-radius:12px;overflow:hidden;
+ max-height:400px;overflow-y:auto;}
+.s-row{display:flex;align-items:center;gap:12px;padding:13px 14px;
+ border-bottom:1px solid #f6f7fc;cursor:pointer;transition:background .12s;}
+.s-row:last-child{border-bottom:none;}
+.s-row:hover{background:#f6f7fc;}
+.s-row:active{background:#f1f2fa;}
+.s-check{width:20px;height:20px;border-radius:6px;border:2px solid #cdd0e6;
+ display:flex;align-items:center;justify-content:center;flex-shrink:0;
+ transition:all .15s;background:#fff;}
+.s-check.on{background:#2e3192;border-color:#2e3192;}
+.s-check.on::after{content:'';color:#fff;font-size:12px;font-weight:900;}
+.s-info{flex:1;min-width:0;}
+.s-name{font-size:13px;font-weight:700;color:#1b1e45;}
+.s-matric{font-size:11px;color:#8e92b3;font-family:monospace;margin-top:1px;}
+.s-badge{padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;
+ background:#f0f1ff;color:#2e3192;white-space:nowrap;flex-shrink:0;}
+.empty-state{padding:40px 20px;text-align:center;}
+.empty-icon{font-size:40px;margin-bottom:10px;}
+.empty-text{font-size:13px;color:#8e92b3;font-weight:500;}
+
+/* CSV tab */
+.csv-zone{border:2px dashed #cdd0e6;border-radius:14px;padding:28px 20px;
+ text-align:center;cursor:pointer;transition:all .2s;background:#f6f7fc;}
+.csv-zone:hover,.csv-zone.drag{border-color:#2e3192;background:#f0f1ff;}
+.csv-zone input[type=file]{display:none;}
+.csv-zone-icon{font-size:36px;margin-bottom:10px;}
+.csv-zone-title{font-size:14px;font-weight:700;color:#4a4e73;margin-bottom:4px;}
+.csv-zone-sub{font-size:12px;color:#8e92b3;}
+.csv-note{font-size:12px;color:#8e92b3;line-height:1.7;margin-top:14px;
+ background:#f6f7fc;border-radius:10px;padding:10px 14px;}
+.csv-preview{margin-top:12px;background:#f1f2fa;border-radius:10px;
+ padding:12px 14px;font-size:12px;color:#4a4e73;font-family:monospace;
+ max-height:100px;overflow-y:auto;display:none;line-height:1.7;}
+.upload-btn{margin-top:12px;width:100%;padding:13px;
+ background:linear-gradient(135deg,#4448b8,#2e3192);color:#fff;
+ border:none;border-radius:12px;font-size:14px;font-weight:800;
+ cursor:pointer;display:none;box-shadow:0 4px 14px rgba(46,49,146,.3);transition:all .2s;}
+.upload-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(46,49,146,.4);}
+.upload-btn:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+
+/* Not-found warning */
+.notfound-warn{margin-top:12px;padding:10px 14px;background:#fff7ed;
+ border:1.5px solid #fed7aa;border-radius:10px;font-size:12px;color:#c2410c;}
+
+/* CSV mode toggle */
+.csv-mode-toggle{display:flex;gap:0;margin-top:12px;border-radius:10px;overflow:hidden;border:1.5px solid #e6e8f3;}
+.csv-mode-btn{flex:1;padding:10px 0;font-size:13px;font-weight:700;border:none;cursor:pointer;transition:all .2s;background:#f1f2fa;color:#5b5f80;}
+.csv-mode-btn.active-restrict{background:linear-gradient(135deg,#4448b8,#2e3192);color:#fff;}
+.csv-mode-btn.active-unrestrict{background:linear-gradient(135deg,#b91c1c,#ef4444);color:#fff;}
+.upload-btn.unrestrict-mode{background:linear-gradient(135deg,#b91c1c,#ef4444);box-shadow:0 4px 14px rgba(239,68,68,.3);}
+.upload-btn.unrestrict-mode:hover{box-shadow:0 6px 20px rgba(239,68,68,.4);}
+
+/* CSV mode toggle */
+.csv-mode-toggle{display:flex;gap:0;margin-top:12px;border-radius:10px;overflow:hidden;border:1.5px solid #e6e8f3;}
+.csv-mode-btn{flex:1;padding:10px 0;font-size:13px;font-weight:700;border:none;cursor:pointer;transition:all .2s;background:#f1f2fa;color:#5b5f80;}
+.csv-mode-btn.active-restrict{background:linear-gradient(135deg,#4448b8,#2e3192);color:#fff;}
+.csv-mode-btn.active-unrestrict{background:linear-gradient(135deg,#b91c1c,#ef4444);color:#fff;}
+.upload-btn.unrestrict-mode{background:linear-gradient(135deg,#b91c1c,#ef4444);box-shadow:0 4px 14px rgba(239,68,68,.3);}
+.upload-btn.unrestrict-mode:hover{box-shadow:0 6px 20px rgba(239,68,68,.4);}
+
+/* Skeleton */
+.skel{background:linear-gradient(90deg,#f1f2fa 25%,#e6e8f3 50%,#f1f2fa 75%);
+ background-size:200% 100%;animation:sh 1.2s infinite;border-radius:10px;
+ height:56px;margin-bottom:6px;}
+@keyframes sh{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(8px);
+ background:#1b1e45;color:#fff;padding:11px 24px;border-radius:999px;
+ font-size:13px;font-weight:700;opacity:0;pointer-events:none;
+ transition:all .3s;z-index:9999;white-space:nowrap;max-width:88vw;
+ text-align:center;box-shadow:0 8px 24px rgba(0,0,0,.2);}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.hidden{display:none!important;}
+</style>
+</head>
+<body>
+<script src="js/admin.js"></script>
+
+<div class="page">
+ <a href="javascript:history.back()" class="back-btn">← Back</a>
+
+ <!-- Hero -->
+ <div class="hero">
+ <h1>Access Code Restrictions</h1>
+ <p>All students are <strong>unrestricted</strong> by default. Tick students to <strong>restrict</strong> them.<br>Empty list = <strong>everyone</strong> with the code can enter.</p>
+ </div>
+
+ <!-- Exam picker -->
+ <div class="select-wrap">
+ <div class="select-label">Select Exam</div>
+ <div class="exam-select-styled">
+ <select id="examSelect" onchange="loadExam()">
+ <option value="">— Choose an exam —</option>
+ </select>
+ </div>
+ </div>
+
+ <div id="examContent" class="hidden">
+
+ <!-- Banner -->
+ <div id="banner" class="banner open">
+ <div class="banner-icon"></div>
+ <div class="banner-text">
+ <div class="banner-title" id="bannerTitle">Open to All</div>
+ <div class="banner-sub" id="bannerSub">Any student with the access code can enter.</div>
+ </div>
+ <button class="btn-clear hidden" id="btnClear" onclick="clearAll()">Restrict All</button>
+ </div>
+
+ <!-- Tabs card -->
+ <div class="tabs-card">
+ <div class="tabs-nav">
+ <button class="tab-btn active" id="tab1" onclick="switchTab(1)">Students List</button>
+ <button class="tab-btn" id="tab2" onclick="switchTab(2)">Upload CSV / Excel</button>
+ </div>
+
+ <!-- Tab 1: Student checklist -->
+ <div class="tab-pane active" id="pane1">
+ <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+ <div>
+ <div style="font-size:15px;font-weight:800;color:#1b1e45;">Eligible Students</div>
+ <div style="font-size:12px;color:#8e92b3;margin-top:2px;" id="eligibleCount">Select an exam first</div>
+ </div>
+ <button class="apply-btn" id="applyBtn" onclick="applyChanges()" disabled>Apply Changes</button>
+ </div>
+
+ <div class="search-bar">
+ <input type="text" id="filterInput" placeholder="Filter by name or matric…"
+ oninput="renderList()" enterkeyhint="search" inputmode="search">
+ </div>
+
+ <div class="bulk-row">
+ <div class="s-check" id="checkAllBox" onclick="toggleAll()"></div>
+ <div class="bulk-label" onclick="toggleAll()">Select / Deselect All Visible</div>
+ </div>
+
+ <div class="student-list" id="studentList">
+ <div class="empty-state">
+ <div class="empty-icon"></div>
+ <div class="empty-text">Choose an exam to load students</div>
+ </div>
+ </div>
+ </div>
+
+ <!-- Tab 2: CSV Upload -->
+ <div class="tab-pane" id="pane2">
+ <div class="csv-zone" id="csvZone"
+ onclick="document.getElementById('csvFile').click()"
+ ondragover="event.preventDefault();this.classList.add('drag')"
+ ondragleave="this.classList.remove('drag')"
+ ondrop="handleDrop(event)">
+ <div class="csv-zone-icon"></div>
+ <div class="csv-zone-title">Tap to choose a file, or drag & drop</div>
+ <div class="csv-zone-sub">.csv, .xlsx, or .xls — one matric number per row</div>
+ <input type="file" id="csvFile" accept=".csv,.xlsx,.xls" onchange="handleFile(this.files[0])">
+ </div>
+
+ <div class="csv-note">
+ <strong>Column format:</strong>First column = matric numbers. Any header row is auto-skipped. Extra columns are ignored.
+ </div>
+
+ <div class="csv-mode-toggle">
+ <button class="csv-mode-btn active-restrict" id="modeRestrict" onclick="setCsvMode('restrict')">Restrict</button>
+ <button class="csv-mode-btn" id="modeUnrestrict" onclick="setCsvMode('unrestrict')">Unrestrict</button>
+ </div>
+ <div class="csv-mode-toggle">
+ <button class="csv-mode-btn active-restrict" id="modeRestrict" onclick="setCsvMode('restrict')">Restrict</button>
+ <button class="csv-mode-btn" id="modeUnrestrict" onclick="setCsvMode('unrestrict')">Unrestrict</button>
+ </div>
+ <div class="csv-preview" id="csvPreview"></div>
+ <div class="notfound-warn hidden" id="notFoundWarn"></div>
+ <button class="upload-btn" id="uploadBtn" onclick="uploadCsv()"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg> Add Students</button>
+ </div>
+ </div>
+
+ </div><!-- /examContent -->
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+requireSuper();
+
+let currentExamId = null;
+let allStudents  = [];
+let pendingMatrics = [];
+let csvMode = 'restrict';
+let allVisibleChecked = false;
+
+// ── Load exams ──────────────────────────────────────────────────────
+(async () => {
+ try {
+ const data = await apiGet('/api/admin/exams');
+ const exams = Array.isArray(data) ? data : (data.exams || []);
+ const sel = document.getElementById('examSelect');
+ exams.forEach(e => {
+ const opt = document.createElement('option');
+ opt.value = e.id || e._id;
+ opt.textContent = e.title + (e.access_code ? ` [${e.access_code}]` : ' [no code]');
+ sel.appendChild(opt);
+ });
+ } catch(e) { toast(' Failed to load exams'); }
+})();
+
+// ── Tab switch ──────────────────────────────────────────────────────
+function switchTab(n) {
+ [1,2].forEach(i => {
+ document.getElementById('tab'+i).classList.toggle('active', i===n);
+ document.getElementById('pane'+i).classList.toggle('active', i===n);
+ });
+}
+
+// ── Load exam ───────────────────────────────────────────────────────
+async function loadExam() {
+ const id = document.getElementById('examSelect').value;
+ if (!id) { document.getElementById('examContent').classList.add('hidden'); return; }
+ currentExamId = id;
+ document.getElementById('examContent').classList.remove('hidden');
+ document.getElementById('applyBtn').disabled = true;
+ document.getElementById('eligibleCount').textContent = 'Loading…';
+ document.getElementById('studentList').innerHTML = '<div class="skel"></div>'.repeat(4);
+
+ try {
+ const data = await apiGet(`/api/admin/exams/${id}/eligible-students`);
+ if (!data.success) { toast(' ' + data.message); return; }
+ const anyAllowed = data.students.some(s => s.allowed);
+ // restrictions_saved=true means admin has explicitly saved this list before.
+ // If never saved → default all checked (restricted) as a safe starting point.
+ // If saved and empty → admin deliberately unrestricted everyone, respect that.
+ const restrictionsSaved = !!data.restrictions_saved;
+ allStudents = data.students.map(s => ({
+ ...s,
+ checked: anyAllowed ? !s.allowed : !restrictionsSaved
+ }));
+ renderList();
+ updateBanner();
+ } catch(e) { toast(' ' + e.message); }
+}
+
+// ── Render list ─────────────────────────────────────────────────────
+function renderList() {
+ const q = document.getElementById('filterInput').value.trim().toLowerCase();
+ const visible = allStudents.filter(s =>
+ !q || s.name.toLowerCase().includes(q) || s.matric.toLowerCase().includes(q)
+ );
+
+ const total  = allStudents.length;
+ const allowed = allStudents.filter(s => s.allowed).length;
+ document.getElementById('eligibleCount').textContent =
+ `${total} eligible` + (allowed ? ` · ${total - allowed} restricted` : ' · all restricted');
+
+ // Update select-all box state
+ const allBox = document.getElementById('checkAllBox');
+ const someChecked = visible.some(s => s.checked);
+ const allChecked  = visible.length > 0 && visible.every(s => s.checked);
+ allBox.className = 's-check' + (allChecked ? ' on' : '');
+ allVisibleChecked = allChecked;
+
+ if (!visible.length) {
+ document.getElementById('studentList').innerHTML = `
+ <div class="empty-state">
+ <div class="empty-icon">${q ? '' : ''}</div>
+ <div class="empty-text">${q ? 'No students match your filter.' : 'No eligible students found for this exam.'}</div>
+ </div>`;
+ return;
+ }
+
+ document.getElementById('studentList').innerHTML = visible.map(s => `
+ <div class="s-row" onclick="toggleStudent('${s.id}')">
+ <div class="s-check ${s.checked ? 'on' : ''}"></div>
+ <div class="s-info">
+ <div class="s-name">${esc(s.name)}</div>
+ <div class="s-matric">${esc(s.matric)}</div>
+ </div>
+ ${s.checked ? '<span class="s-badge" style="background:#dcfce7;color:#166534;">Unrestricted</span>' : '<span class="s-badge">Restricted</span>'}
+ </div>`).join('');
+}
+
+function toggleStudent(id) {
+ const s = allStudents.find(x => x.id === id);
+ if (!s) return;
+ s.checked = !s.checked;
+ document.getElementById('applyBtn').disabled = false;
+ renderList();
+ updateBanner();
+}
+
+function toggleAll() {
+ const q = document.getElementById('filterInput').value.trim().toLowerCase();
+ const newVal = !allVisibleChecked;
+ allStudents.forEach(s => {
+ if (!q || s.name.toLowerCase().includes(q) || s.matric.toLowerCase().includes(q))
+ s.checked = newVal;
+ });
+ document.getElementById('applyBtn').disabled = false;
+ renderList();
+ updateBanner();
+}
+
+// ── Banner ──────────────────────────────────────────────────────────
+function updateBanner() {
+ const n = allStudents.filter(s => s.checked).length;
+ const banner = document.getElementById('banner');
+ const clearBtn = document.getElementById('btnClear');
+ if (n > 0) {
+ banner.className = 'banner lock';
+ document.getElementById('bannerTitle').textContent = ` ${n} student${n!==1?'s':''} unrestricted`;
+ document.getElementById('bannerSub').textContent  = "Tick students to restrict them from this exam's access code.";
+ clearBtn.classList.remove('hidden');
+ } else {
+ banner.className = 'banner open';
+ document.getElementById('bannerTitle').textContent = ' Open to All';
+ document.getElementById('bannerSub').textContent  = 'Any student with the access code can enter.';
+ clearBtn.classList.add('hidden');
+ }
+}
+
+function clearAll() {
+ allStudents.forEach(s => s.checked = true);
+ document.getElementById('applyBtn').disabled = false;
+ renderList(); updateBanner();
+ // Save immediately — button hides itself when n=0 so we must persist before that
+ applyChanges();
+}
+
+// ── Apply changes ───────────────────────────────────────────────────
+async function applyChanges() {
+ if (!currentExamId) return;
+ const btn = document.getElementById('applyBtn');
+ btn.disabled = true; btn.textContent = 'Saving…';
+
+ const checkedIds = allStudents.filter(s => !s.checked).map(s => s.id); // unchecked = restricted = in allowed_students
+ try {
+ // Clear first
+ await fetch(`/api/admin/exams/${currentExamId}/allowed-students`, {
+ method: 'DELETE', headers: { 'X-Admin-Token': getAdminToken() }
+ });
+
+ if (checkedIds.length > 0) {
+ const r = await apiPost(`/api/admin/exams/${currentExamId}/allowed-students`, { student_ids: checkedIds });
+ if (!r.success) { toast(' ' + r.message); btn.textContent='Apply Changes'; btn.disabled=false; return; }
+ }
+
+ // Refresh from server
+ const fresh = await apiGet(`/api/admin/exams/${currentExamId}/eligible-students`);
+ const anyAllowed2 = fresh.students.some(s => s.allowed);
+ allStudents = fresh.students.map(s => ({ ...s, checked: anyAllowed2 ? !s.allowed : false }));
+ btn.textContent = 'Apply Changes';
+ renderList(); updateBanner();
+ toast(checkedIds.length > 0
+ ? ` ${checkedIds.length} student${checkedIds.length!==1?'s':''} unrestricted`
+ : ' All restrictions cleared — open to all');
+ } catch(e) {
+ toast(' ' + e.message);
+ btn.disabled = false; btn.textContent = 'Apply Changes';
+ }
+}
+
+// ── CSV Upload ──────────────────────────────────────────────────────
+function handleDrop(e) {
+ e.preventDefault();
+ document.getElementById('csvZone').classList.remove('drag');
+ const f = e.dataTransfer.files[0];
+ if (f) handleFile(f);
+}
+
+async function handleFile(file) {
+ if (!file) return;
+ pendingMatrics = [];
+ const ext = file.name.split('.').pop().toLowerCase();
+
+ try {
+ if (ext === 'csv') {
+ const text = await file.text();
+ const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+ const first = lines[0]?.split(',')[0]?.trim().toLowerCase() || '';
+ const skip  = /matric|name|sn|student|reg|no/.test(first);
+ pendingMatrics = (skip ? lines.slice(1) : lines)
+ .map(r => r.split(',')[0].replace(/["']/g,'').trim())
+ .filter(Boolean);
+ } else {
+ // Excel — load SheetJS
+ if (!window.XLSX) {
+ await new Promise((res, rej) => {
+ const s = document.createElement('script');
+ s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+ s.onload = res; s.onerror = () => rej(new Error('SheetJS failed to load'));
+ document.head.appendChild(s);
+ });
+ }
+ const buf  = await file.arrayBuffer();
+ const wb  = XLSX.read(buf, { type: 'array' });
+ const ws  = wb.Sheets[wb.SheetNames[0]];
+ const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+ if (!rows.length) { toast(' Empty file'); return; }
+ const headers = rows[0].map(h =>String(h).toLowerCase());
+ let col = headers.findIndex(h => /matric|reg/.test(h));
+ if (col < 0) col = 0;
+ const dataRows = headers.some(h => /matric|name|student/.test(h)) ? rows.slice(1) : rows;
+ pendingMatrics = dataRows
+ .map(r =>String(r[col] || '').replace(/["']/g,'').trim())
+ .filter(Boolean);
+ }
+ } catch(err) {
+ toast(' File read error: ' + err.message); return;
+ }
+
+ const prev = document.getElementById('csvPreview');
+ const btn  = document.getElementById('uploadBtn');
+ const warn = document.getElementById('notFoundWarn');
+ warn.classList.add('hidden');
+
+ if (!pendingMatrics.length) { toast(' No matric numbers found in file.'); return; }
+
+ prev.style.display = 'block';
+ prev.innerHTML =
+ `<strong>${pendingMatrics.length} matric number${pendingMatrics.length!==1?'s':''} found:</strong><br>` +
+ pendingMatrics.slice(0, 20).join('<br>') +
+ (pendingMatrics.length > 20 ? `<br><em>…+${pendingMatrics.length-20} more</em>` : '');
+
+ btn.style.display = 'block';
+ updateCsvBtn();
+ toast(` ${pendingMatrics.length} matric numbers read from file`);
+}
+
+function setCsvMode(mode) {
+ csvMode = mode;
+ document.getElementById('modeRestrict').className = 'csv-mode-btn' + (mode === 'restrict' ? ' active-restrict' : '');
+ document.getElementById('modeUnrestrict').className = 'csv-mode-btn' + (mode === 'unrestrict' ? ' active-unrestrict' : '');
+ updateCsvBtn();
+}
+
+function updateCsvBtn() {
+ const btn = document.getElementById('uploadBtn');
+ if (!pendingMatrics.length) return;
+ if (csvMode === 'unrestrict') {
+ btn.className = 'upload-btn unrestrict-mode';
+ btn.textContent = ` Unrestrict ${pendingMatrics.length} Student${pendingMatrics.length!==1?'s':''}`;
+ } else {
+ btn.className = 'upload-btn';
+ btn.textContent = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg> Add ${pendingMatrics.length} Student${pendingMatrics.length!==1?'s':''}`;
+ }
+}
+
+async function uploadCsv() {
+ if (!currentExamId) { toast(' Select an exam first'); return; }
+ if (!pendingMatrics.length) { toast(' No matric numbers to upload'); return; }
+
+ const btn = document.getElementById('uploadBtn');
+ btn.disabled = true; btn.textContent = 'Uploading…';
+
+ try {
+ const endpoint = csvMode === 'unrestrict'
+ ? `/api/admin/exams/${currentExamId}/allowed-students/unrestrict-csv`
+ : `/api/admin/exams/${currentExamId}/allowed-students`;
+ const data = await apiPost(endpoint, { matrics: pendingMatrics });
+
+ if (data.success) {
+ const action = csvMode === 'unrestrict' ? 'unrestricted' : 'added';
+ let msg = ` ${data.added} student${data.added!==1?'s':''} ${action}`;
+ const warn = document.getElementById('notFoundWarn');
+ if (data.not_found && data.not_found.length) {
+ warn.classList.remove('hidden');
+ warn.innerHTML = ` <strong>${data.not_found.length} not found in database:</strong><br>` +
+ data.not_found.slice(0,10).join(', ') +
+ (data.not_found.length > 10 ? ` …+${data.not_found.length-10} more` : '');
+ msg += ` · ${data.not_found.length} not found`;
+ } else {
+ warn.classList.add('hidden');
+ }
+ toast(msg);
+ // Reset CSV UI
+ pendingMatrics = [];
+ document.getElementById('csvPreview').style.display = 'none';
+ btn.style.display = 'none';
+ document.getElementById('csvFile').value = '';
+ // Reload list
+ const fresh = await apiGet(`/api/admin/exams/${currentExamId}/eligible-students`);
+ const anyAllowed3 = fresh.students.some(s => s.allowed);
+ allStudents = fresh.students.map(s => ({ ...s, checked: anyAllowed3 ? !s.allowed : false }));
+ document.getElementById('applyBtn').disabled = true;
+ renderList(); updateBanner();
+ // Switch to list tab to show results
+ switchTab(1);
+ } else {
+ toast(' ' + (data.message || 'Upload failed'));
+ }
+ } catch(e) {
+ toast(' Network error: ' + e.message);
+ }
+ btn.disabled = false;
+}
+
+// ── Helpers ─────────────────────────────────────────────────────────
+function toast(msg) {
+ const t = document.getElementById('toast');
+ t.textContent = msg; t.classList.add('show');
+ clearTimeout(t._tid);
+ t._tid = setTimeout(() => t.classList.remove('show'), 3400);
+}
+function esc(s) {
+ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+<script src="js/ai-assistant.js" defer></script>
+<script src="/pwa.js"></script>
+</body>
+</html>

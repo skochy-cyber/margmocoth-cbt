@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="manifest" href="/manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MARGMOCOTH CBT">
+<meta name="theme-color" content="#2e3192">
+<link rel="apple-touch-icon" href="/icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Upload Questions – MARGMOCOTH CBT</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+</head>
+<body>
+<div class="admin-layout">
+ <div id="sidebarContainer"></div>
+ <div class="admin-main">
+ <div id="topbarContainer"></div>
+ <div class="content">
+ <div id="alertBox"></div>
+
+ <div style="display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-bottom:22px;">
+
+ <div class="card">
+ <div class="card-header">Upload Questions via CSV</div>
+ <div class="card-body">
+ <div class="form-group">
+ <label class="form-label">Select Exam *</label>
+ <select id="examSelect" class="form-control form-select">
+ <option value="">-- Select Exam --</option>
+ </select>
+ </div>
+
+ <div class="upload-zone" id="uploadZone" onclick="document.getElementById('csvFile').click()">
+ <div style="font-size:48px;margin-bottom:12px;"></div>
+ <div style="font-size:16px;font-weight:700;color:#1b1e45;margin-bottom:6px;">Click to select CSV file</div>
+ <div style="font-size:13px;color:#71717a;">or drag & drop here</div>
+ <input type="file" id="csvFile" accept=".csv" style="display:none;" onchange="handleFile(this.files[0])">
+ </div>
+
+ <div id="fileInfo" style="display:none;margin-top:12px;padding:12px 14px;background:#edfff4;border:1px solid #34c462;border-radius:10px;font-size:13px;font-weight:600;color:#0f6b30;"></div>
+
+ <button onclick="uploadQuestions()" class="btn btn-primary btn-full" style="margin-top:14px;">Upload Questions</button>
+ </div>
+ </div>
+
+ <div class="card">
+ <div class="card-header" style="background:linear-gradient(135deg,#0f1230,#1b1e45);">CSV Format Example</div>
+ <div class="card-body">
+ <p style="font-size:13px;margin-bottom:14px;color:#71717a;">Your CSV file must have these exact column headers:</p>
+ <div class="code-block">question,optionA,optionB,optionC,optionD,answer<br>
+What is 2+2?,1,2,4,8,C<br>
+Capital of Nigeria?,Lagos,Abuja,Kano,Ibadan,B<br>
+<span style="color:#86efac;">The sun rises in the east.,True,False,,,A</span></div>
+ <p style="font-size:12px;margin-top:10px;color:#86efac;font-weight:600;">True/False: leave optionC & optionD empty</p>
+ <div style="margin-top:8px;font-size:13px;color:#71717a;line-height:2;">
+ Answer must be A, B, C, or D<br>
+ First row must be the header row<br>
+ UTF-8 encoding recommended<br>
+ No empty rows
+ </div>
+ <button onclick="downloadTemplate()" class="btn btn-accent btn-sm" style="margin-top:14px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg> Download Template</button>
+ </div>
+ </div>
+
+ </div>
+
+ <div class="card">
+ <div class="card-header">Preview</div>
+ <div class="card-body" style="padding:0;">
+ <div class="table-wrapper">
+ <table>
+ <thead>
+ <tr>
+ <th>#</th><th>Question</th><th>A</th><th>B</th><th>C</th><th>D</th><th>Answer</th><th>Status</th>
+ </tr>
+ </thead>
+ <tbody id="previewTable">
+ <tr><td colspan="8" style="text-align:center;padding:32px;color:#5b5f80;">No CSV selected yet</td></tr>
+ </tbody>
+ </table>
+ </div>
+ </div>
+ </div>
+
+ </div>
+ </div>
+</div>
+
+<script src="js/admin.js"></script>
+<script>
+document.getElementById('sidebarContainer').innerHTML = getSidebarHTML('upload-questions.html');
+document.getElementById('topbarContainer').innerHTML  = getTopbarHTML('Upload Questions');
+checkAdmin();
+requirePermission('manage_questions');
+
+let parsedData = [];
+
+const zone = document.getElementById('uploadZone');
+zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('dragover'); });
+zone.addEventListener('dragleave', ()  => zone.classList.remove('dragover'));
+zone.addEventListener('drop', e => {
+ e.preventDefault(); zone.classList.remove('dragover');
+ if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+});
+
+async function loadExams() {
+ const admin = JSON.parse(sessionStorage.getItem('admin') || '{}');
+ const url = (admin.role === 'lecturer' && admin.id)
+ ? `/api/admin/exams?lecturer_id=${admin.id}`
+ : '/api/admin/exams';
+ const data = await apiGet(url);
+ const sel  = document.getElementById('examSelect');
+ sel.innerHTML = '<option value="">-- Select Exam --</option>';
+ if (!data.length) {
+ sel.innerHTML += '<option disabled>No exams assigned to you yet</option>';
+ return;
+ }
+ data.forEach(e => {
+ const opt = document.createElement('option');
+ opt.value = e.id; opt.textContent = e.title;
+ sel.appendChild(opt);
+ });
+}
+
+function handleFile(file) {
+ if (!file || !file.name.endsWith('.csv')) {
+ showAlert('Please select a valid .csv file.', 'danger'); return;
+ }
+ const fileInfo = document.getElementById('fileInfo');
+ fileInfo.style.display = 'block';
+ fileInfo.textContent = ` ${file.name} (${(file.size/1024).toFixed(1)} KB)`;
+
+ const reader = new FileReader();
+ reader.onload = e => {
+ // ── Full RFC-4180 CSV parser: handles quoted fields, commas & newlines inside quotes ──
+ function parseCSV(text) {
+ const rows = [];
+ let cur = '', inQuotes = false, row = [];
+ for (let i = 0; i < text.length; i++) {
+ const ch = text[i], next = text[i+1];
+ if (ch === '"') {
+ if (inQuotes && next === '"') { cur += '"'; i++; } // escaped ""
+ else inQuotes = !inQuotes;
+ } else if (ch === ',' && !inQuotes) {
+ row.push(cur.trim()); cur = '';
+ } else if ((ch === '\n' || ch === '\r') && !inQuotes) {
+ if (ch === '\r' && next === '\n') i++; // CRLF
+ row.push(cur.trim()); cur = '';
+ if (row.some(c => c)) rows.push(row); // skip blank rows
+ row = [];
+ } else cur += ch;
+ }
+ if (cur || row.length) { row.push(cur.trim()); if (row.some(c => c)) rows.push(row); }
+ return rows;
+ }
+
+ const allRows = parseCSV(e.target.result);
+ parsedData = [];
+ const valid = [], errors = [];
+
+ // Detect headers from first row
+ const headers = (allRows[0] || []).map(h => h.toLowerCase().replace(/^"|"$/g,''));
+ const colIdx = {
+ question:  headers.indexOf('question'),
+ optionA:  headers.findIndex(h => h === 'optiona' || h === 'option_a'),
+ optionB:  headers.findIndex(h => h === 'optionb' || h === 'option_b'),
+ optionC:  headers.findIndex(h => h === 'optionc' || h === 'option_c'),
+ optionD:  headers.findIndex(h => h === 'optiond' || h === 'option_d'),
+ answer:  headers.findIndex(h => h === 'answer'),
+ question_type: headers.findIndex(h => h === 'question_type' || h === 'type')
+ };
+
+ for (let i = 1; i < allRows.length; i++) {
+ const cols = allRows[i].map(c => c.replace(/^"|"$/g,''));
+
+ const question = colIdx.question >= 0 ? cols[colIdx.question] : cols[0];
+ const optA  = colIdx.optionA >= 0  ? cols[colIdx.optionA]  : cols[1];
+ const optB  = colIdx.optionB >= 0  ? cols[colIdx.optionB]  : cols[2];
+ const rawAns  = colIdx.answer >= 0  ? cols[colIdx.answer]  : cols[cols.length-1];
+ const answer  = (rawAns || '').toUpperCase().trim();
+ const qt_raw  = colIdx.question_type >= 0 ? (cols[colIdx.question_type] || '').toLowerCase().trim() : '';
+ const optC  = colIdx.optionC >= 0  ? (cols[colIdx.optionC] || '') : (cols[3] || '');
+ const optD  = colIdx.optionD >= 0  ? (cols[colIdx.optionD] || '') : (cols[4] || '');
+
+ // Detect true/false: explicit column OR missing C/D
+ const isTF = qt_raw === 'true_false' || qt_raw === 'truefalse' || qt_raw === 'tf' || (!optC && !optD);
+ const question_type = isTF ? 'true_false' : 'multiple_choice';
+
+ if (!question || !['A','B','C','D'].includes(answer)) { errors.push(i+1); continue; }
+ if (!isTF && (!optC || !optD)) { errors.push(i+1); continue; }
+
+ const row = {
+ question, question_type,
+ optionA: optA || (isTF ? 'True' : ''),
+ optionB: optB || (isTF ? 'False' : ''),
+ optionC: isTF ? '' : optC,
+ optionD: isTF ? '' : optD,
+ answer
+ };
+ parsedData.push(row);
+ valid.push({ ...row, rowNum: i + 1 });
+ }
+
+ document.getElementById('previewTable').innerHTML =
+ valid.map(r => `
+ <tr>
+ <td>${r.rowNum}</td>
+ <td style="max-width:220px;white-space:normal;line-height:1.5;" class="math-cell">${r.question.substring(0,120)}${r.question.length>120?'...':''}</td>
+ <td class="math-cell">${r.optionA}</td><td class="math-cell">${r.optionB}</td>
+ <td>${r.question_type === 'true_false' ? '<span style="color:#888;font-size:11px;">—</span>' : `<span class="math-cell">${r.optionC}</span>`}</td>
+ <td>${r.question_type === 'true_false' ? '<span style="color:#888;font-size:11px;">—</span>' : `<span class="math-cell">${r.optionD}</span>`}</td>
+ <td><span class="badge badge-success">${r.answer}</span></td>
+ <td>
+ <span class="badge badge-success">Valid</span>
+ ${r.question_type === 'true_false' ? '<span style="font-size:10px;margin-left:4px;color:#16a34a;">T/F</span>' : ''}
+ </td>
+ </tr>`).join('') +
+ (valid.length > 20 ? `` : '');
+
+ // Render KaTeX math in all preview cells
+ if (window.renderMathInElement) {
+ document.querySelectorAll('.math-cell').forEach(el => {
+ renderMathInElement(el, {
+ delimiters: [
+ { left: '$$', right: '$$', display: true },
+ { left: '$',  right: '$',  display: false }
+ ],
+ throwOnError: false
+ });
+ });
+ }
+
+ showAlert(`Parsed ${valid.length} valid questions${errors.length ? ` (${errors.length} rows skipped)` : ''}. Ready to upload.`, 'success');
+ };
+ reader.readAsText(file);
+}
+
+async function uploadQuestions() {
+ const examId = document.getElementById('examSelect').value;
+ if (!examId)  { showAlert('Please select an exam.',  'danger'); return; }
+ if (!parsedData.length) { showAlert('No valid questions to upload. Select a CSV file.', 'danger'); return; }
+
+ const btn = document.querySelector('button[onclick="uploadQuestions()"]');
+ btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2m6-2a10 10 0 11-20 0 10 10 0 0120 0z"/></svg> Uploading...'; btn.disabled = true;
+
+ const data = await apiPost('/api/admin/bulk-questions-json', { exam_id: examId, questions: parsedData });
+ btn.innerHTML = ' Upload Questions'; btn.disabled = false;
+
+ if (data.success) {
+ showAlert(`Successfully uploaded ${data.count} questions!`, 'success');
+ parsedData = [];
+ document.getElementById('previewTable').innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:#0f6b30;font-weight:600;">Upload complete!</td></tr>';
+ document.getElementById('fileInfo').style.display = 'none';
+ } else showAlert(data.message, 'danger');
+}
+
+function downloadTemplate() {
+ const csv = [
+ 'question,optionA,optionB,optionC,optionD,answer',
+ 'What is 2+2?,1,2,4,8,C',
+ 'Capital of Nigeria?,Lagos,Abuja,Kano,Ibadan,B',
+ 'Which is a primary color?,Green,Purple,Red,Black,C',
+ 'The sun rises in the east.,True,False,,,A',
+ 'Rods are responsible for color vision.,True,False,,,B'
+ ].join('\n');
+ const a = document.createElement('a');
+ a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+ a.download = 'questions_template.csv';
+ a.click();
+}
+
+loadExams();
+</script>
+<script src="js/ai-assistant.js" defer></script>
+<script src="/pwa.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+</body>
+</html>

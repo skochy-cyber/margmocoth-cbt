@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="manifest" href="/manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MARGMOCOTH CBT">
+<meta name="theme-color" content="#2e3192">
+<link rel="apple-touch-icon" href="/icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Answer Review — MARGMOCOTH CBT</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+body { background:#f1f2fa; min-height:100vh; padding:20px 16px 80px; font-family:'DM Sans',system-ui,sans-serif; }
+.review-wrap { max-width:760px; margin:0 auto; }
+.review-header { background:linear-gradient(135deg,#4448b8,#2e3192); color:#fff; border-radius:16px; padding:24px 28px; margin-bottom:24px; }
+.review-header h1 { font-size:20px; font-weight:800; margin:0 0 6px; }
+.review-header p  { font-size:13px; opacity:.85; margin:0; }
+.stat-pills { display:flex; gap:10px; flex-wrap:wrap; margin-top:16px; }
+.stat-pill  { background:rgba(255,255,255,.18); border-radius:999px; padding:5px 14px; font-size:12px; font-weight:700; }
+.q-card { background:#fff; border-radius:14px; padding:20px 22px; margin-bottom:14px; border:2px solid #e6e8f3; transition:border-color .15s; }
+.q-card.correct  { border-color:#86efac; }
+.q-card.wrong    { border-color:#fca5a5; }
+.q-num   { font-size:11px; font-weight:800; color:#5b5f80; text-transform:uppercase; letter-spacing:.5px; margin-bottom:8px; }
+.q-text  { font-size:15px; font-weight:600; color:#1b1e45; margin-bottom:14px; line-height:1.5; }
+.opts    { display:flex; flex-direction:column; gap:7px; }
+.opt     { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:10px; font-size:14px; border:1.5px solid #e6e8f3; }
+.opt.student-correct { background:#dcfce7; border-color:#4ade80; font-weight:700; }
+.opt.student-wrong   { background:#fee2e2; border-color:#f87171; font-weight:700; }
+.opt.correct-ans     { background:#e0e2ff; border-color:#9ea2f0; font-weight:700; }
+.opt-letter { width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; background:#f1f2fa; color:#4a4e73; flex-shrink:0; }
+.badge { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:800; padding:3px 10px; border-radius:999px; float:right; }
+.badge.ok  { background:#dcfce7; color:#166534; }
+.badge.err { background:#fee2e2; color:#991b1b; }
+.legend { display:flex; gap:14px; flex-wrap:wrap; font-size:12px; font-weight:600; color:#5b5f80; margin-bottom:18px; }
+.legend span { display:flex; align-items:center; gap:6px; }
+.legend-dot { width:12px; height:12px; border-radius:3px; }
+.loading { text-align:center; padding:60px 0; color:#8e92b3; font-size:14px; }
+.action-row { display:flex; gap:10px; margin-top:24px; flex-wrap:wrap; }
+.btn { padding:11px 20px; border-radius:10px; font-size:13px; font-weight:700; border:none; cursor:pointer; text-decoration:none; display:inline-block; }
+.btn-primary { background:#2e3192; color:#fff; }
+.btn-ghost   { background:#f1f2fa; color:#4a4e73; }
+
+/* KaTeX support */
+.katex-display { overflow-x:auto; }
+</style>
+</head>
+<body>
+
+<div class="review-wrap">
+
+  <div class="review-header" id="reviewHeader">
+    <h1>Answer Review</h1>
+    <p id="reviewSubtitle">Loading your results…</p>
+    <div class="stat-pills" id="statPills"></div>
+  </div>
+
+  <div class="legend">
+    <span><div class="legend-dot" style="background:#4ade80;"></div> Your correct answer</span>
+    <span><div class="legend-dot" style="background:#f87171;"></div> Your wrong answer</span>
+    <span><div class="legend-dot" style="background:#9ea2f0;"></div> Correct answer (when you got it wrong)</span>
+  </div>
+
+  <div id="questionsContainer" class="loading">Loading review…</div>
+
+  <div class="action-row">
+    <button onclick="window.print()" class="btn btn-primary">Print Review</button>
+    <a href="results.html" class="btn btn-ghost">Back to Results</a>
+    <a href="exam-access.html" class="btn btn-ghost">New Exam</a>
+  </div>
+
+</div>
+
+<!-- KaTeX for math rendering -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, { delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}] })"></script>
+
+<script>
+const result  = JSON.parse(sessionStorage.getItem('examResult') || 'null');
+const student = JSON.parse(localStorage.getItem('mcht_student')  || 'null');
+
+if (!result || !student) { window.location.href = 'login.html'; }
+
+async function loadReview() {
+  const container = document.getElementById('questionsContainer');
+  const resultId  = result.result_id || result._id;
+  if (!resultId) {
+    container.innerHTML = '<div style="color:#dc2626;padding:24px;text-align:center;">Result ID not available. Please re-take the exam to generate a review.</div>';
+    return;
+  }
+  try {
+    const res  = await fetch(`/api/exam-review?result_id=${resultId}&student_id=${student.id}`);
+    const data = await res.json();
+    if (!data.success) {
+      container.innerHTML = `<div style="color:#5b5f80;padding:32px;text-align:center;background:#fff;border-radius:14px;">
+        <div style="margin-bottom:12px;"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#5b5f80" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+        <div style="font-size:15px;font-weight:700;">${data.message}</div>
+        <div style="font-size:13px;margin-top:8px;opacity:.7;">Answer review may not be enabled by your administrator.</div>
+      </div>`;
+      return;
+    }
+
+    const questions = data.questions;
+    const correct   = questions.filter(q => q.is_correct).length;
+    const total     = questions.length;
+    const pct       = Math.round((correct / total) * 100);
+    const grade     = pct >= 70 ? 'A' : pct >= 60 ? 'B' : pct >= 50 ? 'C' : pct >= 45 ? 'D' : 'F';
+
+    document.getElementById('reviewSubtitle').textContent = `${student.name} · ${result.exam_title || 'Exam'}`;
+    document.getElementById('statPills').innerHTML = `
+      <div class="stat-pill">Correct: ${correct}</div>
+      <div class="stat-pill">Wrong: ${total - correct}</div>
+      <div class="stat-pill">${pct}%</div>
+      <div class="stat-pill">Grade: ${grade}</div>
+    `;
+
+    container.innerHTML = questions.map((q, i) => {
+      const opts = ['A','B','C','D'];
+      const optTexts = { A: q.optionA, B: q.optionB, C: q.optionC, D: q.optionD };
+      const isCorrect = q.is_correct;
+      const studentAns = q.student_answer;
+      const correctAns = q.correct_answer;
+
+      const optsHTML = opts.map(key => {
+        let cls = '';
+        if (key === studentAns && key === correctAns) cls = 'student-correct';
+        else if (key === studentAns && key !== correctAns) cls = 'student-wrong';
+        else if (key === correctAns && studentAns !== correctAns) cls = 'correct-ans';
+        const icon = cls === 'student-correct' ? 'Correct' : cls === 'student-wrong' ? 'Wrong' : cls === 'correct-ans' ? 'Answer' : '';
+        return `<div class="opt ${cls}">
+          <div class="opt-letter">${key}</div>
+          <div style="flex:1;">${optTexts[key] || ''}</div>
+          ${icon ? `<span>${icon}</span>` : ''}
+        </div>`;
+      }).join('');
+
+      const unanswered = !studentAns ? '<div style="font-size:12px;color:#f59e0b;font-weight:600;margin-top:8px;">Not answered</div>' : '';
+
+      return `<div class="q-card ${isCorrect ? 'correct' : 'wrong'}">
+        <div class="q-num">Question ${i + 1} <span class="badge ${isCorrect ? 'ok' : 'err'}">${isCorrect ? 'Correct' : 'Wrong'}</span></div>
+        <div class="q-text">${q.question}</div>
+        <div class="opts">${optsHTML}</div>
+        ${unanswered}
+      </div>`;
+    }).join('');
+
+    // Render math if KaTeX loaded
+    if (window.renderMathInElement) {
+      renderMathInElement(container, { delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}] });
+    }
+  } catch(e) {
+    container.innerHTML = `<div style="color:#dc2626;padding:24px;text-align:center;">Failed to load review: ${e.message}</div>`;
+  }
+}
+
+loadReview();
+</script>
+<!-- pwa.js excluded: exam/proctoring page -->
+</body>
+</html>

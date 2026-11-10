@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="manifest" href="/manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MARGMOCOTH CBT">
+<meta name="theme-color" content="#2e3192">
+<link rel="apple-touch-icon" href="/icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Broadcast — MARGMOCOTH CBT Admin</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+.bc-grid {
+ display: grid;
+ grid-template-columns: 1fr 1fr;
+ gap: 20px;
+ padding: 24px;
+ max-width: 1100px;
+ margin: 0 auto;
+}
+@media (max-width: 800px) { .bc-grid { grid-template-columns: 1fr; } }
+
+.bc-card {
+ background: #fff;
+ border-radius: 16px;
+ border: 1.5px solid #e6e8f3;
+ overflow: hidden;
+ box-shadow: 0 1px 4px rgba(0,0,0,.05);
+}
+.bc-card-head {
+ padding: 18px 22px 14px;
+ border-bottom: 1px solid #f1f2fa;
+ display: flex; align-items: center; gap: 12px;
+}
+.bc-card-icon {
+ width: 40px; height: 40px; border-radius: 12px;
+ display: flex; align-items: center; justify-content: center;
+ font-size: 20px; flex-shrink: 0;
+}
+.bc-card-icon.push { background: #ede9fe; }
+.bc-card-icon.email { background: #dcfce7; }
+.bc-card-head-txt h3 { font-size: 15px; font-weight: 800; color: var(--text, #0f1230); margin: 0 0 2px; }
+.bc-card-head-txt p { font-size: 12px; color: #5b5f80; margin: 0; }
+.bc-card-body { padding: 20px 22px; display: flex; flex-direction: column; gap: 14px; }
+
+.bc-field label { display: block; font-size: 12px; font-weight: 700; color: #374151; margin-bottom: 5px; text-transform: uppercase; letter-spacing: .5px; }
+.bc-field input, .bc-field select, .bc-field textarea {
+ width: 100%; border: 1.5px solid #e6e8f3; border-radius: 10px;
+ padding: 10px 13px; font-size: 14px; outline: none;
+ font-family: inherit; background: #f6f7fc; box-sizing: border-box;
+ transition: border-color .15s;
+}
+.bc-field input:focus, .bc-field select:focus, .bc-field textarea:focus {
+ border-color: #2e3192; background: #fff;
+}
+.bc-field textarea { resize: vertical; min-height: 100px; line-height: 1.5; }
+
+.bc-target {
+ display: flex; gap: 8px; flex-wrap: wrap;
+}
+.bc-target-btn {
+ padding: 6px 14px; border-radius: 999px; border: 1.5px solid #e6e8f3;
+ font-size: 12px; font-weight: 700; cursor: pointer;
+ background: #fff; color: #4a4e73; transition: all .15s;
+}
+.bc-target-btn.active { border-color: #2e3192; background: #f0f1ff; color: #2e3192; }
+
+.bc-send-btn {
+ width: 100%; padding: 12px; border: none; border-radius: 12px;
+ font-size: 14px; font-weight: 700; cursor: pointer;
+ display: flex; align-items: center; justify-content: center; gap: 8px;
+ transition: all .2s;
+}
+.bc-send-btn.push { background: linear-gradient(135deg,#7c3aed,#a855f7); color: #fff; }
+.bc-send-btn.email { background: linear-gradient(135deg,#059669,#10b981); color: #fff; }
+.bc-send-btn:hover { transform: translateY(-1px); filter: brightness(1.05); }
+.bc-send-btn:active { transform: scale(.98); }
+.bc-send-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+.bc-result {
+ padding: 10px 14px; border-radius: 10px; font-size: 13px; font-weight: 600;
+ display: none; margin-top: 4px;
+}
+.bc-result.ok { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+.bc-result.err { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+
+/* History log */
+.bc-log-section { padding: 0 24px 24px; max-width: 1100px; margin: 0 auto; }
+.bc-log-head { font-size: 13px; font-weight: 800; color: #8e92b3; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+.bc-log { background: #fff; border-radius: 14px; border: 1.5px solid #e6e8f3; overflow: hidden; }
+.bc-log-item {
+ padding: 13px 18px; border-bottom: 1px solid #f1f2fa; display: flex; gap: 12px; align-items: flex-start;
+}
+.bc-log-item:last-child { border-bottom: none; }
+.bc-log-type {
+ font-size: 10px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase;
+ padding: 3px 8px; border-radius: 999px; flex-shrink: 0; margin-top: 2px;
+}
+.bc-log-type.push { background: #ede9fe; color: #7c3aed; }
+.bc-log-type.email { background: #dcfce7; color: #059669; }
+.bc-log-title { font-size: 13px; font-weight: 700; color: var(--text, #0f1230); margin-bottom: 2px; }
+.bc-log-preview { font-size: 12px; color: #5b5f80; }
+.bc-log-meta { font-size: 11px; color: #8e92b3; margin-top: 4px; }
+.bc-log-empty { padding: 28px; text-align: center; font-size: 13px; color: #8e92b3; }
+
+
+.bc-preview-box {
+ background: #f6f7fc; border: 1.5px solid #e6e8f3; border-radius: 10px;
+ padding: 12px 14px; font-size: 13px; color: #374151; line-height: 1.6;
+ max-height: 120px; overflow-y: auto; white-space: pre-wrap;
+}
+.bc-count-badge {
+ display: inline-block; background: #fef9c3; color: #854d0e;
+ border: 1px solid #fde68a; border-radius: 999px;
+ font-size: 11px; font-weight: 800; padding: 2px 10px; margin-left: 8px;
+}
+
+/* Dept select visibility */
+.dept-row { display: none; }
+.dept-row.show { display: block; }
+.level-row { display: none; }
+.level-row.show { display: block; }
+
+/* ── Custom Confirm Dialog ──────────────────────────────────── */
+.confirm-overlay {
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(0,0,0,.50); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px; opacity: 0; pointer-events: none;
+  transition: opacity .2s;
+}
+.confirm-overlay.show { opacity: 1; pointer-events: all; }
+.confirm-box {
+  background: var(--surface, #fff);
+  border-radius: 20px;
+  padding: 28px 24px 22px;
+  width: 100%; max-width: 360px;
+  box-shadow: 0 24px 64px rgba(0,0,0,.22);
+  transform: scale(.94) translateY(12px);
+  transition: transform .25s cubic-bezier(.34,1.56,.64,1);
+  text-align: center;
+}
+.confirm-overlay.show .confirm-box { transform: scale(1) translateY(0); }
+.confirm-icon-wrap {
+  width: 54px; height: 54px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 16px;
+}
+.confirm-icon-wrap.warn   { background: #fff7ed; color: #2e3192; }
+.confirm-icon-wrap.danger { background: #fef2f2; color: #dc2626; }
+.confirm-icon-wrap.info   { background: #f0f1ff; color: #2e3192; }
+.confirm-icon-wrap svg { display: block; }
+.confirm-title {
+  font-size: 17px; font-weight: 800;
+  color: var(--text, #111); margin-bottom: 8px;
+}
+.confirm-msg {
+  font-size: 13px; color: var(--muted, var(--text-2, #666));
+  line-height: 1.6; margin-bottom: 24px;
+}
+.confirm-actions { display: flex; gap: 10px; }
+.confirm-actions button {
+  flex: 1; padding: 11px 0; border-radius: 12px;
+  font-size: 14px; font-weight: 700; border: none;
+  cursor: pointer; transition: opacity .15s, transform .1s;
+}
+.confirm-actions button:active { transform: scale(.97); }
+.confirm-btn-cancel { background: #f1f2fa; color: #1b1e45; }
+.confirm-btn-cancel:hover { opacity: .75; }
+.confirm-btn-ok        { color: #fff; }
+.confirm-btn-ok.warn   { background: #2e3192; }
+.confirm-btn-ok.danger { background: #dc2626; }
+.confirm-btn-ok.info   { background: #2e3192; }
+.confirm-btn-ok:hover  { opacity: .88; }
+</style>
+</head>
+<body>
+
+<div class="admin-layout">
+ <div id="sidebarContainer"></div>
+ <div class="admin-main">
+ <div id="topbarContainer"></div>
+
+ <!-- ── Page Intro ── -->
+ <div style="padding:20px 24px 4px;">
+ <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px;">
+ <div style="width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg,#2e3192,#2e3192);display:flex;align-items:center;justify-content:center;font-size:22px;"></div>
+ <div>
+ <h2 style="font-size:20px;font-weight:800;color:#0f1230;margin:0;">Broadcast Center</h2>
+ <p style="font-size:13px;color:#5b5f80;margin:0;">Send push notifications or emails to all students or a specific department</p>
+ </div>
+ </div>
+ </div>
+
+ <!-- ── Two Compose Cards ── -->
+ <div class="bc-grid">
+
+ <!-- Push Notification -->
+ <div class="bc-card">
+ <div class="bc-card-head">
+ <div class="bc-card-icon push"></div>
+ <div class="bc-card-head-txt">
+ <h3>Push Notification</h3>
+ <p>Delivered to students' devices via OneSignal</p>
+ </div>
+ </div>
+ <div class="bc-card-body">
+ <div class="bc-field">
+ <label>Send To</label>
+ <div class="bc-target">
+ <button class="bc-target-btn active" onclick="setTarget('push','all',this)">All Students</button>
+ <button class="bc-target-btn" onclick="setTarget('push','dept',this)">By Department</button>
+ <button class="bc-target-btn" onclick="setTarget('push','level',this)">By Level</button>
+ </div>
+ </div>
+ <div class="bc-field dept-row" id="pushDeptRow">
+ <label>Department</label>
+ <select id="pushDept"><option value="">Select department…</option></select>
+ </div>
+ <div class="bc-field level-row" id="pushLevelRow">
+ <label>Level</label>
+ <select id="pushLevel"><option value="">Select level…</option></select>
+ </div>
+ <div class="bc-field">
+ <label>Title</label>
+ <input type="text" id="pushTitle" placeholder="e.g. Exam Alert, Schedule Update…" maxlength="80">
+ </div>
+ <div class="bc-field">
+ <label>Message Body</label>
+ <textarea id="pushBody" placeholder="Type your push notification message here…" maxlength="300"></textarea>
+ </div>
+ <div class="bc-result" id="pushResult"></div>
+ <button class="bc-send-btn push" id="pushSendBtn" onclick="sendPush()">
+ Send Push Notification
+ </button>
+ </div>
+ </div>
+
+ <!-- Email Broadcast -->
+ <div class="bc-card">
+ <div class="bc-card-head">
+ <div class="bc-card-icon email"></div>
+ <div class="bc-card-head-txt">
+ <h3>Email Broadcast</h3>
+ <p>Delivered to students' registered email addresses</p>
+ </div>
+ </div>
+ <div class="bc-card-body">
+ <div class="bc-field">
+ <label>Send To</label>
+ <div class="bc-target">
+ <button class="bc-target-btn active" onclick="setTarget('email','all',this)">All Students</button>
+ <button class="bc-target-btn" onclick="setTarget('email','dept',this)">By Department</button>
+ <button class="bc-target-btn" onclick="setTarget('email','level',this)">By Level</button>
+ </div>
+ </div>
+ <div class="bc-field dept-row" id="emailDeptRow">
+ <label>Department</label>
+ <select id="emailDept"><option value="">Select department…</option></select>
+ </div>
+ <div class="bc-field level-row" id="emailLevelRow">
+ <label>Level</label>
+ <select id="emailLevel"><option value="">Select level…</option></select>
+ </div>
+ <div class="bc-field">
+ <label>Subject</label>
+ <input type="text" id="emailSubject" placeholder="Email subject line…" maxlength="120">
+ </div>
+ <div class="bc-field">
+ <label>Message Body <span style="font-weight:400;color:#8e92b3;font-size:11px;">(use {name} for student's name)</span></label>
+ <textarea id="emailBody" style="min-height:130px;"
+ placeholder="Dear {name},&#10;&#10;Type your message here…"></textarea>
+ </div>
+ <div class="bc-result" id="emailResult"></div>
+ <button class="bc-send-btn email" id="emailSendBtn" onclick="sendEmail()">
+ Send Email Broadcast
+ </button>
+ </div>
+ </div>
+
+ </div>
+
+
+ <!-- ── Send History ── -->
+ <div class="bc-log-section">
+ <div class="bc-log-head">Recent Broadcasts</div>
+ <div class="bc-log" id="bcLog">
+ <div class="bc-log-empty">No broadcasts sent yet.</div>
+ </div>
+ </div>
+
+ <!-- ── Scheduled Announcements ── -->
+ <div class="bc-log-section" style="margin-top:0;">
+ <div class="bc-log-head" style="display:flex;align-items:center;justify-content:space-between;">
+ <span>Scheduled Broadcasts</span>
+ <button onclick="loadScheduled()" class="refresh-btn">↻ Refresh</button>
+ </div>
+ <!-- Compose a scheduled broadcast -->
+ <div class="bc-card" style="margin-bottom:14px;">
+ <div class="bc-card-head">
+ <div class="bc-card-icon push" style="background:#fef3c7;"></div>
+ <div class="bc-card-head-txt">
+ <h3>Schedule a Broadcast</h3>
+ <p>Write now, send automatically at a future date/time</p>
+ </div>
+ </div>
+ <div class="bc-card-body">
+ <div style="display:flex;gap:12px;flex-wrap:wrap;">
+ <div class="bc-field" style="flex:1;min-width:140px;">
+ <label>Type</label>
+ <select id="scType">
+ <option value="push">Push Notification</option>
+ <option value="email">Email</option>
+ </select>
+ </div>
+ <div class="bc-field" style="flex:1;min-width:140px;">
+ <label>Send To</label>
+ <select id="scTargetType" onchange="updateScTargetRows()">
+ <option value="all">All Students</option>
+ <option value="dept">By Department</option>
+ <option value="level">By Level</option>
+ </select>
+ </div>
+ </div>
+ <div class="bc-field" id="scDeptRow" style="display:none;">
+ <label>Department</label>
+ <select id="scDept"><option value="">Select department…</option></select>
+ </div>
+ <div class="bc-field" id="scLevelRow" style="display:none;">
+ <label>Level</label>
+ <select id="scLevel"><option value="">Select level…</option></select>
+ </div>
+ <div class="bc-field">
+ <label>Title / Subject</label>
+ <input type="text" id="scTitle" placeholder="Title or email subject…" maxlength="120">
+ </div>
+ <div class="bc-field">
+ <label>Message Body</label>
+ <textarea id="scBody" placeholder="Message body… (use {name} for student name in emails)" style="min-height:90px;"></textarea>
+ </div>
+ <div class="bc-field">
+ <label>Send At (Date & Time)</label>
+ <input type="datetime-local" id="scSendAt">
+ </div>
+ <div class="bc-result" id="scResult"></div>
+ <button class="bc-send-btn push" style="background:linear-gradient(135deg,#b45309,#d97706);" onclick="scheduleNow()">
+ Schedule Broadcast
+ </button>
+ </div>
+ </div>
+ <!-- Queue -->
+ <div class="bc-log" id="scheduledLog">
+ <div class="bc-log-empty">No scheduled broadcasts pending.</div>
+ </div>
+ </div>
+
+ </div>
+</div>
+
+<script src="js/admin.js"></script>
+<script>
+const _adminToken = sessionStorage.getItem('adminToken');
+if (!_adminToken) window.location.href = 'admin-login.html';
+
+document.getElementById('sidebarContainer').innerHTML = getSidebarHTML('admin-broadcast.html');
+document.getElementById('topbarContainer').innerHTML = getTopbarHTML('Broadcast Center');
+
+// ── State ──────────────────────────────────────────────────
+const pushState = { target: 'all', dept: '', level: '' };
+const emailState = { target: 'all', dept: '', level: '' };
+
+// ── Target toggle ──────────────────────────────────────────
+function setTarget(type, val, btn) {
+ const state = type === 'push' ? pushState : emailState;
+ state.target = val;
+
+ btn.closest('.bc-target').querySelectorAll('.bc-target-btn')
+ .forEach(b => b.classList.remove('active'));
+ btn.classList.add('active');
+
+ // dept row
+ const deptRow = document.getElementById(type + 'DeptRow');
+ const levelRow = document.getElementById(type + 'LevelRow');
+ if (val === 'dept') { deptRow.classList.add('show'); levelRow.classList.remove('show'); }
+ else if (val === 'level') { levelRow.classList.add('show'); deptRow.classList.remove('show'); }
+ else { deptRow.classList.remove('show'); levelRow.classList.remove('show'); }
+}
+
+// ── Load departments & levels ──────────────────────────────
+async function loadDepts() {
+ try {
+ const res = await fetch('/api/departments', { headers: { 'X-Admin-Token': _adminToken } });
+ const list = await res.json();
+ ['pushDept','emailDept','scDept'].forEach(id => {
+ const sel = document.getElementById(id);
+ if (!sel) return;
+ list.forEach(d => {
+ const o = document.createElement('option');
+ o.value = d.id; o.textContent = d.name;
+ sel.appendChild(o);
+ });
+ });
+ } catch(e) {}
+}
+
+async function loadLevels() {
+ try {
+ const res = await fetch('/api/admin/levels', { headers: { 'X-Admin-Token': _adminToken } });
+ const list = await res.json();
+ ['pushLevel','emailLevel','scLevel'].forEach(id => {
+ const sel = document.getElementById(id);
+ if (!sel) return;
+ list.forEach(l => {
+ const o = document.createElement('option');
+ o.value = l.id; o.textContent = l.name;
+ sel.appendChild(o);
+ });
+ });
+ } catch(e) {}
+}
+
+// ── Send Push ──────────────────────────────────────────────
+async function sendPush() {
+ const title = document.getElementById('pushTitle').value.trim();
+ const body = document.getElementById('pushBody').value.trim();
+ const deptId = pushState.target === 'dept' ? document.getElementById('pushDept').value : '';
+ const levelId= pushState.target === 'level' ? document.getElementById('pushLevel').value : '';
+ const res_el = document.getElementById('pushResult');
+ const btn = document.getElementById('pushSendBtn');
+
+ if (!title) { showResult(res_el,'err',' Please enter a notification title.'); return; }
+ if (!body) { showResult(res_el,'err',' Please enter the message body.'); return; }
+ if (pushState.target === 'dept' && !deptId) { showResult(res_el,'err',' Please select a department.'); return; }
+ if (pushState.target === 'level' && !levelId) { showResult(res_el,'err',' Please select a level.'); return; }
+
+ btn.disabled = true; btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2m6-2a10 10 0 11-20 0 10 10 0 0120 0z"/></svg> Sending…';
+ try {
+ const endpoint = levelId ? '/api/admin/push/broadcast/level' : '/api/admin/push/broadcast';
+ const payload = levelId ? { title, body, level_id: levelId } : { title, body, dept_id: deptId || undefined };
+ const r = await fetch(endpoint, {
+ method: 'POST',
+ headers: { 'Content-Type': 'application/json', 'X-Admin-Token': _adminToken },
+ body: JSON.stringify(payload)
+ });
+ const d = await r.json();
+ if (d.success) {
+ const targetLabel = levelId
+ ? document.getElementById('pushLevel').options[document.getElementById('pushLevel').selectedIndex]?.text
+ : (deptId ? document.getElementById('pushDept').options[document.getElementById('pushDept').selectedIndex]?.text : 'All Students');
+ showResult(res_el,'ok',` Sent! ${d.recipients ? d.recipients + ' devices notified.' : ''}`);
+ addHistory('push', title, body, targetLabel);
+ document.getElementById('pushTitle').value = '';
+ document.getElementById('pushBody').value = '';
+ } else {
+ showResult(res_el,'err',' ' + (d.reason || d.message || 'Failed to send.'));
+ }
+ } catch(e) {
+ showResult(res_el,'err',' Server error. Please try again.');
+ }
+ btn.disabled = false; btn.innerHTML = ' Send Push Notification';
+}
+
+// ── Send Email ─────────────────────────────────────────────
+async function sendEmail() {
+ const subject = document.getElementById('emailSubject').value.trim();
+ const html_body= document.getElementById('emailBody').value.trim().replace(/\n/g,'<br>');
+ const deptId = emailState.target === 'dept' ? document.getElementById('emailDept').value : '';
+ const levelId = emailState.target === 'level' ? document.getElementById('emailLevel').value : '';
+ const res_el = document.getElementById('emailResult');
+ const btn = document.getElementById('emailSendBtn');
+
+ if (!subject) { showResult(res_el,'err',' Please enter an email subject.'); return; }
+ if (!html_body){ showResult(res_el,'err',' Please enter the email body.'); return; }
+ if (emailState.target === 'dept' && !deptId) { showResult(res_el,'err',' Please select a department.'); return; }
+ if (emailState.target === 'level' && !levelId) { showResult(res_el,'err',' Please select a level.'); return; }
+
+ btn.disabled = true; btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2m6-2a10 10 0 11-20 0 10 10 0 0120 0z"/></svg> Sending…';
+ try {
+ const endpoint = levelId ? '/api/admin/email/broadcast/level' : '/api/admin/email/broadcast';
+ const payload = levelId ? { subject, html_body, level_id: levelId } : { subject, html_body, dept_id: deptId || undefined };
+ const r = await fetch(endpoint, {
+ method: 'POST',
+ headers: { 'Content-Type': 'application/json', 'X-Admin-Token': _adminToken },
+ body: JSON.stringify(payload)
+ });
+ const d = await r.json();
+ if (d.success) {
+ const targetLabel = levelId
+ ? document.getElementById('emailLevel').options[document.getElementById('emailLevel').selectedIndex]?.text
+ : (deptId ? document.getElementById('emailDept').options[document.getElementById('emailDept').selectedIndex]?.text : 'All Students');
+ if (d.queued) {
+ showResult(res_el,'ok',` Queued — sending to ${d.total} student${d.total !== 1 ? 's' : ''} in the background.`);
+ watchBroadcastLog();
+ } else {
+ showResult(res_el,'ok',` ${d.message || 'No students with email addresses found.'}`);
+ }
+ addHistory('email', subject, document.getElementById('emailBody').value.trim(), targetLabel);
+ document.getElementById('emailSubject').value = '';
+ document.getElementById('emailBody').value = '';
+ } else {
+ showResult(res_el,'err',' ' + (d.message || 'Failed to send.'));
+ }
+ } catch(e) {
+ showResult(res_el,'err',' Server error. Please try again.');
+ }
+ btn.disabled = false; btn.innerHTML = ' Send Email Broadcast';
+}
+
+// ── Scheduled Broadcast ────────────────────────────────────
+function updateScTargetRows() {
+ const val = document.getElementById('scTargetType').value;
+ document.getElementById('scDeptRow').style.display = val === 'dept' ? 'block' : 'none';
+ document.getElementById('scLevelRow').style.display = val === 'level' ? 'block' : 'none';
+}
+
+async function scheduleNow() {
+ const type = document.getElementById('scType').value;
+ const title = document.getElementById('scTitle').value.trim();
+ const body = document.getElementById('scBody').value.trim();
+ const targetType = document.getElementById('scTargetType').value;
+ const dept_id = document.getElementById('scDept').value;
+ const level_id = document.getElementById('scLevel').value;
+ const send_at = document.getElementById('scSendAt').value;
+ const res_el = document.getElementById('scResult');
+
+ if (!body) { showResult(res_el,'err',' Message body is required.'); return; }
+ if (!send_at) { showResult(res_el,'err',' Please select a send date/time.'); return; }
+ if (new Date(send_at) <= new Date()) { showResult(res_el,'err',' Send time must be in the future.'); return; }
+ if (targetType === 'dept' && !dept_id) { showResult(res_el,'err',' Please select a department.'); return; }
+ if (targetType === 'level' && !level_id) { showResult(res_el,'err',' Please select a level.'); return; }
+
+ try {
+ const r = await fetch('/api/admin/broadcast/schedule', {
+ method: 'POST',
+ headers: { 'Content-Type': 'application/json', 'X-Admin-Token': _adminToken },
+ body: JSON.stringify({ type, title, body, target_type: targetType, dept_id: dept_id || undefined, level_id: level_id || undefined, send_at })
+ });
+ const d = await r.json();
+ if (d.success) {
+ showResult(res_el,'ok',' Broadcast scheduled!');
+ document.getElementById('scTitle').value = '';
+ document.getElementById('scBody').value = '';
+ document.getElementById('scSendAt').value = '';
+ loadScheduled();
+ } else {
+ showResult(res_el,'err',' ' + (d.message || 'Failed to schedule.'));
+ }
+ } catch(e) {
+ showResult(res_el,'err',' Server error.');
+ }
+}
+
+async function loadScheduled() {
+ try {
+ const r = await fetch('/api/admin/broadcast/scheduled', { headers: { 'X-Admin-Token': _adminToken } });
+ const list = await r.json();
+ const log = document.getElementById('scheduledLog');
+ if (!list.length) {
+ log.innerHTML = '<div class="bc-log-empty">No scheduled broadcasts pending.</div>';
+ return;
+ }
+ log.innerHTML = list.map(s => {
+ const typeLabel = s.type === 'push' ? ' Push' : ' Email';
+ const sendTime = new Date(s.send_at).toLocaleString('en-NG', { timeZone: 'Africa/Lagos', dateStyle: 'medium', timeStyle: 'short' });
+ return `<div class="bc-log-item">
+ <span class="bc-log-type ${s.type}">${typeLabel}</span>
+ <div style="flex:1;min-width:0;">
+ <div class="bc-log-title">${escHtml(s.title || s.body.slice(0,50))}</div>
+ <div class="bc-log-preview">${escHtml(s.body.slice(0,100))}${s.body.length > 100 ? '…' : ''}</div>
+ <div class="bc-log-meta"> ${escHtml(s.target)} · ${sendTime}</div>
+ </div>
+ <button onclick="cancelScheduled('${s.id}')" style="background:#fef2f2;color:#dc2626;border:1.5px solid #fecaca;border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0;">Cancel</button>
+ </div>`;
+ }).join('');
+ } catch(e) {}
+}
+
+async function cancelScheduled(id) {
+ const _ok = await showConfirm({ type:'warn', title:'Cancel Broadcast?', msg:'This scheduled broadcast will be cancelled and not sent.', okLabel:'Yes, Cancel' });
+    if (!_ok) return;
+ try {
+ await fetch(`/api/admin/broadcast/scheduled/${id}`, { method: 'DELETE', headers: { 'X-Admin-Token': _adminToken } });
+ loadScheduled();
+ } catch(e) {}
+}
+
+// ── Helpers ────────────────────────────────────────────────
+function showResult(el, type, msg) {
+ el.className = 'bc-result ' + type;
+ el.textContent = msg;
+ el.style.display = 'block';
+ setTimeout(() => { el.style.display = 'none'; }, 7000);
+}
+
+function addHistory(type, title, body, target) {
+ loadBroadcastLog();
+}
+
+async function loadBroadcastLog() {
+ try {
+ const logs = await apiGet('/api/admin/broadcast/log');
+ renderHistory(logs, false);
+ } catch(e) {}
+}
+
+// Briefly poll the log after queuing a broadcast so the "Sending…" entry
+// updates to its final sent/failed counts once the background job finishes.
+let _watchTimer = null;
+function watchBroadcastLog() {
+ if (_watchTimer) clearInterval(_watchTimer);
+ let ticks = 0;
+ _watchTimer = setInterval(async () => {
+ ticks++;
+ await loadBroadcastLog();
+ if (ticks >= 20) clearInterval(_watchTimer); // stop after ~60s
+ }, 3000);
+}
+
+function renderHistory(logs, prepend) {
+ const log = document.getElementById('bcLog');
+ if (!logs || !logs.length) {
+ if (!prepend) log.innerHTML = '<div class="bc-log-empty">No broadcasts sent yet.</div>';
+ return;
+ }
+ log.innerHTML = logs.slice(0, 20).map(h => {
+ const typeLabel = h.type === 'push' ? ' Push' : ' Email';
+ const ago = formatAgo(new Date(h.created_at));
+ const sending = h.type === 'email' && h.status === 'sending';
+ const sentInfo = sending
+ ? ` · Sending… (${h.total || 0} recipient${h.total !== 1 ? 's' : ''})`
+ : (h.type === 'email' && h.sent !== undefined ? ` · ${h.sent} sent${h.failed ? ', ' + h.failed + ' failed' : ''}` : '');
+ return `<div class="bc-log-item">
+ <span class="bc-log-type ${h.type}">${typeLabel}</span>
+ <div style="flex:1;min-width:0;">
+ <div class="bc-log-title">${escHtml(h.title || h.body.slice(0,60))}</div>
+ <div class="bc-log-preview">${escHtml(h.body.slice(0, 100))}${h.body.length > 100 ? '…' : ''}</div>
+ <div class="bc-log-meta"> ${escHtml(h.target)} · ${ago}${sentInfo}</div>
+ </div>
+ </div>`;
+ }).join('');
+}
+
+function formatAgo(d) {
+ const s = Math.floor((Date.now() - d) / 1000);
+ if (s < 60) return 'just now';
+ if (s < 3600) return Math.floor(s/60) + 'm ago';
+ return Math.floor(s/3600) + 'h ago';
+}
+
+function escHtml(t) {
+ return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// Init
+loadDepts();
+loadLevels();
+loadBroadcastLog();
+loadScheduled();
+</script>
+
+<script src="/pwa.js"></script>
+<script>
+function showResult(el, type, msg) {
+ el.className = 'bc-result ' + type;
+ el.textContent = msg;
+ el.style.display = 'block';
+ setTimeout(() => el.style.display = 'none', 6000);
+}
+
+
+</script>
+<!-- Confirm Dialog -->
+<div class="confirm-overlay" id="confirmModal">
+  <div class="confirm-box">
+    <div class="confirm-icon-wrap" id="confirmIconWrap">
+      <svg id="confirmIconSVG" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
+           width="26" height="26"></svg>
+    </div>
+    <div class="confirm-title" id="confirmTitle"></div>
+    <p class="confirm-msg" id="confirmMsg"></p>
+    <div class="confirm-actions">
+      <button class="confirm-btn-cancel" onclick="_confirmResolve(false)">Cancel</button>
+      <button class="confirm-btn-ok" id="confirmOkBtn" onclick="_confirmResolve(true)">Confirm</button>
+    </div>
+  </div>
+</div>
+<script>
+const _CSVG = {
+  warn:   '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
+  danger: '<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>',
+  info:   '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>'
+};
+let __confirmCb = null;
+function showConfirm({ type='warn', title, msg, okLabel='Confirm' }) {
+  document.getElementById('confirmIconWrap').className = 'confirm-icon-wrap ' + type;
+  document.getElementById('confirmIconSVG').innerHTML = _CSVG[type] || _CSVG.warn;
+  document.getElementById('confirmTitle').textContent = title;
+  document.getElementById('confirmMsg').innerHTML = msg;
+  const okBtn = document.getElementById('confirmOkBtn');
+  okBtn.textContent = okLabel;
+  okBtn.className = 'confirm-btn-ok ' + type;
+  document.getElementById('confirmModal').classList.add('show');
+  return new Promise(res => { __confirmCb = res; });
+}
+function _confirmResolve(val) {
+  document.getElementById('confirmModal').classList.remove('show');
+  if (__confirmCb) { __confirmCb(val); __confirmCb = null; }
+}
+document.getElementById('confirmModal').addEventListener('click', function(e) {
+  if (e.target === this) _confirmResolve(false);
+});
+</script>
+</body>
+</html>

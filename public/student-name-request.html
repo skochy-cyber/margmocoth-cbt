@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="manifest" href="/manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MARGMOCOTH CBT">
+<meta name="theme-color" content="#2e3192">
+<link rel="apple-touch-icon" href="/icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Name / Matric Change – MARGMOCOTH CBT</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: #eef2f7;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  padding-bottom: 80px;
+  background-image: radial-gradient(circle at 1px 1px, rgba(30,64,175,.06) 1px, transparent 0);
+  background-size: 24px 24px;
+}
+.topbar {
+  background: linear-gradient(135deg, #14163f 0%, #1f2170 60%, #2e3192 100%);
+  padding: 12px 16px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 100;
+  box-shadow: 0 4px 20px rgba(30,58,138,.35);
+}
+.topbar-left { display: flex; align-items: center; gap: 10px; }
+.back-btn {
+  background: rgba(255,255,255,.15); border: none; color: #fff;
+  border-radius: 8px; padding: 7px 12px; font-size: 13px; font-weight: 600;
+  cursor: pointer; display: flex; align-items: center; gap: 5px;
+  text-decoration: none;
+}
+.back-btn:hover { background: rgba(255,255,255,.25); }
+.topbar-title { color: #fff; font-size: 15px; font-weight: 800; letter-spacing: -.3px; }
+.page { max-width: 520px; margin: 0 auto; padding: 20px 16px; }
+
+/* info card */
+.info-card {
+  background: linear-gradient(135deg, #1f2170, #2e3192);
+  border-radius: 18px; padding: 20px;
+  color: #fff; margin-bottom: 20px;
+  box-shadow: 0 4px 16px rgba(30,64,175,.25);
+}
+.info-card-name { font-size: 18px; font-weight: 800; margin-bottom: 4px; }
+.info-card-matric { font-size: 13px; opacity: .8; font-weight: 500; }
+.info-card-label { font-size: 11px; opacity: .65; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 2px; }
+
+/* form card */
+.form-card {
+  background: #fff; border-radius: 18px; padding: 20px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.07); border: 1px solid #e6e8f3;
+  margin-bottom: 16px;
+}
+.form-card-title {
+  font-size: 15px; font-weight: 800; color: #0f1230;
+  margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
+}
+.field-label { font-size: 12px; font-weight: 700; color: #374151; margin-bottom: 6px; display: block; }
+.field-input {
+  width: 100%; padding: 11px 14px; border: 1.5px solid #e6e8f3;
+  border-radius: 10px; font-size: 14px; font-family: inherit;
+  color: #1b1e45; outline: none; transition: border .2s;
+  background: #f6f7fc;
+}
+.field-input:focus { border-color: #2e3192; background: #fff; }
+.field-group { margin-bottom: 14px; }
+.type-btns { display: flex; gap: 10px; margin-bottom: 14px; }
+.type-btn {
+  flex: 1; padding: 11px 10px; border-radius: 10px; border: 2px solid #e6e8f3;
+  background: #f6f7fc; font-size: 13px; font-weight: 700; color: #5b5f80;
+  cursor: pointer; transition: all .2s; text-align: center;
+}
+.type-btn.active {
+  border-color: #2e3192; background: #f0f1ff; color: #1f2170;
+}
+.submit-btn {
+  width: 100%; padding: 13px; background: linear-gradient(135deg, #1f2170, #2e3192);
+  color: #fff; border: none; border-radius: 12px; font-size: 14px; font-weight: 800;
+  cursor: pointer; letter-spacing: .2px; transition: opacity .2s;
+}
+.submit-btn:disabled { opacity: .6; cursor: not-allowed; }
+.alert { padding: 12px 14px; border-radius: 10px; font-size: 13px; font-weight: 600; margin-bottom: 14px; }
+.alert-success { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+.alert-error   { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+
+/* history */
+.history-card {
+  background: #fff; border-radius: 18px; padding: 20px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.07); border: 1px solid #e6e8f3;
+}
+.history-title { font-size: 15px; font-weight: 800; color: #0f1230; margin-bottom: 14px; }
+.req-item {
+  border: 1px solid #e6e8f3; border-radius: 12px; padding: 14px;
+  margin-bottom: 10px; background: #fafbfc;
+}
+.req-item:last-child { margin-bottom: 0; }
+.req-type-badge {
+  display: inline-block; padding: 3px 10px; border-radius: 999px;
+  font-size: 11px; font-weight: 700; margin-bottom: 8px;
+}
+.badge-name   { background: #f0f1ff; color: #1f2170; }
+.badge-matric { background: #f5f3ff; color: #6d28d9; }
+.req-change { font-size: 13px; color: #374151; margin-bottom: 6px; }
+.req-change strong { color: #0f1230; }
+.req-reason { font-size: 12px; color: #5b5f80; margin-bottom: 8px; }
+.req-status-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; }
+.status-pill {
+  padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 800;
+  text-transform: uppercase; letter-spacing: .5px;
+}
+.status-pending  { background: #fef9c3; color: #92400e; }
+.status-approved { background: #dcfce7; color: #166534; }
+.status-declined { background: #fee2e2; color: #dc2626; }
+.req-date { font-size: 11px; color: #8e92b3; }
+.admin-note { font-size: 12px; color: #dc2626; margin-top: 8px; background: #fef2f2; border-radius: 8px; padding: 8px 10px; border: 1px solid #fecaca; }
+.admin-note-approved { font-size: 12px; color: #166534; margin-top: 8px; background: #f0fdf4; border-radius: 8px; padding: 8px 10px; border: 1px solid #bbf7d0; }
+.empty-state { text-align: center; color: #8e92b3; font-size: 13px; padding: 20px 0; }
+.section-head { font-size: 12px; font-weight: 800; color: #5b5f80; text-transform: uppercase; letter-spacing: .8px; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <a class="back-btn" href="dashboard.html">← Back</a>
+    <div class="topbar-title">Change Request</div>
+  </div>
+</div>
+
+<div class="page">
+
+  <!-- Current Info Card -->
+  <div class="info-card" id="infoCard">
+    <div class="info-card-label">Current Name</div>
+    <div class="info-card-name" id="currentName">Loading…</div>
+    <div style="margin-top:10px;">
+      <div class="info-card-label">Current Matric Number</div>
+      <div class="info-card-matric" id="currentMatric">—</div>
+    </div>
+  </div>
+
+  <!-- Request Form -->
+  <div class="form-card">
+    <div class="form-card-title">Submit a Change Request</div>
+
+    <div id="formAlert"></div>
+
+    <div class="field-group">
+      <div class="field-label">What do you want to change?</div>
+      <div class="type-btns">
+        <button class="type-btn active" id="btnName" onclick="selectType('name')">Full Name</button>
+        <button class="type-btn" id="btnMatric" onclick="selectType('matric')">Matric Number</button>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label" id="newValueLabel">New Full Name</label>
+      <input class="field-input" type="text" id="newValue" placeholder="Enter your correct name" maxlength="100">
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Reason for change <span style="font-weight:400;color:#8e92b3;">(optional)</span></label>
+      <textarea class="field-input" id="reason" rows="3" placeholder="e.g. Name was misspelled during registration" maxlength="500" style="resize:vertical;"></textarea>
+    </div>
+
+    <button class="submit-btn" id="submitBtn" onclick="submitRequest()">Submit Request</button>
+  </div>
+
+  <!-- History -->
+  <div class="history-card">
+    <div class="section-head">My Change Requests</div>
+    <div id="historyList"><div class="empty-state">Loading…</div></div>
+  </div>
+
+</div>
+
+<script>
+const student = JSON.parse(sessionStorage.getItem('student') || 'null');
+if (!student || !student.id) window.location.href = 'login.html';
+
+let selectedType = 'name';
+
+document.getElementById('currentName').textContent   = student.name   || '—';
+document.getElementById('currentMatric').textContent = student.matric || '—';
+
+function selectType(type) {
+  selectedType = type;
+  document.getElementById('btnName').classList.toggle('active',   type === 'name');
+  document.getElementById('btnMatric').classList.toggle('active', type === 'matric');
+  document.getElementById('newValueLabel').textContent = type === 'name' ? 'New Full Name' : 'New Matric Number';
+  document.getElementById('newValue').placeholder = type === 'name' ? 'Enter your correct full name' : 'Enter your correct matric number';
+  document.getElementById('newValue').value = '';
+}
+
+async function submitRequest() {
+  const newValue = document.getElementById('newValue').value.trim();
+  const reason   = document.getElementById('reason').value.trim();
+  const alertEl  = document.getElementById('formAlert');
+  const btn      = document.getElementById('submitBtn');
+
+  if (!newValue) {
+    alertEl.innerHTML = `<div class="alert alert-error">Please enter the new ${selectedType === 'name' ? 'full name' : 'matric number'}.</div>`;
+    return;
+  }
+  btn.disabled = true; btn.textContent = 'Submitting…';
+  alertEl.innerHTML = '';
+
+  try {
+    const res  = await fetch('/api/student/name-change-request', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ student_id: student.id, request_type: selectedType, new_value: newValue, reason })
+    });
+    const data = await res.json();
+    if (data.success) {
+      alertEl.innerHTML = `<div class="alert alert-success">Request submitted! Admin will review it shortly.</div>`;
+      document.getElementById('newValue').value = '';
+      document.getElementById('reason').value   = '';
+      loadHistory();
+    } else {
+      alertEl.innerHTML = `<div class="alert alert-error">${data.message}</div>`;
+    }
+  } catch(e) {
+    alertEl.innerHTML = `<div class="alert alert-error">Network error. Please try again.</div>`;
+  }
+  btn.disabled = false; btn.textContent = 'Submit Request';
+}
+
+async function loadHistory() {
+  const el = document.getElementById('historyList');
+  try {
+    const list = await fetch(`/api/student/name-change-requests?student_id=${student.id}`).then(r => r.json());
+    if (!list.length) { el.innerHTML = `<div class="empty-state">No requests yet.</div>`; return; }
+    el.innerHTML = list.map(r => {
+      const typeLabel = r.request_type === 'name' ? 'Name' : 'Matric Number';
+      const typeClass = r.request_type === 'name' ? 'badge-name' : 'badge-matric';
+      const date = new Date(r.requested_at).toLocaleDateString('en-NG', { day:'2-digit', month:'short', year:'numeric' });
+      let noteHtml = '';
+      if (r.status === 'declined' && r.admin_note)
+        noteHtml = `<div class="admin-note">Admin Reason: ${r.admin_note}</div>`;
+      if (r.status === 'approved')
+        noteHtml = `<div class="admin-note-approved">Your ${typeLabel.toLowerCase()} has been updated to <strong>${r.new_value}</strong>.</div>`;
+      return `
+        <div class="req-item">
+          <span class="req-type-badge ${typeClass}">${typeLabel} Change</span>
+          <div class="req-change">
+            <strong>${r.current_value}</strong> → <strong>${r.new_value}</strong>
+          </div>
+          ${r.reason ? `<div class="req-reason">Reason: ${r.reason}</div>` : ''}
+          <div class="req-status-row">
+            <span class="status-pill status-${r.status}">${r.status}</span>
+            <span class="req-date">${date}</span>
+          </div>
+          ${noteHtml}
+        </div>`;
+    }).join('');
+  } catch(e) { el.innerHTML = `<div class="empty-state">Could not load history.</div>`; }
+}
+
+loadHistory();
+</script>
+</body>
+</html>

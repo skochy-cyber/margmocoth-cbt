@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="manifest" href="/manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="MARGMOCOTH CBT">
+<meta name="theme-color" content="#2e3192">
+<link rel="apple-touch-icon" href="/icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>MARGMOCOTH CBT — Student Registration</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-text-size-adjust: 100%; }
+
+:root {
+  --bg: #f0f2f5;
+  --surface: #ffffff;
+  --surface2: #f7f7f8;
+  --border: rgba(0,0,0,0.08);
+  --border-hover: rgba(0,0,0,0.18);
+  --accent: #2e3192;
+  --accent2: #4448b8;
+  --accent-dim: rgba(46,49,146,0.10);
+  --accent-glow: rgba(46,49,146,0.20);
+  --text: #0d0d0d;
+  --text-sub: #555555;
+  --text-muted: #aaaaaa;
+  --success: #16a34a;
+  --error: #dc2626;
+  --font-head: 'Syne', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  min-height: 100vh;
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* ── Background: clean flat ── */
+.bg-mesh { display: none; }
+.bg-grid  { display: none; }
+
+/* ── Layout ── */
+.page {
+  min-height: 100vh; position: relative; z-index: 2;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 32px 16px 80px;
+}
+
+/* ── Status pill ── */
+.status-pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(255,255,255,0.7);
+  border: 1px solid var(--border);
+  border-radius: 999px; padding: 7px 16px;
+  margin-bottom: 24px;
+  backdrop-filter: blur(12px);
+  animation: riseIn 0.5s cubic-bezier(.22,1,.36,1) both;
+}
+.status-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 7px var(--accent);
+  animation: dotPulse 2s ease infinite;
+}
+@keyframes dotPulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.status-pill span {
+  font-size: 11px; font-weight: 600; letter-spacing: 1.2px;
+  text-transform: uppercase; color: var(--text-sub);
+}
+
+/* ── Card ── */
+.card {
+  width: 100%; max-width: 480px;
+  background: var(--surface);
+  border: 1px solid rgba(0,0,0,0.06);
+  border-radius: 24px; overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06), 0 12px 40px rgba(0,0,0,0.08);
+  animation: riseIn .65s cubic-bezier(.22,1,.36,1) both .1s;
+}
+@keyframes riseIn {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ── Card header ── */
+.card-head {
+  padding: 32px 28px 24px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  text-align: center; position: relative; overflow: hidden;
+}
+.card-head::before {
+  content: '';
+  position: absolute; top: -40px; left: 50%; transform: translateX(-50%);
+  width: 220px; height: 220px;
+  background: radial-gradient(circle, rgba(46,49,146,0.07) 0%, transparent 65%);
+  pointer-events: none;
+}
+
+.logo-wrap {
+  width: 68px; height: 68px; margin: 0 auto 16px;
+  background: var(--surface);
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden; position: relative; z-index: 1;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+}
+.logo-wrap img { width: 100%; height: 100%; object-fit: cover; }
+.logo-fallback {
+  font-family: var(--font-head); font-size: 22px; font-weight: 800;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  display: none; width: 100%; height: 100%;
+  align-items: center; justify-content: center;
+}
+
+.brand-name {
+  font-family: var(--font-head); font-size: 20px; font-weight: 800;
+  color: var(--text); letter-spacing: -0.5px; line-height: 1.2;
+  position: relative; z-index: 1;
+}
+.brand-name span {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.brand-sub {
+  font-size: 11px; font-weight: 500; letter-spacing: 2px;
+  text-transform: uppercase; color: var(--text-muted);
+  margin-top: 5px; position: relative; z-index: 1;
+}
+.reg-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-top: 12px; position: relative; z-index: 1;
+  background: var(--accent-dim);
+  border: 1px solid rgba(46,49,146,0.2);
+  border-radius: 999px; padding: 5px 14px;
+  font-size: 11px; font-weight: 700; color: var(--accent);
+  letter-spacing: 0.4px;
+}
+
+/* ── Card body ── */
+.card-body { padding: 28px; }
+
+/* ── Disabled panel ── */
+.disabled-panel { text-align: center; padding: 36px 20px; }
+.disabled-icon {
+  width: 56px; height: 56px; border-radius: 16px;
+  background: rgba(220,38,38,0.08); border: 1px solid rgba(220,38,38,0.15);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 16px;
+}
+.disabled-panel h3 { font-family: var(--font-head); font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 10px; }
+.disabled-panel p  {
+  font-size: 13px; color: var(--text-sub); line-height: 1.7;
+  background: rgba(220,38,38,0.05); border: 1px solid rgba(220,38,38,0.12);
+  border-radius: 12px; padding: 14px 16px;
+}
+
+/* ── Fields ── */
+.field { margin-bottom: 18px; }
+.field-label {
+  display: block; font-size: 11px; font-weight: 600;
+  color: var(--text-sub); margin-bottom: 8px;
+  text-transform: uppercase; letter-spacing: 0.8px;
+}
+.field-label .req { color: var(--error); }
+.field-note { font-size: 11px; color: var(--text-muted); margin-top: 5px; }
+.field-wrap { position: relative; }
+.field-icon {
+  position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+  color: var(--text-muted); pointer-events: none;
+  display: flex; align-items: center; justify-content: center;
+}
+.field-input {
+  width: 100%; padding: 13px 14px 13px 42px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-family: var(--font-body); font-size: 14px;
+  color: var(--text); transition: all .2s ease;
+  -webkit-appearance: none;
+}
+.field-input::placeholder { color: var(--text-muted); }
+.field-input:focus {
+  outline: none; border-color: var(--accent);
+  background: #fff;
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+.field-input:disabled { opacity: 0.5; cursor: not-allowed; }
+.field-input.err { border-color: var(--error); background: rgba(220,38,38,0.03); }
+
+select.field-input {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%23aaaaaa' stroke-width='2'%3E%3Cpath d='m4 6 4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center;
+  padding-right: 40px; appearance: none; cursor: pointer;
+}
+select.field-input option { background: #fff; color: #111; }
+
+.toggle-password {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; cursor: pointer;
+  color: var(--text-muted); padding: 4px;
+  display: flex; align-items: center; transition: color .2s;
+}
+.toggle-password:hover { color: var(--text-sub); }
+.toggle-password svg {
+  width: 18px; height: 18px; fill: none; stroke: currentColor;
+  stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+}
+
+/* ── Contact grid ── */
+.contact-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+/* ── Dept locked note ── */
+.dept-locked-note {
+  display: none; margin-top: 6px;
+  font-size: 11px; font-weight: 600; color: var(--accent);
+  display: flex; align-items: center; gap: 5px;
+}
+
+/* ── Terms row ── */
+.terms-row { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 20px; margin-top: 4px; }
+.terms-row input[type=checkbox] { width: 16px; height: 16px; margin-top: 2px; flex-shrink: 0; accent-color: var(--accent); cursor: pointer; }
+.terms-row label { font-size: 12.5px; color: var(--text-sub); line-height: 1.6; cursor: pointer; }
+.terms-row label a { color: var(--accent); font-weight: 600; text-decoration: none; }
+.terms-row label a:hover { text-decoration: underline; }
+
+/* ── Alert ── */
+#alertBox { margin-bottom: 16px; }
+.alert-msg {
+  padding: 11px 14px; border-radius: 10px;
+  font-size: 13px; font-weight: 500;
+  display: flex; align-items: center; gap: 8px;
+  animation: alertIn .25s ease;
+}
+@keyframes alertIn { from{opacity:0;transform:translateY(-5px)} to{opacity:1;transform:none} }
+.alert-err { background: rgba(220,38,38,0.07); color: #b91c1c; border: 1px solid rgba(220,38,38,0.18); }
+.alert-ok  { background: rgba(22,163,74,0.07);  color: #15803d; border: 1px solid rgba(22,163,74,0.18); }
+
+/* ── Register button ── */
+.reg-btn {
+  width: 100%; padding: 14px; border: none; border-radius: 12px;
+  cursor: pointer;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+  color: #fff;
+  font-family: var(--font-body); font-size: 15px; font-weight: 600;
+  box-shadow: 0 4px 18px var(--accent-glow);
+  transition: all .2s ease;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.reg-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 26px var(--accent-glow); filter: brightness(1.05); }
+.reg-btn:active { transform: scale(.98); }
+.reg-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+/* ── Card footer ── */
+.card-foot {
+  border-top: 1px solid var(--border);
+  padding: 14px 28px; text-align: center;
+  font-size: 13px; color: var(--text-muted);
+}
+.card-foot a { color: var(--accent); font-weight: 600; text-decoration: none; }
+.card-foot a:hover { text-decoration: underline; }
+
+/* ── Success state ── */
+.success-state { text-align: center; padding: 24px 8px; }
+.success-check {
+  width: 64px; height: 64px; border-radius: 50%;
+  background: rgba(22,163,74,0.1); border: 2px solid rgba(22,163,74,0.25);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 18px;
+}
+.success-title { font-family: var(--font-head); font-size: 20px; font-weight: 800; color: var(--text); margin-bottom: 8px; }
+.success-msg { font-size: 13px; color: var(--text-sub); line-height: 1.7; margin-bottom: 24px; }
+.go-login-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: #fff; padding: 13px 28px; border-radius: 12px;
+  text-decoration: none; font-weight: 600; font-size: 15px;
+  font-family: var(--font-body);
+  box-shadow: 0 4px 16px var(--accent-glow);
+  transition: all .2s;
+}
+.go-login-btn:hover { transform: translateY(-2px); }
+
+/* ── Terms modal ── */
+.modal-overlay {
+  display: none; position: fixed; inset: 0; z-index: 99999;
+  background: rgba(0,0,0,0.35);
+  align-items: center; justify-content: center; padding: 20px;
+  backdrop-filter: blur(4px);
+}
+.modal-overlay.open { display: flex; }
+.modal-box {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 20px; max-width: 480px; width: 100%;
+  max-height: 80vh; overflow: hidden;
+  display: flex; flex-direction: column;
+  box-shadow: 0 24px 56px rgba(0,0,0,0.15);
+  animation: riseIn .25s cubic-bezier(.22,1,.36,1);
+}
+.modal-head {
+  padding: 20px 24px 16px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.modal-head h3 { font-family: var(--font-head); font-size: 16px; font-weight: 700; color: var(--text); }
+.modal-close {
+  background: var(--surface2); border: 1px solid var(--border);
+  width: 30px; height: 30px; border-radius: 50%; cursor: pointer;
+  color: var(--text-sub); display: flex; align-items: center; justify-content: center;
+  font-size: 13px; transition: all .2s;
+}
+.modal-close:hover { color: var(--text); border-color: var(--border-hover); }
+.modal-body {
+  padding: 20px 24px; overflow-y: auto;
+  font-size: 13px; color: var(--text-sub); line-height: 1.8;
+}
+.modal-body h4 {
+  font-family: var(--font-head); font-size: 13px; font-weight: 700;
+  color: var(--text); margin: 16px 0 6px;
+}
+.modal-body h4:first-child { margin-top: 0; }
+.modal-footer { padding: 16px 24px; border-top: 1px solid var(--border); }
+.btn-accept {
+  width: 100%; padding: 13px; border: none; border-radius: 12px; cursor: pointer;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: #fff; font-family: var(--font-body); font-size: 14px; font-weight: 600;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: filter .2s;
+}
+.btn-accept:hover { filter: brightness(1.06); }
+
+/* ── Footer ticker ── */
+.footer-ticker {
+  position: fixed; bottom: 0; left: 0; width: 100%; z-index: 1000;
+  background: var(--surface2); border-top: 1px solid var(--border);
+  padding: 8px 0; overflow: hidden;
+}
+.ticker-track { display: inline-flex; white-space: nowrap; animation: ticker 35s linear infinite; }
+.ticker-track span {
+  font-family: var(--font-body); font-size: 11px; font-weight: 600;
+  color: var(--text-muted); letter-spacing: 1px;
+  text-transform: uppercase; padding-right: 80px;
+}
+.ticker-track span b { color: var(--accent); font-weight: 600; }
+@keyframes ticker { from{transform:translateX(100vw)} to{transform:translateX(-100%)} }
+
+@media (max-width: 480px) {
+  .card-body { padding: 22px 18px; }
+  .contact-row { grid-template-columns: 1fr; }
+  .brand-name { font-size: 18px; }
+}
+</style>
+</head>
+<body>
+
+<div class="bg-mesh"></div>
+<div class="bg-grid"></div>
+
+<!-- Terms Modal -->
+<div class="modal-overlay" id="termsModal" onclick="if(event.target===this)closeTerms()">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>Terms of Use</h3>
+      <button class="modal-close" onclick="closeTerms()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <h4>1. Account Responsibility</h4>
+      <p>You are solely responsible for maintaining the confidentiality of your account credentials. Do not share your password with anyone.</p>
+
+      <h4>2. Honest Registration</h4>
+      <p>You must provide accurate and truthful information when registering. Impersonation or false registration details will result in account suspension.</p>
+
+      <h4>3. Examination Conduct</h4>
+      <p>During examinations, you must not engage in any form of malpractice. This includes seeking external help, using unauthorized materials, or attempting to manipulate the system.</p>
+
+      <h4>4. Monitoring</h4>
+      <p>The CBT system uses AI-assisted monitoring during examinations including webcam surveillance and behaviour tracking. By registering, you consent to this monitoring during any exam session.</p>
+
+      <h4>5. Data Usage</h4>
+      <p>Your personal information will be used solely for examination administration purposes. It will not be shared with third parties.</p>
+
+      <h4>6. Violations</h4>
+      <p>Any detected violations during an exam may result in automatic submission or disqualification at the administrator's discretion.</p>
+
+      <h4>7. Acceptance</h4>
+      <p>By creating an account, you confirm that you have read, understood, and agree to abide by these terms.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-accept" onclick="acceptTerms()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        I Accept These Terms
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="page">
+
+  <div class="status-pill">
+    <span class="status-dot"></span>
+    <span>Student Registration</span>
+  </div>
+
+  <div class="card">
+
+    <div class="card-head">
+      <div class="logo-wrap">
+        <img src="school-logo.png" alt="Logo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div class="logo-fallback">T</div>
+      </div>
+      <div class="brand-name" id="schoolName">MARGMOCOTH<span> CBT</span></div>
+      <div class="brand-sub">CBT Examination System</div>
+      <div class="reg-badge">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+        </svg>
+        New Student Registration
+      </div>
+    </div>
+
+    <div class="card-body" id="cardBody">
+
+      <!-- Disabled panel -->
+      <div class="disabled-panel" id="disabledPanel" style="display:none;">
+        <div class="disabled-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+        </div>
+        <h3>Registration Closed</h3>
+        <p>Student self-registration is currently disabled. Please contact your administrator to have your account created manually.</p>
+      </div>
+
+      <!-- Registration form -->
+      <div id="regForm">
+        <div id="alertBox"></div>
+
+        <!-- Full Name -->
+        <div class="field">
+          <label class="field-label">Full Name <span class="req">*</span></label>
+          <div class="field-wrap">
+            <span class="field-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+              </svg>
+            </span>
+            <input type="text" id="name" class="field-input" placeholder="e.g. John Doe" autocomplete="name">
+          </div>
+        </div>
+
+        <!-- Department -->
+        <div class="field" id="deptField">
+          <label class="field-label">Department <span class="req">*</span></label>
+          <div class="field-wrap">
+            <span class="field-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+              </svg>
+            </span>
+            <select id="department_id" class="field-input">
+              <option value="">Select your department</option>
+            </select>
+          </div>
+          <div id="deptLockedNote" class="dept-locked-note" style="display:none;">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+            Department is fixed for this registration link.
+          </div>
+        </div>
+
+        <!-- Level -->
+        <div class="field">
+          <label class="field-label">Level <span class="req">*</span></label>
+          <div class="field-wrap">
+            <span class="field-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+              </svg>
+            </span>
+            <select id="level_id" class="field-input">
+              <option value="">Select your level</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Contact -->
+        <div class="field">
+          <label class="field-label">
+            Contact <span class="req">*</span>
+            <span style="font-size:10px;color:var(--text-muted);font-weight:500;text-transform:none;letter-spacing:0;"> — at least one required</span>
+          </label>
+          <div class="contact-row">
+            <div class="field-wrap">
+              <span class="field-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.49 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.4 1.18h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.4a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 14.92z"/>
+                </svg>
+              </span>
+              <input type="tel" id="phone" class="field-input" placeholder="Phone number" autocomplete="tel">
+            </div>
+            <div class="field-wrap">
+              <span class="field-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
+                </svg>
+              </span>
+              <input type="email" id="email" class="field-input" placeholder="Email address" autocomplete="email">
+            </div>
+          </div>
+          <div class="field-note">You can provide both or just one.</div>
+        </div>
+
+        <!-- Password -->
+        <div class="field">
+          <label class="field-label">Password <span class="req">*</span></label>
+          <div class="field-wrap">
+            <span class="field-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+            </span>
+            <input type="password" id="password" class="field-input" placeholder="At least 6 characters" autocomplete="new-password">
+            <button type="button" class="toggle-password" onclick="togglePw('password','eye1open','eye1closed')">
+              <svg id="eye1closed" viewBox="0 0 24 24"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>
+              <svg id="eye1open" style="display:none;" viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Confirm Password -->
+        <div class="field">
+          <label class="field-label">Confirm Password <span class="req">*</span></label>
+          <div class="field-wrap">
+            <span class="field-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+            </span>
+            <input type="password" id="confirmPassword" class="field-input" placeholder="Re-enter your password" autocomplete="new-password">
+            <button type="button" class="toggle-password" onclick="togglePw('confirmPassword','eye2open','eye2closed')">
+              <svg id="eye2closed" viewBox="0 0 24 24"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>
+              <svg id="eye2open" style="display:none;" viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Terms -->
+        <div class="terms-row">
+          <input type="checkbox" id="termsCheck">
+          <label for="termsCheck">
+            I have read and agree to the
+            <a href="#" onclick="openTerms(event)">Terms of Use</a>.
+            By registering, I confirm all information provided is accurate.
+          </label>
+        </div>
+
+        <button class="reg-btn" onclick="doRegister()" id="regBtn">
+          <span>Create My Account</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>
+          </svg>
+        </button>
+      </div>
+
+    </div>
+
+    <div class="card-foot">
+      Already have an account? <a href="login.html">Sign in instead</a>
+    </div>
+
+  </div>
+</div>
+
+<!-- Footer ticker -->
+<footer class="footer-ticker">
+  <div class="ticker-track">
+    <span id="marqueeText">Powered by <b>Tribal Tech</b> &nbsp;&#183;&nbsp; MARGMOCOTH CBT System &nbsp;&#183;&nbsp; Powered by <b>Tribal Tech</b> &nbsp;&#183;&nbsp; MARGMOCOTH CBT System &nbsp;&#183;&nbsp; Powered by <b>Tribal Tech</b> &nbsp;&#183;&nbsp; MARGMOCOTH CBT System</span>
+  </div>
+</footer>
+
+<script>
+const alertBox = document.getElementById('alertBox');
+let _deptToken = null;
+
+function showAlert(msg, type) {
+  alertBox.innerHTML = `<div class="alert-msg ${type==='ok'?'alert-ok':'alert-err'}">${msg}</div>`;
+  alertBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+function clearAlert() { alertBox.innerHTML = ''; }
+
+function togglePw(inputId, openId, closedId) {
+  const inp = document.getElementById(inputId);
+  const isHidden = inp.type === 'password';
+  inp.type = isHidden ? 'text' : 'password';
+  document.getElementById(openId).style.display   = isHidden ? 'block' : 'none';
+  document.getElementById(closedId).style.display = isHidden ? 'none'  : 'block';
+}
+
+function openTerms(e) { e && e.preventDefault(); document.getElementById('termsModal').classList.add('open'); }
+function closeTerms() { document.getElementById('termsModal').classList.remove('open'); }
+function acceptTerms() {
+  document.getElementById('termsCheck').checked = true;
+  closeTerms();
+}
+
+async function init() {
+  try {
+    const params = new URLSearchParams(location.search);
+    const deptId = params.get('dept');
+    const token  = params.get('token');
+
+    const data = await fetch('/api/settings/portal').then(r => r.json());
+
+    if (data.school_name) {
+      document.getElementById('schoolName').textContent = data.school_name;
+    }
+    if (data.marquee_text) {
+      const t = data.marquee_text;
+      document.getElementById('marqueeText').innerHTML =
+        `Powered by <b>Tribal Tech</b> &nbsp;&#183;&nbsp; ${t} &nbsp;&#183;&nbsp; Powered by <b>Tribal Tech</b> &nbsp;&#183;&nbsp; ${t}`;
+    }
+
+    if (deptId && token) {
+      const chk = await fetch(`/api/dept-reg-check?dept_id=${deptId}&token=${encodeURIComponent(token)}`).then(r => r.json());
+      if (!chk.valid) {
+        document.getElementById('regForm').style.display       = 'none';
+        document.getElementById('disabledPanel').style.display = 'block';
+        document.getElementById('disabledPanel').innerHTML = `
+          <div class="disabled-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+          </div>
+          <h3>Registration Closed</h3>
+          <p>${chk.message}</p>`;
+        return;
+      }
+      _deptToken = token;
+      const sel = document.getElementById('department_id');
+      sel.innerHTML = `<option value="${chk.dept_id}">${chk.dept_name}</option>`;
+      sel.value    = chk.dept_id;
+      sel.disabled = true;
+      const note = document.getElementById('deptLockedNote');
+      note.style.display = 'flex';
+      if (chk.closes_at) {
+        const d = new Date(chk.closes_at);
+        note.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Department fixed. Registration closes: ${d.toLocaleString()}.`;
+      }
+    } else {
+      if (!data.registration_open) {
+        document.getElementById('regForm').style.display       = 'none';
+        document.getElementById('disabledPanel').style.display = 'block';
+        return;
+      }
+      const depts = await fetch('/api/departments').then(r => r.json());
+      const sel   = document.getElementById('department_id');
+      depts.forEach(d => {
+        const o = document.createElement('option');
+        o.value = d.id; o.textContent = d.name;
+        sel.appendChild(o);
+      });
+    }
+
+    const levels = await fetch('/api/levels').then(r => r.json());
+    const lsel   = document.getElementById('level_id');
+    levels.forEach(l => {
+      const o = document.createElement('option');
+      o.value = l.id; o.textContent = l.name;
+      lsel.appendChild(o);
+    });
+
+  } catch(e) {}
+}
+
+async function doRegister() {
+  clearAlert();
+
+  const name     = document.getElementById('name').value.trim();
+  const dept     = document.getElementById('department_id').value;
+  const levelId  = document.getElementById('level_id').value;
+  const phone    = document.getElementById('phone').value.trim();
+  const email    = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+  const confirm  = document.getElementById('confirmPassword').value;
+  const terms    = document.getElementById('termsCheck').checked;
+
+  if (!name)    { showAlert('Please enter your full name.', 'err'); return; }
+  if (!dept)    { showAlert('Please select your department.', 'err'); return; }
+  if (!levelId) { showAlert('Please select your class.', 'err'); return; }
+  if (!phone && !email) { showAlert('Please provide at least a phone number or email address.', 'err'); return; }
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showAlert('Please enter a valid email address.', 'err'); return; }
+  if (!password || password.length < 6) { showAlert('Password must be at least 6 characters.', 'err'); return; }
+  if (password !== confirm) { showAlert('Passwords do not match.', 'err'); return; }
+  if (!terms) { showAlert('You must accept the Terms of Use to register.', 'err'); return; }
+
+  const btn = document.getElementById('regBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span>Creating account...</span>';
+
+  try {
+    const res  = await fetch('/api/student-register', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ name, phone: phone||null, email: email||null,
+                                department_id: dept, level_id: levelId, password,
+                                dept_token: _deptToken || undefined })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      document.getElementById('regForm').innerHTML = `
+        <div class="success-state">
+          <div class="success-check">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </div>
+          <div class="success-title">Registration Successful</div>
+          <div class="success-msg">Your account has been created.<br>You can now log in with your name, level, department and password.</div>
+          <a href="login.html" class="go-login-btn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m15 18-6-6 6-6"/>
+            </svg>
+            Go to Login
+          </a>
+        </div>`;
+    } else {
+      showAlert(data.message, 'err');
+      btn.disabled = false;
+      btn.innerHTML = '<span>Create My Account</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>';
+    }
+  } catch(e) {
+    showAlert('Server error. Please try again.', 'err');
+    btn.disabled = false;
+    btn.innerHTML = '<span>Create My Account</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>';
+  }
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Enter') doRegister(); });
+init();
+</script>
+<script src="/pwa.js"></script>
+</body>
+</html>

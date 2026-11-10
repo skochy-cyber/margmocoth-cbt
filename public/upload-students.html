@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="manifest" href="/manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MARGMOCOTH CBT">
+<meta name="theme-color" content="#2e3192">
+<link rel="apple-touch-icon" href="/icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manage Students – MARGMOCOTH CBT</title>
+<link rel="stylesheet" href="css/style.css">
+<!-- SheetJS for Excel export -->
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<!-- jsPDF + AutoTable for PDF export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<style>
+.export-btn-group { display: flex; gap: 8px; flex-shrink: 0; align-items: center; flex-wrap: wrap; }
+.export-btn {
+ display: inline-flex; align-items: center; gap: 6px;
+ padding: 9px 14px; border: none; border-radius: 8px;
+ font-family: inherit; font-size: 13px; font-weight: 700;
+ cursor: pointer; transition: all .2s; white-space: nowrap;
+}
+.export-btn-excel { background: #166534; color: #fff; }
+.export-btn-excel:hover { background: #14532d; }
+.export-btn-pdf  { background: #9f1239; color: #fff; }
+.export-btn-pdf:hover  { background: #881337; }
+
+/* Edit Student Modal */
+.se-modal-overlay {
+ display: none; position: fixed; inset: 0; z-index: 9998;
+ background: rgba(0,0,0,.45); align-items: center; justify-content: center; padding: 16px;
+}
+.se-modal-overlay.active { display: flex; }
+.se-modal-box {
+ background: #fff; border-radius: 16px; padding: 24px 22px 20px;
+ width: 100%; max-width: 420px; box-shadow: 0 20px 60px rgba(0,0,0,.22);
+}
+.se-modal-box h3 { margin: 0 0 16px; font-size: 16px; font-weight: 800; color: #1b1e45; }
+.se-modal-actions { display: flex; gap: 10px; margin-top: 18px; justify-content: flex-end; }
+</style>
+</head>
+<body>
+<div class="admin-layout">
+ <div id="sidebarContainer"></div>
+ <div class="admin-main">
+ <div id="topbarContainer"></div>
+ <div class="content">
+ <div id="alertBox"></div>
+
+ <div class="tabs">
+ <button class="tab-btn active" onclick="showTab('manual')">Manual Add</button>
+ <button class="tab-btn" onclick="showTab('csv')">CSV Upload</button>
+ <button class="tab-btn" onclick="showTab('list')">All Students</button>
+ </div>
+
+ <!-- MANUAL TAB -->
+ <div id="tab-manual">
+ <div class="card">
+ <div class="card-header">Add Student Manually</div>
+ <div class="card-body">
+ <div class="form-grid-2">
+ <div class="form-group">
+ <label class="form-label">Full Name *</label>
+ <input type="text" id="name" class="form-control" placeholder="John Doe">
+ </div>
+
+ <div class="form-group">
+ <label class="form-label">Department *</label>
+ <select id="department_id" data-label="arm" class="form-control form-select">
+ <option value="">-- Select Department --</option>
+ </select>
+ </div>
+ <div class="form-group">
+ <label class="form-label">Level *</label>
+ <select id="level_id" data-label="class" class="form-control form-select">
+ <option value="">-- Select Level --</option>
+ </select>
+ </div>
+ </div>
+ <div style="background:#f0f1ff;border:1px solid #ffd4a8;border-radius:10px;padding:11px 14px;margin-bottom:14px;font-size:12px;color:#2e3192;font-weight:600;">
+ Login password will be auto-assigned from the active generated password for the selected department.
+ </div>
+ <button onclick="addStudent()" class="btn btn-primary btn-lg">Add Student</button>
+ </div>
+ </div>
+ </div>
+
+ <!-- CSV TAB -->
+ <div id="tab-csv" style="display:none;">
+ <div style="display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-bottom:22px;">
+
+ <div class="card">
+ <div class="card-header">Upload Students CSV</div>
+ <div class="card-body">
+ <div class="upload-zone" onclick="document.getElementById('studentCsv').click()">
+ <div style="font-size:48px;margin-bottom:12px;"></div>
+ <div style="font-size:16px;font-weight:700;color:#1b1e45;margin-bottom:6px;">Select CSV File</div>
+ <div style="font-size:13px;color:#71717a;">Click to browse or drag & drop</div>
+ <input type="file" id="studentCsv" accept=".csv" style="display:none;" onchange="previewStudents(this.files[0])">
+ </div>
+ <div id="csvFileInfo" style="display:none;margin-top:12px;padding:12px 14px;background:#edfff4;border:1px solid #34c462;border-radius:10px;font-size:13px;font-weight:600;color:#0f6b30;"></div>
+ <div style="margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+ <div class="form-group" style="margin-bottom:0;">
+ <label class="form-label" style="font-size:12px;">Override Department <span style="color:#8e92b3;font-weight:400;">(optional)</span></label>
+ <select id="csvArmOverride" class="form-control form-select">
+ <option value="">— Use CSV value —</option>
+ </select>
+ </div>
+ <div class="form-group" style="margin-bottom:0;">
+ <label class="form-label" style="font-size:12px;">Override Level <span style="color:#8e92b3;font-weight:400;">(optional)</span></label>
+ <select id="csvClassOverride" class="form-control form-select">
+ <option value="">— Use CSV value —</option>
+ </select>
+ </div>
+ </div>
+ <button onclick="uploadStudents()" class="btn btn-primary btn-full" style="margin-top:14px;">Upload Students</button>
+ </div>
+ </div>
+
+ <div class="card">
+ <div class="card-header" style="background:linear-gradient(135deg,#0f1230,#1b1e45);">CSV Format</div>
+ <div class="card-body">
+ <p style="font-size:13px;margin-bottom:14px;color:#71717a;">Required CSV format:</p>
+ <div class="code-block">name,department,level<br>
+John Doe,Medical Laboratory,100L<br>
+Jane Smith,Public Health,200L<br>
+Ali Hassan,HIM,300L</div>
+ <div style="margin-top:14px;font-size:13px;color:#71717a;line-height:2;">
+ Password is auto-assigned from the active generated password for each department. Department and class names must match exactly as created in Settings.
+ </div>
+ <button onclick="downloadStudentTemplate()" class="btn btn-accent btn-sm" style="margin-top:14px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg> Download Template</button>
+ </div>
+ </div>
+
+ </div>
+
+ <div class="card">
+ <div class="card-header">Preview</div>
+ <div class="card-body" style="padding:0;">
+ <div class="table-wrapper">
+ <table>
+ <thead>
+ <tr><th>#</th><th>Name</th><th>Department</th><th>Level</th><th>Status</th></tr>
+ </thead>
+ <tbody id="studentPreview">
+ <tr><td colspan="6" style="text-align:center;padding:32px;color:#5b5f80;">No file selected</td></tr>
+ </tbody>
+ </table>
+ </div>
+ </div>
+ </div>
+ </div>
+
+ <!-- LIST TAB -->
+ <div id="tab-list" style="display:none;">
+ <div style="display:flex;gap:12px;margin-bottom:18px;flex-wrap:wrap;align-items:center;">
+ <input type="text" id="searchStudent" class="form-control" style="max-width:260px;" placeholder=" Search by name..." oninput="filterStudents()">
+ <select id="filterDept" class="form-control form-select" style="max-width:180px;" onchange="filterStudents()">
+ <option value="">All Departments</option>
+ </select>
+ <select id="filterLevel" class="form-control form-select" style="max-width:150px;" onchange="filterStudents()">
+ <option value="">All Levels</option>
+ </select>
+ <div class="export-btn-group" style="margin-left:auto;">
+ <button onclick="exportStudentsExcel()" class="export-btn export-btn-excel">Export Excel</button>
+ <button onclick="exportStudentsPDF()" class="export-btn export-btn-pdf">Export PDF</button>
+ </div>
+ </div>
+
+ <div class="card">
+ <div class="card-header">
+ All Students
+ <span id="studentCount" style="margin-left:auto;font-size:13px;font-weight:500;opacity:.85;"></span>
+ </div>
+ <div class="card-body" style="padding:0;">
+ <div class="table-wrapper">
+ <table>
+ <thead>
+ <tr><th>#</th><th>Name</th><th>Department</th><th>Level</th><th>Actions</th></tr>
+ </thead>
+ <tbody id="studentsTable">
+ <tr><td colspan="5" style="text-align:center;padding:32px;color:#5b5f80;">Loading students...</td></tr>
+ </tbody>
+ </table>
+ </div>
+ </div>
+ </div>
+ </div>
+
+ </div>
+ </div>
+</div>
+
+<script src="js/admin.js"></script>
+<script>
+document.getElementById('sidebarContainer').innerHTML = getSidebarHTML('upload-students.html');
+document.getElementById('topbarContainer').innerHTML  = getTopbarHTML('Manage Students');
+checkAdmin();
+requirePermission('manage_students');
+
+let allStudents = [], parsedStudents = [];
+
+function showTab(tab) {
+ ['manual','csv','list'].forEach(t => {
+ document.getElementById(`tab-${t}`).style.display = t === tab ? '' : 'none';
+ });
+ document.querySelectorAll('.tab-btn').forEach((b, i) => {
+ b.classList.toggle('active', ['manual','csv','list'][i] === tab);
+ });
+ if (tab === 'list') loadStudents();
+}
+
+async function loadDropdowns(retryCount = 0) {
+ const sel  = document.getElementById('department_id');
+ const lsel = document.getElementById('level_id');
+ const fsel = document.getElementById('filterDept');
+ const flsel = document.getElementById('filterLevel');
+ const csvArm   = document.getElementById('csvArmOverride');
+ const csvClass = document.getElementById('csvClassOverride');
+
+ let depts, levels;
+ try {
+ [depts, levels] = await Promise.all([apiGet('/api/departments'), apiGet('/api/levels')]);
+ } catch (err) {
+ console.error('Failed to load arms/classes:', err);
+ if (retryCount < 2) { setTimeout(() => loadDropdowns(retryCount + 1), 1500); return; }
+ showAlert('Could not load Departments/Levels. Check your connection and reload the page.', 'danger');
+ return;
+ }
+
+ // Guard against non-array responses (e.g. an error object from the server)
+ if (!Array.isArray(depts) || !Array.isArray(levels)) {
+ console.error('Unexpected /api/departments or /api/levels response:', depts, levels);
+ if (retryCount < 2) { setTimeout(() => loadDropdowns(retryCount + 1), 1500); return; }
+ showAlert('Could not load Departments/Levels. Please reload the page or try again shortly.', 'danger');
+ return;
+ }
+
+ if (!depts.length || !levels.length) {
+ showAlert('No Departments or Levels found yet. Add them first under Settings → Departments/Levels.', 'danger');
+ }
+
+ // Reset to just the placeholder before repopulating (avoids duplicate options on retry)
+ sel.innerHTML  = '<option value="">-- Select Department --</option>';
+ lsel.innerHTML = '<option value="">-- Select Level --</option>';
+ fsel.innerHTML  = '<option value="">All Departments</option>';
+ flsel.innerHTML = '<option value="">All Levels</option>';
+ csvArm.innerHTML   = '<option value="">— Use CSV value —</option>';
+ csvClass.innerHTML = '<option value="">— Use CSV value —</option>';
+
+ depts.forEach(d => {
+ sel.innerHTML   += `<option value="${d.id}">${d.name}</option>`;
+ fsel.innerHTML  += `<option value="${d.name}">${d.name}</option>`;
+ csvArm.innerHTML += `<option value="${d.name}">${d.name}</option>`;
+ });
+ levels.forEach(l => {
+ lsel.innerHTML    += `<option value="${l.id}">${l.name}</option>`;
+ flsel.innerHTML   += `<option value="${l.name}">${l.name}</option>`;
+ csvClass.innerHTML += `<option value="${l.name}">${l.name}</option>`;
+ });
+
+ // Pre-fill and lock dept for lecturers
+ const admin = JSON.parse(sessionStorage.getItem('admin') || '{}');
+ if (admin.role === 'lecturer' && admin.department_id) {
+ sel.value  = admin.department_id;
+ sel.disabled = true;
+ if (admin.department_name) fsel.value = admin.department_name;
+ }
+}
+
+async function addStudent() {
+ const admin  = JSON.parse(sessionStorage.getItem('admin') || '{}');
+ const payload = {
+ name:  document.getElementById('name').value.trim(),
+ department_id: document.getElementById('department_id').value,
+ level_id:  document.getElementById('level_id').value,
+ created_by:  admin.id || null
+ };
+ if (!payload.name || !payload.department_id || !payload.level_id) {
+ showAlert('Please fill all required fields.', 'danger'); return;
+ }
+ const btn = document.querySelector('#tab-manual .btn-primary');
+ btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2m6-2a10 10 0 11-20 0 10 10 0 0120 0z"/></svg> Adding...'; btn.disabled = true;
+ const data = await apiPost('/api/admin/add-student', payload);
+ btn.innerHTML = ' Add Student'; btn.disabled = false;
+ if (data.success) {
+ showAlert('Student added successfully! Password auto-assigned from department generated password.', 'success');
+ ['name'].forEach(id => document.getElementById(id).value = '');
+ } else showAlert(data.message, 'danger');
+}
+
+function previewStudents(file) {
+ if (!file) return;
+ const fileInfo = document.getElementById('csvFileInfo');
+ fileInfo.style.display = 'block';
+ fileInfo.textContent = ` ${file.name}`;
+ const reader = new FileReader();
+ reader.onload = e => {
+ const lines = e.target.result.trim().split('\n');
+ parsedStudents = [];
+ for (let i = 1; i < lines.length; i++) {
+ const cols = lines[i].split(',').map(c => c.trim().replace(/^"|"$/g,''));
+ if (cols.length >= 3) parsedStudents.push({ name: cols[0], department: cols[1], level: cols[2], password: cols[3] || '' });
+ }
+ document.getElementById('studentPreview').innerHTML =
+ parsedStudents.slice(0,20).map((s,i) => `
+ <tr>
+ <td>${i+1}</td>
+ <td>${s.name}</td>
+ <td>${s.department}</td>
+ <td>${s.level}</td>
+ <td><span class="badge badge-success">Valid</span></td>
+ </tr>`).join('') +
+ (parsedStudents.length > 20 ? `<tr><td colspan="6" style="text-align:center;padding:14px;color:#71717a;">...and ${parsedStudents.length-20} more</td></tr>` : '');
+ showAlert(`Parsed ${parsedStudents.length} students. Click Upload to save.`, 'success');
+ };
+ reader.readAsText(file);
+}
+
+async function uploadStudents() {
+ if (!parsedStudents.length) { showAlert('No students to upload.', 'danger'); return; }
+ const armOverride   = document.getElementById('csvArmOverride').value;
+ const classOverride = document.getElementById('csvClassOverride').value;
+ const students = parsedStudents.map(s => ({
+ name:       s.name,
+ arm:        armOverride   || s.department,
+ class:      classOverride || s.level,
+ }));
+ const btn = document.querySelector('#tab-csv .btn-primary');
+ btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2m6-2a10 10 0 11-20 0 10 10 0 0120 0z"/></svg> Uploading...'; btn.disabled = true;
+ const data = await apiPost('/api/admin/bulk-students', { students });
+ btn.innerHTML = ' Upload Students'; btn.disabled = false;
+ if (data.success) {
+ showAlert(`Uploaded ${data.count} students (${data.skipped} skipped).`, 'success');
+ parsedStudents = [];
+ document.getElementById('studentPreview').innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:#0f6b30;font-weight:600;">Upload complete!</td></tr>';
+ document.getElementById('csvFileInfo').style.display = 'none';
+ } else showAlert(data.message || 'Upload failed.', 'danger');
+}
+
+async function loadStudents() {
+ const admin = JSON.parse(sessionStorage.getItem('admin') || '{}');
+ const url  = admin.role === 'lecturer' && admin.department_id
+ ? `/api/admin/students?department_id=${admin.department_id}`
+ : '/api/admin/students';
+ const data  = await apiGet(url);
+ allStudents  = data;
+ document.getElementById('studentCount').textContent = `Total: ${data.length}`;
+ renderStudents(data);
+}
+
+function renderStudents(data) {
+ const admin  = JSON.parse(sessionStorage.getItem('admin') || '{}');
+ const isLec  = admin.role === 'lecturer';
+ const tbody  = document.getElementById('studentsTable');
+ if (!data.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:32px;color:#5b5f80;">No students found.</td></tr>'; return; }
+
+ // Group: dept → level → students
+ const groups = {};
+ data.forEach(s => {
+ const dept  = s.department || 'No Department';
+ const level = s.level  || 'No Level';
+ if (!groups[dept]) groups[dept] = {};
+ if (!groups[dept][level]) groups[dept][level] = [];
+ groups[dept][level].push(s);
+ });
+
+ let html = '';
+ let rowNum = 1;
+ const deptNames = Object.keys(groups).sort();
+ deptNames.forEach(dept => {
+ const levelNames = Object.keys(groups[dept]).sort();
+ levelNames.forEach(level => {
+ const students = groups[dept][level];
+ // Section header row
+ html += `<tr>
+ <td colspan="5" style="background:linear-gradient(135deg,#2e3192,#4448b8);color:#fff;font-weight:700;font-size:13px;padding:10px 16px;letter-spacing:.5px;">
+ ${dept} — ${level}
+ <span style="float:right;font-weight:500;font-size:12px;opacity:.85;">${students.length} student${students.length>1?'s':''}</span>
+ </td></tr>`;
+ students.forEach(s => {
+ html += `<tr>
+ <td>${rowNum++}</td>
+ <td>${s.name}</td>
+ <td>${s.department || '-'}</td>
+ <td>${s.level || '-'}</td>
+ <td>${isLec
+ ? '<span style="color:#8e92b3;font-size:12px;">—</span>'
+ : `<button onclick="openEditStudentModal('${s.id}')" class="btn btn-secondary btn-xs" style="margin-right:6px;">Edit</button>
+ <button onclick="deleteStudent('${s.id}')" class="btn btn-secondary btn-xs">Delete</button>`
+ }</td>
+ </tr>`;
+ });
+ });
+ });
+ tbody.innerHTML = html;
+}
+
+function filterStudents() {
+ const q  = document.getElementById('searchStudent').value.toLowerCase();
+ const dept  = document.getElementById('filterDept').value;
+ const level = document.getElementById('filterLevel').value;
+ renderStudents(allStudents.filter(s =>
+ (!q  || s.name.toLowerCase().includes(q)) &&
+ (!dept  || s.department === dept) &&
+ (!level || s.level === level)
+ ));
+}
+
+async function deleteStudent(id) {
+ if (!confirmDelete('Delete this student?')) return;
+ const data = await apiDelete(`/api/admin/students/${id}`);
+ if (data.success) { showAlert('Student deleted.', 'success'); loadStudents(); }
+ else showAlert(data.message, 'danger');
+}
+
+// ── Edit Student ────────────────────────────────────────────
+let _editStudentId = null;
+
+async function openEditStudentModal(id) {
+ const s = allStudents.find(x => x.id === id);
+ if (!s) return;
+ _editStudentId = id;
+ document.getElementById('editStudentName').value = s.name;
+
+ const eDept  = document.getElementById('editStudentDept');
+ const eLevel = document.getElementById('editStudentLevel');
+
+ // Show the modal immediately with a loading state, then fetch fresh
+ // Department/Level lists directly — don't depend on the manual-add selects,
+ // since those may not have finished loading (or may have failed) yet.
+ eDept.innerHTML  = '<option value="">Loading…</option>';
+ eLevel.innerHTML = '<option value="">Loading…</option>';
+ document.getElementById('editStudentModal').classList.add('active');
+
+ try {
+ const [depts, levels] = await Promise.all([apiGet('/api/departments'), apiGet('/api/levels')]);
+ eDept.innerHTML  = '<option value="">-- Select Department --</option>' +
+ (Array.isArray(depts)  ? depts.map(d => `<option value="${d.id}">${d.name}</option>`).join('')  : '');
+ eLevel.innerHTML = '<option value="">-- Select Level --</option>' +
+ (Array.isArray(levels) ? levels.map(l => `<option value="${l.id}">${l.name}</option>`).join('') : '');
+ if (!Array.isArray(depts) || !Array.isArray(levels) || !depts.length || !levels.length) {
+ showAlert('No Departments/Levels found. Add them under Settings → Departments/Levels.', 'danger');
+ }
+ } catch (err) {
+ console.error('Failed to load arms/classes for edit modal:', err);
+ eDept.innerHTML  = '<option value="">-- Select Department --</option>';
+ eLevel.innerHTML = '<option value="">-- Select Level --</option>';
+ showAlert('Could not load Departments/Levels. Check your connection and try again.', 'danger');
+ }
+
+ eDept.value  = s.department_id  || '';
+ eLevel.value = s.level_id     || '';
+}
+
+function closeEditStudentModal() {
+ _editStudentId = null;
+ document.getElementById('editStudentModal').classList.remove('active');
+}
+
+document.getElementById('editStudentModal').addEventListener('click', function(e) {
+ if (e.target === this) closeEditStudentModal();
+});
+
+async function saveStudentEdit() {
+ if (!_editStudentId) return;
+ const name   = document.getElementById('editStudentName').value.trim();
+ const dept_id  = document.getElementById('editStudentDept').value;
+ const level_id = document.getElementById('editStudentLevel').value;
+ if (!name) { showAlert('Name is required.', 'danger'); return; }
+ const btn = document.getElementById('editStudentSaveBtn');
+ btn.disabled = true; btn.textContent = 'Saving…';
+ const data = await apiPut(`/api/admin/students/${_editStudentId}`, {
+ name, department_id: dept_id || null, level_id: level_id || null
+ });
+ btn.disabled = false; btn.textContent = 'Save Changes';
+ if (data.success) {
+ showAlert('Student updated successfully!', 'success');
+ closeEditStudentModal();
+ loadStudents();
+ } else showAlert(data.message || 'Update failed.', 'danger');
+}
+
+function downloadStudentTemplate() {
+ const csv = 'name,department,level\nJohn Doe,Medical Laboratory,100L\nJane Smith,Public Health,200L';
+ const a = document.createElement('a'); a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv); a.download = 'students_template.csv'; a.click();
+}
+
+loadDropdowns();
+
+// ── EXCEL EXPORT ──────────────────────────────────────────
+function exportStudentsExcel() {
+ const visibleData = getVisibleStudents();
+ if (!visibleData.length) { alert('No students to export.'); return; }
+
+ const deptSel  = document.getElementById('filterDept');
+ const levelSel  = document.getElementById('filterLevel');
+ const deptLabel  = deptSel.value  ? deptSel.options[deptSel.selectedIndex].text  : 'ALL ARMS';
+ const levelLabel = levelSel.value ? levelSel.options[levelSel.selectedIndex].text : 'ALL CLASSES';
+
+ const wsData = [
+ ['MARGMOCOTH CBT'],
+ [`${deptLabel.toUpperCase()} — ${levelLabel}`],
+ [`Generated: ${new Date().toLocaleString()}`],
+ [],
+ ['S/N', 'NAME', 'MATRIC NO']
+ ];
+
+ visibleData.forEach((s, i) => {
+ wsData.push([i + 1, s.name]);
+ });
+
+ const wb = XLSX.utils.book_new();
+ const ws = XLSX.utils.aoa_to_sheet(wsData);
+ ws['!cols'] = [{ wch: 5 }, { wch: 32 }, { wch: 20 }];
+ ws['!merges'] = [
+ { s: { r: 0, c: 0 }, e: { r: 0, c: 2 } },
+ { s: { r: 1, c: 0 }, e: { r: 1, c: 2 } },
+ { s: { r: 2, c: 0 }, e: { r: 2, c: 2 } }
+ ];
+ XLSX.utils.book_append_sheet(wb, ws, 'Students');
+ XLSX.writeFile(wb, `MARGMOCOTH CBT_Students_${deptLabel.replace(/\s+/g,'_')}_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+// ── PDF EXPORT ─────────────────────────────────────────────
+function getVisibleStudents() {
+ const q  = document.getElementById('searchStudent').value.toLowerCase();
+ const dept  = document.getElementById('filterDept').value;
+ const level = document.getElementById('filterLevel').value;
+ return allStudents.filter(s =>
+ (!q  || s.name.toLowerCase().includes(q)) &&
+ (!dept  || s.department === dept) &&
+ (!level || s.level === level)
+ );
+}
+
+function exportStudentsPDF() {
+ const visibleData = getVisibleStudents();
+ if (!visibleData.length) { alert('No students to export.'); return; }
+
+ const deptSel  = document.getElementById('filterDept');
+ const levelSel  = document.getElementById('filterLevel');
+ const deptLabel  = deptSel.value  ? deptSel.options[deptSel.selectedIndex].text  : 'ALL ARMS';
+ const levelLabel = levelSel.value ? levelSel.options[levelSel.selectedIndex].text : 'ALL CLASSES';
+
+ const { jsPDF } = window.jspdf;
+ const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+ // Header block
+ doc.setFillColor(15, 107, 48);
+ doc.rect(0, 0, 210, 32, 'F');
+ doc.setTextColor(255, 255, 255);
+ doc.setFontSize(13);
+ doc.setFont('helvetica', 'bold');
+ doc.text('MARGMOCOTH CBT', 105, 10, { align: 'center' });
+ doc.setFontSize(10);
+ doc.text(`${deptLabel.toUpperCase()} — ${levelLabel}`, 105, 19, { align: 'center' });
+ doc.setFontSize(7);
+ doc.setFont('helvetica', 'normal');
+ doc.text(`Generated: ${new Date().toLocaleString()}`, 105, 27, { align: 'center' });
+
+ const head = [['S/N', 'NAME', 'MATRIC NO']];
+ const body = visibleData.map((s, i) => [i + 1, s.name]);
+
+ doc.autoTable({
+ head,
+ body,
+ startY: 37,
+ theme: 'grid',
+ headStyles: { fillColor: [15, 107, 48], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 9 },
+ bodyStyles: { fontSize: 9, cellPadding: 3 },
+ alternateRowStyles: { fillColor: [240, 248, 244] },
+ columnStyles: {
+ 0: { halign: 'center', cellWidth: 14 },
+ 2: { halign: 'center', cellWidth: 50 }
+ },
+ foot: [[{ content: 'Powered by Tribal Tech', colSpan: 3, styles: { halign: 'center', fontSize: 7, textColor: [100,100,100] } }]],
+ footStyles: { fillColor: [248, 250, 252] }
+ });
+
+ doc.save(`MARGMOCOTH CBT_Students_${deptLabel.replace(/\s+/g,'_')}_${new Date().toISOString().slice(0,10)}.pdf`);
+}
+
+// ── Helper ──────────────────────────────────────────────────────
+function escHtmlAttr(s) { return (s||'').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+</script>
+
+<!-- EDIT STUDENT MODAL -->
+<div class="se-modal-overlay" id="editStudentModal">
+ <div class="se-modal-box">
+ <h3>Edit Student</h3>
+ <div class="form-group">
+ <label class="form-label">Full Name *</label>
+ <input type="text" id="editStudentName" class="form-control" placeholder="Student name">
+ </div>
+ <div class="form-group">
+ <label class="form-label">Department *</label>
+ <select id="editStudentDept" class="form-control form-select"></select>
+ </div>
+ <div class="form-group">
+ <label class="form-label">Level *</label>
+ <select id="editStudentLevel" class="form-control form-select"></select>
+ </div>
+ <div class="se-modal-actions">
+ <button onclick="closeEditStudentModal()" class="btn btn-secondary">Cancel</button>
+ <button onclick="saveStudentEdit()" class="btn btn-primary" id="editStudentSaveBtn">Save Changes</button>
+ </div>
+ </div>
+</div>
+
+<script src="/pwa.js"></script>
+</body>
+</html>

@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="manifest" href="/manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MARGMOCOTH CBT">
+<meta name="theme-color" content="#2e3192">
+<link rel="apple-touch-icon" href="/icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Access Codes – MARGMOCOTH CBT</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+.exam-card {
+ background: var(--surface);
+ border: 1px solid var(--border);
+ border-radius: var(--r-lg);
+ padding: 18px 20px;
+ margin-bottom: 14px;
+ display: flex;
+ align-items: center;
+ gap: 16px;
+ flex-wrap: wrap;
+ transition: box-shadow .2s;
+}
+.exam-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.07); }
+
+.exam-info { flex: 1; min-width: 180px; }
+.exam-title { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.exam-meta  { font-size: 12px; color: var(--text-2); display: flex; flex-wrap: wrap; gap: 10px; }
+.exam-meta span { display: flex; align-items: center; gap: 4px; }
+
+.code-area { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+
+.code-badge {
+ display: inline-flex; align-items: center; gap: 8px;
+ background: var(--n-950); color: #fff;
+ border-radius: var(--r-md); padding: 9px 16px;
+ font-family: monospace; font-size: 18px; font-weight: 700;
+ letter-spacing: 3px;
+}
+.code-badge.no-code {
+ background: var(--n-100); color: var(--n-400);
+ font-family: inherit; font-size: 13px; font-weight: 600;
+ letter-spacing: 0; font-style: italic;
+}
+
+.copy-icon {
+ font-size: 16px; cursor: pointer; background: none; border: none;
+ color: var(--n-400); padding: 0; line-height: 1;
+ transition: color .15s;
+}
+.copy-icon:hover { color: var(--brand-400); }
+
+.actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* Modal overlay */
+.modal-overlay {
+ position: fixed; inset: 0; z-index: 1000;
+ background: rgba(0,0,0,.55); backdrop-filter: blur(2px);
+ display: flex; align-items: center; justify-content: center;
+ padding: 16px; opacity: 0; pointer-events: none;
+ transition: opacity .2s;
+}
+.modal-overlay.show { opacity: 1; pointer-events: all; }
+.modal-box {
+ background: var(--surface); border-radius: var(--r-xl);
+ padding: 28px 28px 24px;
+ width: 100%; max-width: 420px;
+ box-shadow: 0 20px 60px rgba(0,0,0,.25);
+ transform: translateY(16px); transition: transform .25s ease;
+}
+.modal-overlay.show .modal-box { transform: none; }
+.modal-title { font-size: 17px; font-weight: 800; margin-bottom: 18px; color: var(--text); }
+
+.status-pill {
+ display: inline-flex; align-items: center; gap: 5px;
+ padding: 3px 10px; border-radius: 999px;
+ font-size: 11px; font-weight: 700;
+}
+.pill-green { background: #dcfce7; color: #166534; }
+.pill-red  { background: #fee2e2; color: #991b1b; }
+.pill-gray  { background: var(--n-100); color: var(--n-500); }
+
+.filter-bar {
+ display: flex; gap: 10px; flex-wrap: wrap;
+ margin-bottom: 20px; align-items: center;
+}
+.filter-bar input, .filter-bar select {
+ padding: 8px 12px; border: 1px solid var(--border);
+ border-radius: var(--r-md); font-size: 13px;
+ background: var(--surface); color: var(--text);
+}
+.filter-bar input { flex: 1; min-width: 160px; }
+
+@media (max-width: 600px) {
+ .exam-card { flex-direction: column; align-items: flex-start; }
+ .code-area  { width: 100%; }
+ .actions  { width: 100%; }
+}
+
+/* ── Confirm Dialog ───────────────────────────────────────────── */
+.confirm-overlay {
+  position: fixed; inset: 0; z-index: 2000;
+  background: rgba(0,0,0,.55); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px; opacity: 0; pointer-events: none;
+  transition: opacity .2s;
+}
+.confirm-overlay.show { opacity: 1; pointer-events: all; }
+
+.confirm-box {
+  background: var(--surface);
+  border-radius: 20px;
+  padding: 28px 24px 22px;
+  width: 100%; max-width: 360px;
+  box-shadow: 0 24px 64px rgba(0,0,0,.28);
+  transform: scale(.94) translateY(12px);
+  transition: transform .25s cubic-bezier(.34,1.56,.64,1);
+  text-align: center;
+}
+.confirm-overlay.show .confirm-box { transform: scale(1) translateY(0); }
+
+.confirm-icon {
+  width: 56px; height: 56px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px; margin: 0 auto 16px;
+}
+.confirm-icon.warn { background: #fff7ed; color: #2e3192; }
+.confirm-icon.info { background: #f0f1ff; color: #2e3192; }
+
+.confirm-title {
+  font-size: 17px; font-weight: 800; color: var(--text);
+  margin-bottom: 8px;
+}
+.confirm-msg {
+  font-size: 13px; color: var(--text-2); line-height: 1.55;
+  margin-bottom: 22px;
+}
+.confirm-actions {
+  display: flex; gap: 10px;
+}
+.confirm-actions button {
+  flex: 1; padding: 11px 0; border-radius: 12px;
+  font-size: 14px; font-weight: 700; border: none; cursor: pointer;
+  transition: opacity .15s, transform .1s;
+}
+.confirm-actions button:active { transform: scale(.97); }
+.confirm-btn-cancel {
+  background: var(--n-100); color: var(--text);
+}
+.confirm-btn-cancel:hover { opacity: .8; }
+.confirm-btn-ok {
+  background: #2e3192; color: #fff;
+}
+.confirm-btn-ok.danger { background: #dc2626; }
+.confirm-btn-ok:hover { opacity: .88; }
+</style>
+</head>
+<body>
+<div class="admin-layout">
+ <div id="sidebarContainer"></div>
+ <div class="admin-main">
+ <div id="topbarContainer"></div>
+ <div class="content">
+ <div id="alertBox"></div>
+
+ <!-- Header + Create button -->
+ <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px;">
+ <div>
+ <h2 style="font-size:18px;font-weight:800;color:var(--text);margin:0;">Exam Access Codes</h2>
+ <p style="font-size:13px;color:var(--text-2);margin:4px 0 0;">Generate or set access codes for exams. Students see all upcoming exams but cannot enter without a code.</p>
+ </div>
+ <a href="create-exam.html" class="btn btn-primary btn-sm">Create New Exam</a>
+ </div>
+
+ <!-- Filter bar -->
+ <div class="filter-bar">
+ <input type="text" id="searchInput" placeholder=" Search exam title…" oninput="renderList()">
+ <select id="filterStatus" onchange="renderList()">
+ <option value="all">All Exams</option>
+ <option value="has_code">Has Code</option>
+ <option value="no_code">No Code Yet</option>
+ </select>
+ </div>
+
+ <!-- Exam list -->
+ <div id="examList">
+ <div style="text-align:center;padding:48px;color:var(--text-2);">Loading exams…</div>
+ </div>
+
+ </div>
+ </div>
+</div>
+
+<!-- Confirm Dialog Modal -->
+<div class="confirm-overlay" id="confirmModal">
+  <div class="confirm-box">
+    <div class="confirm-icon" id="confirmIcon"></div>
+    <div class="confirm-title" id="confirmTitle">Are you sure?</div>
+    <p class="confirm-msg" id="confirmMsg"></p>
+    <div class="confirm-actions">
+      <button class="confirm-btn-cancel" onclick="confirmResolve(false)">Cancel</button>
+      <button class="confirm-btn-ok" id="confirmOkBtn" onclick="confirmResolve(true)">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- Custom Code Modal -->
+<div class="modal-overlay" id="customCodeModal">
+ <div class="modal-box">
+ <div class="modal-title">Set Custom Access Code</div>
+ <p style="font-size:13px;color:var(--text-2);margin-bottom:16px;" id="customCodeExamName">—</p>
+ <div class="form-group">
+ <label class="form-label">Access Code <span style="font-weight:400;color:var(--text-2);">(min 4 characters)</span></label>
+ <div style="display:flex;gap:8px;">
+ <input type="text" id="customCodeInput" class="form-control"
+ placeholder="e.g. ANAT2025" maxlength="16"
+ style="text-transform:uppercase;letter-spacing:2px;font-weight:700;flex:1;"
+ oninput="this.value=this.value.toUpperCase().replace(/\s/g,'')">
+ <button onclick="autoFillCustom()" class="btn btn-accent btn-sm" style="white-space:nowrap;">Random</button>
+ </div>
+ </div>
+ <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end;">
+ <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+ <button class="btn btn-primary" onclick="saveCustomCode()">Save Code</button>
+ </div>
+ </div>
+</div>
+
+<script src="js/admin.js"></script>
+<script>
+document.getElementById('sidebarContainer').innerHTML = getSidebarHTML('exam-access-codes.html');
+document.getElementById('topbarContainer').innerHTML  = getTopbarHTML('Access Codes');
+checkAdmin();
+requirePermission('manage_exams');
+
+let allExams = [];
+let modalExamId = null;
+
+// ── Load all exams ────────────────────────────────────────────
+async function loadExams() {
+ const admin = JSON.parse(sessionStorage.getItem('admin') || '{}');
+ const url  = admin.role === 'lecturer'
+ ? `/api/admin/exams?lecturer_id=${admin.id}`
+ : '/api/admin/exams';
+ allExams = await apiGet(url);
+ // Fetch full exam details including access_code (the list endpoint includes it)
+ renderList();
+}
+
+// ── Render filtered list ──────────────────────────────────────
+function renderList() {
+ const search = document.getElementById('searchInput').value.toLowerCase();
+ const status = document.getElementById('filterStatus').value;
+ const list  = document.getElementById('examList');
+
+ let filtered = allExams.filter(e => {
+ const matchSearch = !search || e.title.toLowerCase().includes(search);
+ const matchStatus =
+ status === 'all'  ? true :
+ status === 'has_code' ? !!e.access_code :
+ status === 'no_code'  ? !e.access_code :
+ true;
+ return matchSearch && matchStatus;
+ });
+
+ if (!filtered.length) {
+ list.innerHTML = `<div style="text-align:center;padding:48px;color:var(--text-2);">
+ ${allExams.length ? 'No exams match your filter.' : 'No exams yet. <a href="create-exam.html">Create one →</a>'}
+ </div>`;
+ return;
+ }
+
+ list.innerHTML = filtered.map(e => {
+ const hasCode = !!e.access_code;
+ const pill  = hasCode
+ ? `<span class="status-pill pill-green">Code Active</span>`
+ : `<span class="status-pill pill-red">No Code</span>`;
+
+ const codeBadge = hasCode
+ ? `<div class="code-badge">
+ <span id="code_${e.id}">${e.access_code}</span>
+ <button class="copy-icon" onclick="copyCode('${e.id}')" title="Copy"></button>
+ </div>`
+ : `<div class="code-badge no-code">No code yet</div>`;
+
+ const scheduleInfo = e.start_date
+ ? `<span> ${fmtDate(e.start_date)}</span>`
+ : `<span style="color:var(--n-400);">No schedule</span>`;
+
+ return `
+ <div class="exam-card" id="examcard_${e.id}">
+ <div class="exam-info">
+ <div class="exam-title">${e.title}</div>
+ <div class="exam-meta">
+ <span> ${e.course_name || 'No course'}</span>
+ <span><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> ${e.duration} min</span>
+ <span> ${e.question_count || 0} Qs</span>
+ ${scheduleInfo}
+ </div>
+ <div style="margin-top:6px;">${pill}</div>
+ </div>
+ <div class="code-area">${codeBadge}</div>
+ <div class="actions">
+ <button onclick="generateCode('${e.id}', '${escHtml(e.title)}')"
+ class="btn btn-primary btn-sm">Auto Generate</button>
+ <button onclick="openCustomModal('${e.id}', '${escHtml(e.title)}')"
+ class="btn btn-accent btn-sm">Set Custom</button>
+ ${hasCode ? `<button onclick="revokeCode('${e.id}')"
+ class="btn btn-secondary btn-sm" title="Revoke code — students can no longer enter">Revoke</button>` : ''}
+ </div>
+ </div>`;
+ }).join('');
+}
+
+// ── Auto generate code ────────────────────────────────────────
+async function generateCode(examId, examTitle) {
+ const ok1 = await showConfirm({
+    icon: '', iconClass: 'info',
+    title: 'Auto-Generate Code?',
+    msg: `A new random access code will be created for:<br><strong>${examTitle}</strong>`,
+    okLabel: 'Generate', okClass: ''
+  });
+  if (!ok1) return;
+ const data = await apiPost(`/api/admin/exams/${examId}/generate-code`, {});
+ if (data.success) {
+ showAlert(` Code generated: ${data.access_code}`, 'success');
+ // Update in allExams and re-render
+ const ex = allExams.find(e => e.id === examId);
+ if (ex) ex.access_code = data.access_code;
+ renderList();
+ } else {
+ showAlert(data.message || 'Failed to generate code.', 'danger');
+ }
+}
+
+// ── Revoke code ───────────────────────────────────────────────
+async function revokeCode(examId) {
+ const ok2 = await showConfirm({
+    icon: '', iconClass: 'warn',
+    title: 'Revoke Access Code?',
+    msg: 'Students will <strong>not</strong> be able to enter this exam until a new code is set.',
+    okLabel: 'Revoke', okClass: 'danger'
+  });
+  if (!ok2) return;
+ const data = await apiDelete(`/api/admin/exams/${examId}/access-code`);
+ if (data.success) {
+ showAlert('Access code revoked. Students can no longer enter this exam.', 'success');
+ const ex = allExams.find(e => e.id === examId);
+ if (ex) ex.access_code = null;
+ renderList();
+ } else {
+ showAlert(data.message || 'Failed to revoke code.', 'danger');
+ }
+}
+
+// ── Copy code to clipboard ────────────────────────────────────
+function copyCode(examId) {
+ const el = document.getElementById(`code_${examId}`);
+ if (!el) return;
+ navigator.clipboard.writeText(el.textContent).catch(() => {});
+ showAlert('Access code copied to clipboard!', 'success');
+}
+
+// ── Custom code modal ─────────────────────────────────────────
+function openCustomModal(examId, examTitle) {
+ modalExamId = examId;
+ document.getElementById('customCodeExamName').textContent = examTitle;
+ document.getElementById('customCodeInput').value = '';
+ document.getElementById('customCodeModal').classList.add('show');
+ setTimeout(() => document.getElementById('customCodeInput').focus(), 100);
+}
+
+function closeModal() {
+ document.getElementById('customCodeModal').classList.remove('show');
+ modalExamId = null;
+}
+
+function autoFillCustom() {
+ const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+ let code = '';
+ for (let i = 0; i < 8; i++) code += chars[Math.floor(Math.random() * chars.length)];
+ document.getElementById('customCodeInput').value = code;
+}
+
+async function saveCustomCode() {
+ const code = document.getElementById('customCodeInput').value.trim();
+ if (!code) { showAlert('Please enter a code.', 'danger'); return; }
+ const data = await apiPost(`/api/admin/exams/${modalExamId}/set-code`, { access_code: code });
+ if (data.success) {
+ showAlert(` Code set: ${data.access_code}`, 'success');
+ const ex = allExams.find(e => e.id === modalExamId);
+ if (ex) ex.access_code = data.access_code;
+ closeModal();
+ renderList();
+ } else {
+ showAlert(data.message || 'Failed to set code.', 'danger');
+ }
+}
+
+// Close modal on backdrop click
+document.getElementById('customCodeModal').addEventListener('click', function(e) {
+ if (e.target === this) closeModal();
+});
+
+// ── Helpers ───────────────────────────────────────────────────
+function fmtDate(v) {
+ if (!v) return '—';
+ return new Date(v).toLocaleString('en-GB', {
+ day: '2-digit', month: 'short', year: 'numeric',
+ hour: '2-digit', minute: '2-digit'
+ });
+}
+
+function escHtml(str) {
+ return (str || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+}
+
+// ── Custom confirm dialog ─────────────────────────────────────
+const CONFIRM_SVGS = {
+  warn: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="26" height="26"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
+  info: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="26" height="26"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`
+};
+let _confirmResolve = null;
+function showConfirm({ icon, iconClass, title, msg, okLabel, okClass }) {
+  const iconEl = document.getElementById('confirmIcon');
+  iconEl.innerHTML = CONFIRM_SVGS[iconClass] || CONFIRM_SVGS.warn;
+  iconEl.className = 'confirm-icon ' + (iconClass || '');
+  document.getElementById('confirmTitle').textContent = title;
+  document.getElementById('confirmMsg').innerHTML = msg;
+  const okBtn = document.getElementById('confirmOkBtn');
+  okBtn.textContent = okLabel || 'OK';
+  okBtn.className = 'confirm-btn-ok ' + (okClass || '');
+  document.getElementById('confirmModal').classList.add('show');
+  return new Promise(res => { _confirmResolve = res; });
+}
+function confirmResolve(val) {
+  document.getElementById('confirmModal').classList.remove('show');
+  if (_confirmResolve) { _confirmResolve(val); _confirmResolve = null; }
+}
+// Close on backdrop click
+document.getElementById('confirmModal').addEventListener('click', function(e) {
+  if (e.target === this) confirmResolve(false);
+});
+
+// ── Init ──────────────────────────────────────────────────────
+loadExams();
+</script>
+<script src="js/ai-assistant.js" defer></script>
+<script src="/pwa.js"></script>
+</body>
+</html>
+

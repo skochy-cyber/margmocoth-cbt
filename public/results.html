@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="manifest" href="/manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MARGMOCOTH CBT">
+<meta name="theme-color" content="#2e3192">
+<link rel="apple-touch-icon" href="/icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Exam Result – MARGMOCOTH CBT</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #f6f7fc;
+    min-height: 100vh;
+    font-family: 'DM Sans', system-ui, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px 100px;
+  }
+
+  .school-bar {
+    width: 100%; max-width: 520px;
+    display: flex; align-items: center; gap: 12px;
+    background: #0f6b30;
+    border-radius: 16px;
+    padding: 14px 20px;
+    margin-bottom: 20px;
+    color: #fff;
+  }
+  .school-logo {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: rgba(255,255,255,0.18);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; flex-shrink: 0;
+  }
+  .school-name { font-size: 12px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; opacity: 0.9; line-height: 1.4; }
+  .school-sub  { font-size: 10px; opacity: 0.7; font-weight: 500; }
+
+  .result-card {
+    width: 100%; max-width: 520px;
+    background: #fff;
+    border-radius: 24px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.10);
+    overflow: hidden;
+  }
+
+  /* Hero */
+  .result-hero {
+    background: linear-gradient(135deg, #0f6b30 0%, #16a34a 55%, #22c55e 100%);
+    padding: 36px 28px 28px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .result-hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(circle at 80% 20%, rgba(255,255,255,0.08) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .result-hero.pending-hero {
+    background: linear-gradient(135deg, #14163f 0%, #2e3192 100%);
+  }
+  .exam-label {
+    font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
+    text-transform: uppercase; color: rgba(255,255,255,0.7);
+    margin-bottom: 6px;
+  }
+  .exam-name {
+    font-size: 20px; font-weight: 800; color: #fff;
+    margin-bottom: 24px; line-height: 1.3;
+  }
+
+  /* Score ring */
+  .score-ring-wrap { display: flex; align-items: center; justify-content: center; margin-bottom: 20px; }
+  .score-ring { position: relative; width: 130px; height: 130px; }
+  .score-ring svg { transform: rotate(-90deg); display: block; }
+  .ring-bg   { fill: none; stroke: rgba(255,255,255,0.2); stroke-width: 10; }
+  .ring-fill { fill: none; stroke: #fff; stroke-width: 10; stroke-linecap: round;
+               transition: stroke-dashoffset 1.2s cubic-bezier(0.34,1.56,0.64,1); }
+  .ring-center {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+  }
+  .ring-pct  { font-size: 28px; font-weight: 900; color: #fff; line-height: 1; }
+  .ring-lbl  { font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.72); letter-spacing: 1px; text-transform: uppercase; margin-top: 2px; }
+  .ring-icon { font-size: 42px; line-height: 1; }
+
+  .grade-pill {
+    display: inline-block;
+    padding: 6px 20px; border-radius: 999px;
+    font-size: 14px; font-weight: 800;
+    background: rgba(255,255,255,0.18);
+    color: #fff; border: 1.5px solid rgba(255,255,255,0.35);
+    margin-bottom: 10px;
+  }
+  .result-msg { font-size: 14px; color: rgba(255,255,255,0.88); font-weight: 500; margin-top: 4px; }
+
+  /* Stats trio */
+  .stats-trio {
+    display: grid; grid-template-columns: 1fr 1fr 1fr;
+    gap: 1px; background: #e8edf2;
+    border-bottom: 1px solid #e8edf2;
+  }
+  .stat-cell { background: #fff; padding: 18px 8px; text-align: center; }
+  .s-num { font-size: 28px; font-weight: 900; line-height: 1; }
+  .s-lbl { font-size: 11px; font-weight: 600; color: #8e92b3; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat-cell.correct .s-num { color: #16a34a; }
+  .stat-cell.wrong   .s-num { color: #dc2626; }
+  .stat-cell.total   .s-num { color: #1b1e45; }
+
+  /* Pending box */
+  .pending-box {
+    margin: 24px;
+    background: #f0f1ff; border: 1.5px solid #cfd1fa;
+    border-radius: 14px; padding: 22px;
+    text-align: center;
+  }
+  .pending-box .p-icon  { font-size: 36px; margin-bottom: 10px; }
+  .pending-box .p-title { font-size: 16px; font-weight: 800; color: #1f2170; margin-bottom: 6px; }
+  .pending-box .p-desc  { font-size: 13px; color: #4448b8; line-height: 1.65; }
+
+  /* Info table */
+  .info-section { padding: 20px 24px 0; }
+  .info-table { width: 100%; border-collapse: collapse; }
+  .info-table tr { border-bottom: 1px solid #f1f2fa; }
+  .info-table tr:last-child { border-bottom: none; }
+  .info-table td { padding: 10px 4px; font-size: 14px; }
+  .info-table td:first-child { color: #8e92b3; font-weight: 600; width: 44%; font-size: 13px; }
+  .info-table td:last-child  { color: #1b1e45; font-weight: 700; text-align: right; }
+
+  .watermark-line {
+    text-align: center; font-size: 10px; color: #cdd0e6;
+    font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase;
+    padding: 14px 24px 6px;
+  }
+
+  /* Action buttons */
+  .action-section { padding: 16px 24px 24px; display: flex; flex-direction: column; gap: 10px; }
+  .btn-result {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    border: none; border-radius: 12px; padding: 14px 20px;
+    font-size: 14px; font-weight: 700; cursor: pointer;
+    text-decoration: none; transition: opacity .15s, transform .1s;
+    font-family: inherit;
+  }
+  .btn-result:active { transform: scale(0.97); opacity: 0.85; }
+  .btn-result.primary   { background: #0f6b30; color: #fff; }
+  .btn-result.secondary { background: #f1f2fa; color: #374151; }
+  .btn-result.ghost     { background: #fff; color: #0f6b30; border: 1.5px solid #bbf7d0; }
+  .btn-result.dark      { background: #1b1e45; color: #fff; }
+  .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  /* Retake */
+  .retake-section { margin: 0 24px 24px; border-top: 1px solid #f1f2fa; padding-top: 20px; }
+  .retake-section h3 { font-size: 15px; font-weight: 700; color: #1b1e45; margin-bottom: 12px; }
+  .retake-status-pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 999px; font-size: 13px; font-weight: 700; margin-bottom: 12px; }
+  .pill-pending  { background:#fef9c3; color:#a16207; }
+  .pill-approved { background:#dcfce7; color:#15803d; }
+  .pill-declined { background:#fee2e2; color:#b91c1c; }
+  .retake-textarea { width: 100%; border: 1.5px solid #e6e8f3; border-radius: 10px; padding: 12px; font-size: 14px; font-family: inherit; resize: vertical; min-height: 90px; margin-bottom: 12px; outline: none; color: #1b1e45; }
+  .retake-textarea:focus { border-color: #16a34a; }
+  .btn-retake { background: #16a34a; color: #fff; border: none; border-radius: 10px; padding: 12px 24px; font-size: 14px; font-weight: 700; cursor: pointer; width: 100%; font-family: inherit; }
+  .btn-retake:hover    { background: #15803d; }
+  .btn-retake:disabled { background: #8e92b3; cursor: not-allowed; }
+  .retake-disabled { text-align: center; color: #8e92b3; font-size: 13px; padding: 14px; background: #f6f7fc; border-radius: 10px; border: 1px dashed #e6e8f3; }
+
+  @media print {
+    body { background: #fff; padding: 0; }
+    .school-bar { border-radius: 0; }
+    .result-card { box-shadow: none; border-radius: 0; }
+    .action-section, .retake-section, .footer-marquee { display: none !important; }
+  }
+  @media (max-width: 400px) {
+    .result-hero { padding: 28px 18px 22px; }
+    .score-ring  { width: 110px; height: 110px; }
+    .ring-pct    { font-size: 24px; }
+    .info-section, .action-section { padding-left: 16px; padding-right: 16px; }
+    .retake-section { margin-left: 16px; margin-right: 16px; }
+    .pending-box    { margin: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="school-bar">
+  <div class="school-logo"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+  <div>
+    <div class="school-name">MARGMOCOTH CBT</div>
+    <div class="school-sub">i-CBT Examination System — Owo, Ondo State</div>
+  </div>
+</div>
+
+<div class="result-card">
+
+  <div class="result-hero" id="resultHero">
+    <div class="exam-label">Exam Result</div>
+    <div class="exam-name" id="examTitleDisp">—</div>
+
+    <div class="score-ring-wrap">
+      <div class="score-ring" id="scoreRing">
+        <svg viewBox="0 0 130 130" width="130" height="130">
+          <circle class="ring-bg"   cx="65" cy="65" r="55"/>
+          <circle class="ring-fill" cx="65" cy="65" r="55"
+            id="ringFill"
+            stroke-dasharray="345.4"
+            stroke-dashoffset="345.4"/>
+        </svg>
+        <div class="ring-center">
+          <div class="ring-pct" id="scorePct">—</div>
+          <div class="ring-lbl" id="scoreLabel">SCORE</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grade-pill" id="gradeBadge" style="display:none;"></div>
+    <div class="result-msg" id="resultMsg">Loading…</div>
+  </div>
+
+  <div class="stats-trio" id="statsTrio">
+    <div class="stat-cell correct"><div class="s-num" id="correctNum">—</div><div class="s-lbl">Correct</div></div>
+    <div class="stat-cell wrong">  <div class="s-num" id="wrongNum">—</div>  <div class="s-lbl">Wrong</div></div>
+    <div class="stat-cell total">  <div class="s-num" id="totalNum">—</div>  <div class="s-lbl">Total</div></div>
+  </div>
+
+  <div class="pending-box" id="pendingBox" style="display:none;">
+    <div class="p-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+    <div class="p-title">Results Not Yet Released</div>
+    <div class="p-desc">Your exam has been submitted and recorded.<br>Results will be visible once the admin releases them.</div>
+  </div>
+
+  <div class="info-section">
+    <table class="info-table">
+      <tr><td>Student Name</td>  <td id="sName">—</td></tr>
+      <tr><td>Level &amp; Department</td> <td id="sMatric">—</td></tr>
+      <tr><td>Department</td>    <td id="sDept">—</td></tr>
+      <tr><td>Level</td>         <td id="sLevel">—</td></tr>
+      <tr><td>Exam Title</td>    <td id="eTitle">—</td></tr>
+      <tr id="rowScore"><td>Score</td>       <td id="eScore">—</td></tr>
+      <tr id="rowPct">  <td>Percentage</td>  <td id="ePct">—</td></tr>
+      <tr><td>Date</td>          <td id="eDate">—</td></tr>
+      <tr><td>Time Taken</td>    <td id="eTime">—</td></tr>
+    </table>
+  </div>
+
+  <div class="watermark-line">MARGMOCOTH CBT – i-CBT Examination System</div>
+
+  <div class="action-section">
+    <button onclick="window.print()" class="btn-result primary">Print Result</button>
+    <div class="btn-row">
+      <button onclick="viewReview()" class="btn-result ghost" id="reviewBtn" style="display:none;">Review Answers</button>
+      <a href="exam-access.html" class="btn-result secondary" id="newExamBtn">New Exam</a>
+    </div>
+    <a href="login.html" class="btn-result dark">Logout</a>
+  </div>
+
+  <div class="retake-section" id="retakeSection" style="display:none;">
+    <h3>Request Retake</h3>
+    <div id="retakeContent"></div>
+  </div>
+
+</div>
+
+<footer class="footer-marquee">
+  <div class="marquee-content">
+    <span>Powered by Tribal Tech | MARGMOCOTH CBT | Powered by Tribal Tech | MARGMOCOTH CBT | Powered by Tribal Tech | MARGMOCOTH CBT</span>
+  </div>
+</footer>
+
+<script>
+const result  = JSON.parse(sessionStorage.getItem('examResult') || 'null');
+const student = JSON.parse(localStorage.getItem('mcht_student')  || 'null');
+
+if (!result) {
+  window.location.href = 'login.html';
+} else {
+  renderResult();
+}
+
+function renderResult() {
+  // ── Display settings now come FROM the server in the result object ──
+  // show_results controls whether ANY score info is visible to the student.
+  // The others (show_percentage, show_score_breakdown, show_grade) control granularity.
+  const showResults   = result.show_results         === true;  // must be explicitly true
+  const showPct       = result.show_percentage      !== false; // default true
+  const showBreakdown = result.show_score_breakdown !== false; // default true
+  const showGrade     = result.show_grade           !== false; // default true
+
+  const pct = result.percentage;
+
+  // ── Always show: exam title, student info, date, time ──
+  document.getElementById('examTitleDisp').textContent = result.exam_title || 'Exam Result';
+  document.getElementById('eTitle').textContent        = result.exam_title || '—';
+
+  if (student) {
+    document.getElementById('sName').textContent   = student.name       || '—';
+    document.getElementById('sMatric').textContent = [student.level, student.department].filter(Boolean).join(' · ') || '—';
+    document.getElementById('sDept').textContent   = student.department || '—';
+    document.getElementById('sLevel').textContent  = student.level      || '—';
+  }
+
+  document.getElementById('eDate').textContent = new Date().toLocaleString('en-GB', {
+    day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+  });
+  const mins = Math.floor((result.time_taken || 0) / 60);
+  const secs = (result.time_taken || 0) % 60;
+  document.getElementById('eTime').textContent = `${mins}m ${secs}s`;
+
+  // ─────────────────────────────────────────────────────
+  // CASE A: Results hidden — blue "pending" screen
+  // ─────────────────────────────────────────────────────
+  if (!showResults) {
+    document.getElementById('resultHero').classList.add('pending-hero');
+
+    // Replace ring with lock icon
+    document.getElementById('scoreRing').innerHTML = `
+      <svg viewBox="0 0 130 130" width="130" height="130">
+        <circle cx="65" cy="65" r="55" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="10"/>
+      </svg>
+      <div class="ring-center"><div class="ring-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div></div>
+    `;
+
+    document.getElementById('resultMsg').textContent = 'Exam submitted successfully.';
+    document.getElementById('statsTrio').style.display = 'none';
+    document.getElementById('pendingBox').style.display = '';
+    document.getElementById('rowScore').style.display  = 'none';
+    document.getElementById('rowPct').style.display    = 'none';
+    document.getElementById('reviewBtn').style.display = 'none';
+
+    initRetake();
+    return;
+  }
+
+  // ─────────────────────────────────────────────────────
+  // CASE B: Results visible — show scores
+  // ─────────────────────────────────────────────────────
+
+  const GRADE_CONFIG = [
+    { grade:'A', min:90, msg:'Outstanding performance! Excellent work!',       bg:'#dcfce7', color:'#15803d', border:'#86efac' },
+    { grade:'B', min:80, msg:'Very good performance! Well done!',              bg:'#e0e2ff', color:'#1f2170', border:'#b9bcf5' },
+    { grade:'C', min:70, msg:'Good performance. Keep it up!',                  bg:'#fef9c3', color:'#a16207', border:'#fde047' },
+    { grade:'D', min:60, msg:'Fair performance. You can do better.',           bg:'#ffedd5', color:'#c2410c', border:'#fdba74' },
+    { grade:'E', min:50, msg:'Below average. More study needed.',              bg:'#fee2e2', color:'#b91c1c', border:'#fca5a5' },
+    { grade:'F', min:0,  msg:'Below passing score. Please study harder.',      bg:'#f1f2fa', color:'#4a4e73', border:'#cdd0e6' },
+  ];
+
+  let gradeObj = GRADE_CONFIG[GRADE_CONFIG.length - 1];
+  if (showPct || showGrade) {
+    gradeObj = GRADE_CONFIG.find(g => pct >= g.min) || gradeObj;
+  }
+
+  // Score ring
+  if (showPct) {
+    document.getElementById('scorePct').textContent   = pct + '%';
+    document.getElementById('scoreLabel').textContent = 'SCORE';
+    const circ   = 345.4;
+    const offset = circ - (pct / 100) * circ;
+    setTimeout(() => {
+      const fill = document.getElementById('ringFill');
+      if (fill) fill.style.strokeDashoffset = offset;
+    }, 120);
+  } else {
+    document.getElementById('scorePct').textContent   = '';
+    document.getElementById('scoreLabel').textContent = 'DONE';
+    const fill = document.getElementById('ringFill');
+    if (fill) fill.style.strokeDashoffset = 0;
+  }
+
+  // Grade badge
+  if (showGrade) {
+    const badge = document.getElementById('gradeBadge');
+    badge.textContent   = 'Grade ' + gradeObj.grade;
+    badge.style.display = '';
+  }
+
+  // Result message
+  document.getElementById('resultMsg').textContent = gradeObj.msg;
+
+  // Stats trio
+  if (showBreakdown) {
+    document.getElementById('correctNum').textContent = result.correct;
+    document.getElementById('wrongNum').textContent   = result.wrong;
+    document.getElementById('totalNum').textContent   = result.total;
+  } else {
+    document.getElementById('statsTrio').style.display = 'none';
+  }
+
+  // Score / Percentage table rows
+  if (showBreakdown) {
+    document.getElementById('eScore').textContent = `${result.correct} / ${result.total}`;
+  } else {
+    document.getElementById('rowScore').style.display = 'none';
+  }
+
+  if (showPct) {
+    document.getElementById('ePct').textContent = pct + '%';
+  } else {
+    document.getElementById('rowPct').style.display = 'none';
+  }
+
+  // Review answers button
+  if (result.result_id || result._id) {
+    document.getElementById('reviewBtn').style.display = '';
+    // Make btn-row show properly only when review is visible
+    document.getElementById('newExamBtn').className = 'btn-result secondary';
+  }
+
+  initRetake();
+}
+
+function viewReview() { window.location.href = 'exam-review.html'; }
+
+// ── Retake Request ────────────────────────────────────────────
+async function initRetake() {
+  if (!result?.exam_id || !result?.student_id) return;
+
+  const section = document.getElementById('retakeSection');
+  const content = document.getElementById('retakeContent');
+  section.style.display = '';
+
+  if (result.retake_request_allowed === false) {
+    content.innerHTML = `<div class="retake-disabled">Retake requests are not allowed for this exam.</div>`;
+    return;
+  }
+
+  try {
+    const resp = await fetch(`/api/retake-request/status?exam_id=${result.exam_id}&student_id=${result.student_id}`);
+    const data = await resp.json();
+
+    if (data.found) {
+      const pillClass = data.status === 'approved' ? 'pill-approved' : data.status === 'declined' ? 'pill-declined' : 'pill-pending';
+      const pillLabel = data.status === 'approved' ? 'Approved'  : data.status === 'declined' ? 'Declined'   : 'Pending Review';
+      content.innerHTML = `
+        <div class="retake-status-pill ${pillClass}">${pillLabel}</div>
+        <p style="font-size:13px;color:#5b5f80;margin:0;">
+          ${data.status === 'pending'  ? 'Your retake request is awaiting admin review.'           :
+            data.status === 'approved' ? 'Approved! You can now take the exam again.'              :
+                                         'Your retake request was declined.'}
+        </p>
+        ${data.admin_note ? `<p style="font-size:13px;color:#4a4e73;margin-top:8px;"><strong>Admin note:</strong> ${data.admin_note}</p>` : ''}`;
+      return;
+    }
+  } catch(e) {}
+
+  content.innerHTML = `
+    <p style="font-size:13px;color:#5b5f80;margin:0 0 12px;">
+      Not satisfied with your result? Submit a retake request. Admin will review it.
+    </p>
+    <textarea class="retake-textarea" id="retakeReason"
+      placeholder="State your reason (e.g. network issue, unwell, etc.)"></textarea>
+    <button class="btn-retake" id="retakeBtn" onclick="submitRetakeRequest()">
+      Submit Retake Request
+    </button>`;
+}
+
+async function submitRetakeRequest() {
+  const reason = document.getElementById('retakeReason')?.value.trim();
+  if (!reason) { alert('Please state your reason for requesting a retake.'); return; }
+  const btn = document.getElementById('retakeBtn');
+  btn.disabled = true; btn.textContent = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2m6-2a10 10 0 11-20 0 10 10 0 0120 0z"/></svg> Submitting...';
+
+  try {
+    const resp = await fetch('/api/retake-request', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ student_id: result.student_id, exam_id: result.exam_id, result_id: result.result_id || null, reason })
+    });
+    const data = await resp.json();
+    if (data.success) {
+      document.getElementById('retakeContent').innerHTML = `
+        <div class="retake-status-pill pill-pending"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2m6-2a10 10 0 11-20 0 10 10 0 0120 0z"/></svg> Pending Review</div>
+        <p style="font-size:13px;color:#5b5f80;margin:0;">Request submitted. You'll receive an email when admin reviews it.</p>`;
+    } else {
+      btn.disabled = false; btn.textContent = 'Submit Retake Request';
+      alert(data.message || 'Failed to submit request.');
+    }
+  } catch(e) {
+    btn.disabled = false; btn.textContent = 'Submit Retake Request';
+    alert('Network error. Please try again.');
+  }
+}
+</script>
+<script src="/pwa.js"></script>
+</body>
+</html>

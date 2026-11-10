@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="manifest" href="/manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MARGMOCOTH CBT">
+<meta name="theme-color" content="#2e3192">
+<link rel="apple-touch-icon" href="/icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Name/Matric Change Requests – MARGMOCOTH CBT</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+.nc-card {
+ background: var(--surface);
+ border: 1px solid var(--border);
+ border-radius: var(--r-lg);
+ padding: 18px 20px;
+ margin-bottom: 14px;
+ transition: box-shadow .2s;
+}
+.nc-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.08); }
+.nc-card-header {
+ display: flex; align-items: flex-start;
+ justify-content: space-between; gap: 12px;
+ flex-wrap: wrap; margin-bottom: 10px;
+}
+.nc-student-name { font-size: 15px; font-weight: 800; color: var(--text); }
+.nc-student-meta { font-size: 12px; color: var(--text-2); margin-top: 3px; }
+.nc-change-row {
+ background: var(--n-50, #f6f7fc); border-radius: 10px;
+ padding: 12px 14px; margin: 10px 0;
+ border-left: 4px solid #2e3192;
+}
+.nc-change-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: #5b5f80; margin-bottom: 6px; }
+.nc-change-values { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.nc-old { font-size: 14px; color: #ef4444; text-decoration: line-through; font-weight: 600; }
+.nc-arrow { color: #8e92b3; font-size: 16px; }
+.nc-new { font-size: 14px; color: #16a34a; font-weight: 700; }
+.nc-reason { font-size: 13px; color: var(--text-2); margin: 8px 0; font-style: italic; }
+.type-badge {
+ display: inline-block; padding: 3px 10px; border-radius: 999px;
+ font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .4px;
+}
+.type-name { background: #f0f1ff; color: #2e3192; }
+.type-matric { background: #f5f3ff; color: #6d28d9; }
+.status-pill {
+ display: inline-flex; align-items: center;
+ padding: 4px 12px; border-radius: 999px;
+ font-size: 12px; font-weight: 700; white-space: nowrap;
+}
+.pill-pending { background:#fef9c3; color:#a16207; }
+.pill-approved { background:#dcfce7; color:#166534; }
+.pill-declined { background:#fee2e2; color:#991b1b; }
+.action-row {
+ display: flex; gap: 8px; flex-wrap: wrap;
+ align-items: flex-end; margin-top: 14px;
+ border-top: 1px solid var(--border); padding-top: 12px;
+}
+.note-input {
+ flex: 1; min-width: 160px;
+ border: 1px solid var(--border); border-radius: 8px;
+ padding: 8px 12px; font-size: 13px;
+ background: var(--surface); color: var(--text);
+ font-family: inherit;
+}
+.note-input:focus { outline: none; border-color: #2e3192; }
+.btn-approve { background: #dcfce7; color: #166534; border: 1.5px solid #86efac; border-radius: 8px; padding: 8px 16px; font-size: 13px; font-weight: 700; cursor: pointer; }
+.btn-approve:hover { background: #bbf7d0; }
+.btn-decline { background: #fee2e2; color: #991b1b; border: 1.5px solid #fca5a5; border-radius: 8px; padding: 8px 16px; font-size: 13px; font-weight: 700; cursor: pointer; }
+.btn-decline:hover { background: #fecaca; }
+.admin-note-box {
+ margin-top: 10px; padding: 10px 12px; border-radius: 8px;
+ font-size: 13px; color: #991b1b;
+ background: #fef2f2; border: 1px solid #fecaca;
+}
+.filter-bar {
+ display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px;
+}
+.filter-bar input, .filter-bar select {
+ padding: 9px 12px; border: 1px solid var(--border);
+ border-radius: var(--r-md); font-size: 13px;
+ background: var(--surface); color: var(--text); font-family: inherit;
+}
+.filter-bar input { flex: 1; min-width: 160px; }
+.badge-count {
+ display: inline-flex; align-items: center; justify-content: center;
+ background: #ef4444; color: #fff; border-radius: 999px;
+ font-size: 11px; font-weight: 800; min-width: 20px; height: 20px; padding: 0 6px;
+ margin-left: 6px;
+}
+.reviewed-info { font-size: 11px; color: var(--text-2); margin-top: 6px; }
+
+/* ── Custom Confirm Dialog ──────────────────────────────────── */
+.confirm-overlay {
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(0,0,0,.50); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px; opacity: 0; pointer-events: none;
+  transition: opacity .2s;
+}
+.confirm-overlay.show { opacity: 1; pointer-events: all; }
+.confirm-box {
+  background: var(--surface, #fff);
+  border-radius: 20px;
+  padding: 28px 24px 22px;
+  width: 100%; max-width: 360px;
+  box-shadow: 0 24px 64px rgba(0,0,0,.22);
+  transform: scale(.94) translateY(12px);
+  transition: transform .25s cubic-bezier(.34,1.56,.64,1);
+  text-align: center;
+}
+.confirm-overlay.show .confirm-box { transform: scale(1) translateY(0); }
+.confirm-icon-wrap {
+  width: 54px; height: 54px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 16px;
+}
+.confirm-icon-wrap.warn   { background: #fff7ed; color: #2e3192; }
+.confirm-icon-wrap.danger { background: #fef2f2; color: #dc2626; }
+.confirm-icon-wrap.info   { background: #f0f1ff; color: #2e3192; }
+.confirm-icon-wrap svg { display: block; }
+.confirm-title {
+  font-size: 17px; font-weight: 800;
+  color: var(--text, #111); margin-bottom: 8px;
+}
+.confirm-msg {
+  font-size: 13px; color: var(--muted, var(--text-2, #666));
+  line-height: 1.6; margin-bottom: 24px;
+}
+.confirm-actions { display: flex; gap: 10px; }
+.confirm-actions button {
+  flex: 1; padding: 11px 0; border-radius: 12px;
+  font-size: 14px; font-weight: 700; border: none;
+  cursor: pointer; transition: opacity .15s, transform .1s;
+}
+.confirm-actions button:active { transform: scale(.97); }
+.confirm-btn-cancel { background: #f1f2fa; color: #1b1e45; }
+.confirm-btn-cancel:hover { opacity: .75; }
+.confirm-btn-ok        { color: #fff; }
+.confirm-btn-ok.warn   { background: #2e3192; }
+.confirm-btn-ok.danger { background: #dc2626; }
+.confirm-btn-ok.info   { background: #2e3192; }
+.confirm-btn-ok:hover  { opacity: .88; }
+</style>
+</head>
+<body>
+<div class="admin-layout">
+ <div id="sidebarContainer"></div>
+ <div class="admin-main">
+ <div id="topbarContainer"></div>
+ <div class="content">
+ <div id="alertBox"></div>
+
+ <!-- Page header -->
+ <div style="margin-bottom:24px;">
+ <h2 style="font-size:18px;font-weight:800;color:var(--text);margin:0;">
+ Name / Matric Change Requests
+ <span class="badge-count" id="pendingBadge" style="display:none;"></span>
+ </h2>
+ <p style="font-size:13px;color:var(--text-2);margin:4px 0 0;">
+ Review student requests to correct their name or matric number. Approved changes reflect immediately in student records.
+ </p>
+ </div>
+
+ <!-- Filter bar -->
+ <div class="filter-bar">
+ <input type="text" id="searchInput" placeholder=" Search student name or matric…" oninput="renderRequests()">
+ <select id="filterType" onchange="renderRequests()">
+ <option value="all">All Types</option>
+ <option value="name">Name Changes</option>
+ <option value="matric">Matric Changes</option>
+ </select>
+ <select id="filterStatus" onchange="renderRequests()">
+ <option value="all">All Status</option>
+ <option value="pending">Pending</option>
+ <option value="approved">Approved</option>
+ <option value="declined">Declined</option>
+ </select>
+ </div>
+
+ <!-- Request list -->
+ <div id="requestList">
+ <div style="text-align:center;padding:48px;color:var(--text-2);">Loading…</div>
+ </div>
+
+ </div>
+ </div>
+</div>
+
+<script src="js/admin.js"></script>
+<script>
+document.getElementById('sidebarContainer').innerHTML = getSidebarHTML('admin-name-requests.html');
+document.getElementById('topbarContainer').innerHTML = getTopbarHTML('Name/Matric Requests');
+checkAdmin();
+
+let allRequests = [];
+
+async function loadRequests() {
+ try {
+ allRequests = await apiGet('/api/admin/name-change-requests');
+ const pending = allRequests.filter(r => r.status === 'pending').length;
+ const badge = document.getElementById('pendingBadge');
+ if (pending > 0) { badge.textContent = pending; badge.style.display = 'inline-flex'; }
+ else { badge.style.display = 'none'; }
+ renderRequests();
+ } catch(e) {
+ document.getElementById('requestList').innerHTML = `<div style="text-align:center;padding:48px;color:var(--text-2);">Failed to load requests.</div>`;
+ }
+}
+
+function renderRequests() {
+ const search = document.getElementById('searchInput').value.toLowerCase();
+ const typeFilter = document.getElementById('filterType').value;
+ const statusFilter = document.getElementById('filterStatus').value;
+ const list = document.getElementById('requestList');
+
+ const filtered = allRequests.filter(r => {
+ const matchSearch = !search ||
+ r.student?.name?.toLowerCase().includes(search) ||
+ r.student?.matric?.toLowerCase().includes(search);
+ const matchType = typeFilter === 'all' || r.request_type === typeFilter;
+ const matchStatus = statusFilter === 'all' || r.status === statusFilter;
+ return matchSearch && matchType && matchStatus;
+ });
+
+ if (!filtered.length) {
+ list.innerHTML = `<div style="text-align:center;padding:48px;color:var(--text-2);">
+ ${allRequests.length ? 'No requests match your filter.' : 'No change requests yet.'}
+ </div>`;
+ return;
+ }
+
+ list.innerHTML = filtered.map(r => {
+ const typeLabel = r.request_type === 'name' ? 'Name' : 'Matric Number';
+ const typeClass = r.request_type === 'name' ? 'type-name' : 'type-matric';
+ const date = new Date(r.requested_at).toLocaleDateString('en-NG', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+ const reviewedDate = r.reviewed_at ? new Date(r.reviewed_at).toLocaleDateString('en-NG', { day:'2-digit', month:'short', year:'numeric' }) : null;
+
+ const actionRow = r.status === 'pending' ? `
+ <div class="action-row">
+ <input class="note-input" type="text" id="note_${r.id}" placeholder="Reason (required only for decline)…" maxlength="300">
+ <button class="btn-approve" onclick="reviewRequest('${r.id}', 'approved')">Approve</button>
+ <button class="btn-decline" onclick="reviewRequest('${r.id}', 'declined')">Decline</button>
+ </div>` : '';
+
+ const adminNoteHtml = r.admin_note
+ ? `<div class="admin-note-box">Admin note: ${r.admin_note}</div>`
+ : '';
+
+ const reviewedInfo = reviewedDate
+ ? `<div class="reviewed-info">Reviewed ${reviewedDate}${r.reviewed_by ? ' by ' + r.reviewed_by : ''}</div>`
+ : '';
+
+ return `
+ <div class="nc-card" id="card_${r.id}">
+ <div class="nc-card-header">
+ <div>
+ <div class="nc-student-name">${r.student?.name || '—'}</div>
+ <div class="nc-student-meta"> ${r.student?.matric || '—'}</div>
+ </div>
+ <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+ <span class="type-badge ${typeClass}">${typeLabel}</span>
+ <span class="status-pill pill-${r.status}">${r.status}</span>
+ </div>
+ </div>
+
+ <div class="nc-change-row">
+ <div class="nc-change-label">Requested Change</div>
+ <div class="nc-change-values">
+ <span class="nc-old">${r.current_value}</span>
+ <span class="nc-arrow">→</span>
+ <span class="nc-new">${r.new_value}</span>
+ </div>
+ </div>
+
+ ${r.reason ? `<div class="nc-reason"> "${r.reason}"</div>` : ''}
+ <div style="font-size:11px;color:var(--text-2);">Requested on ${date}</div>
+ ${reviewedInfo}
+ ${adminNoteHtml}
+ ${actionRow}
+ </div>`;
+ }).join('');
+}
+
+async function reviewRequest(id, action) {
+ const noteInput = document.getElementById(`note_${id}`);
+ const note = noteInput ? noteInput.value.trim() : '';
+
+ if (action === 'declined' && !note) {
+ showAlert('Please enter a reason for declining this request.', 'error');
+ noteInput.focus();
+ return;
+ }
+
+  const _isApprove = action === 'approved';
+      const _ok = await showConfirm({
+        type: _isApprove ? 'info' : 'danger',
+        title: _isApprove ? 'Approve Request?' : 'Decline Request?',
+        msg: _isApprove
+          ? "The student's record will be updated immediately and they will be notified."
+          : 'The student will be notified with your reason.',
+        okLabel: _isApprove ? 'Approve' : 'Decline'
+      });
+      if (!_ok) return;
+
+ try {
+ const data = await apiPost(`/api/admin/name-change-requests/${id}/review`, { action, admin_note: note });
+ if (data.success) {
+ showAlert(action === 'approved' ? ' Request approved and student notified.' : ' Request declined and student notified.', action === 'approved' ? 'success' : 'info');
+ loadRequests();
+ } else {
+ showAlert(data.message || 'Something went wrong.', 'error');
+ }
+ } catch(e) {
+ showAlert('Network error. Please try again.', 'error');
+ }
+}
+
+loadRequests();
+</script>
+
+<!-- Confirm Dialog -->
+<div class="confirm-overlay" id="confirmModal">
+  <div class="confirm-box">
+    <div class="confirm-icon-wrap" id="confirmIconWrap">
+      <svg id="confirmIconSVG" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
+           width="26" height="26"></svg>
+    </div>
+    <div class="confirm-title" id="confirmTitle"></div>
+    <p class="confirm-msg" id="confirmMsg"></p>
+    <div class="confirm-actions">
+      <button class="confirm-btn-cancel" onclick="_confirmResolve(false)">Cancel</button>
+      <button class="confirm-btn-ok" id="confirmOkBtn" onclick="_confirmResolve(true)">Confirm</button>
+    </div>
+  </div>
+</div>
+<script>
+const _CSVG = {
+  warn:   '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
+  danger: '<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>',
+  info:   '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>'
+};
+let __confirmCb = null;
+function showConfirm({ type='warn', title, msg, okLabel='Confirm' }) {
+  document.getElementById('confirmIconWrap').className = 'confirm-icon-wrap ' + type;
+  document.getElementById('confirmIconSVG').innerHTML = _CSVG[type] || _CSVG.warn;
+  document.getElementById('confirmTitle').textContent = title;
+  document.getElementById('confirmMsg').innerHTML = msg;
+  const okBtn = document.getElementById('confirmOkBtn');
+  okBtn.textContent = okLabel;
+  okBtn.className = 'confirm-btn-ok ' + type;
+  document.getElementById('confirmModal').classList.add('show');
+  return new Promise(res => { __confirmCb = res; });
+}
+function _confirmResolve(val) {
+  document.getElementById('confirmModal').classList.remove('show');
+  if (__confirmCb) { __confirmCb(val); __confirmCb = null; }
+}
+document.getElementById('confirmModal').addEventListener('click', function(e) {
+  if (e.target === this) _confirmResolve(false);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MARGMOCOTH CBT — Margaret Mosunmola College of Health Science and Technology, Owo</title>
+<meta name="description" content="Computer-based test portal for students of Margaret Mosunmola College of Health Science and Technology, Owo, Ondo State.">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#2e3192">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="MARGMOCOTH CBT">
+<link rel="apple-touch-icon" href="/icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="64x64" href="/school-favicon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --navy: #2e3192;
+  --navy-d: #1f2170;
+  --red: #d8232a;
+  --ink: #0f1230;
+  --mute: #5b5f80;
+  --bg: #ffffff;
+  --soft: #f6f7fc;
+  --line: #e6e8f3;
+  --ok: #12a150;
+  --r: 14px;
+  --sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; scroll-padding-top: 76px; }
+body { font-family: var(--sans); color: var(--ink); background: var(--bg); line-height: 1.6; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+a { color: inherit; }
+[hidden] { display: none !important; }
+:focus-visible { outline: 3px solid var(--navy); outline-offset: 3px; border-radius: 6px; }
+.wrap { width: min(1120px, 100% - 40px); margin-inline: auto; }
+svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+
+/* Buttons */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 24px; border-radius: 12px; font: 600 15px var(--sans); text-decoration: none; border: 1.5px solid transparent; cursor: pointer; transition: background .15s, border-color .15s, transform .15s, box-shadow .15s; }
+.btn:hover { transform: translateY(-1px); }
+.btn-solid { background: var(--navy); color: #fff; box-shadow: 0 6px 16px -6px rgba(46,49,146,.55); }
+.btn-solid:hover { background: var(--navy-d); }
+.btn-line { background: #fff; color: var(--navy); border-color: var(--line); }
+.btn-line:hover { border-color: var(--navy); }
+.btn-sm { min-height: 40px; padding: 0 18px; font-size: 14px; }
+.btn svg { width: 18px; height: 18px; }
+
+/* Notice */
+.notice { display: none; background: #fff6e8; border-bottom: 1px solid #f1d3a2; color: #6b3f00; padding: 11px 0; font-size: 14.5px; font-weight: 500; }
+.notice.show { display: block; }
+
+/* Header */
+.top { position: sticky; top: 0; z-index: 50; background: rgba(255,255,255,.9); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); padding-top: env(safe-area-inset-top, 0px); }
+.top .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; height: 66px; }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; min-width: 0; }
+.brand img { width: 38px; height: 38px; object-fit: contain; }
+.brand b { font-weight: 800; font-size: 16px; color: var(--navy); letter-spacing: .01em; white-space: nowrap; }
+.menu { display: flex; align-items: center; gap: 26px; }
+.menu a.lnk { text-decoration: none; color: var(--mute); font-weight: 500; font-size: 14.5px; }
+.menu a.lnk:hover { color: var(--navy); }
+.menu .acts { display: flex; gap: 8px; }
+
+/* Hero */
+.hero { background: radial-gradient(900px 420px at 85% -10%, #e9ebff 0%, rgba(233,235,255,0) 70%), var(--bg); }
+.hero .wrap { display: grid; grid-template-columns: 1.05fr .95fr; gap: 56px; align-items: center; padding-block: clamp(44px, 7vw, 92px); }
+.pill { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line); background: #fff; padding: 6px 14px 6px 10px; border-radius: 999px; font-size: 13px; font-weight: 600; color: var(--mute); }
+.pill i { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 4px rgba(18,161,80,.15); }
+h1 { margin-top: 18px; font-weight: 800; font-size: clamp(32px, 5vw, 54px); line-height: 1.08; letter-spacing: -.025em; }
+h1 span { color: var(--navy); }
+.lead { margin-top: 18px; font-size: clamp(16px, 1.8vw, 18px); color: var(--mute); max-width: 50ch; }
+.cta { margin-top: 28px; display: flex; flex-wrap: wrap; gap: 10px; }
+.reg-note { margin-top: 14px; font-size: 14px; color: var(--mute); max-width: 52ch; }
+.trust { margin-top: 28px; display: flex; flex-wrap: wrap; gap: 8px 22px; font-size: 13.5px; color: var(--mute); font-weight: 500; }
+.trust span { display: inline-flex; align-items: center; gap: 7px; }
+.trust svg { width: 16px; height: 16px; color: var(--ok); stroke-width: 2.4; }
+
+/* Exam UI mock */
+.mock { background: #fff; border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 30px 60px -28px rgba(31,33,112,.35), 0 2px 6px rgba(15,18,48,.04); overflow: hidden; }
+.m-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--line); background: var(--soft); font-size: 12.5px; font-weight: 600; }
+.m-dots { display: flex; gap: 6px; }
+.m-dots i { width: 9px; height: 9px; border-radius: 50%; background: #d4d7ea; }
+.m-timer { display: inline-flex; align-items: center; gap: 6px; background: #fff; border: 1px solid var(--line); padding: 4px 10px; border-radius: 8px; color: var(--navy); font-variant-numeric: tabular-nums; }
+.m-timer svg { width: 14px; height: 14px; }
+.m-body { padding: 20px 20px 16px; }
+.m-prog { height: 6px; border-radius: 99px; background: var(--line); overflow: hidden; }
+.m-prog i { display: block; height: 100%; width: 40%; background: var(--navy); border-radius: 99px; }
+.m-meta { margin-top: 12px; display: flex; justify-content: space-between; font-size: 12px; color: var(--mute); font-weight: 600; }
+.m-q { margin-top: 14px; font-weight: 700; font-size: 15.5px; line-height: 1.45; }
+.m-opts { margin-top: 14px; display: grid; gap: 9px; }
+.opt { display: flex; align-items: center; gap: 12px; border: 1.5px solid var(--line); border-radius: 12px; padding: 11px 14px; font-size: 14px; font-weight: 500; }
+.opt b { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 8px; background: var(--soft); font-size: 12px; font-weight: 700; color: var(--mute); }
+.opt.sel { border-color: var(--navy); background: #f0f1ff; }
+.opt.sel b { background: var(--navy); color: #fff; }
+.m-foot { margin-top: 16px; display: flex; justify-content: space-between; gap: 10px; }
+.m-foot span { font-size: 13px; font-weight: 600; padding: 9px 18px; border-radius: 10px; border: 1px solid var(--line); color: var(--mute); }
+.m-foot span.p { background: var(--navy); border-color: var(--navy); color: #fff; }
+
+/* Sections */
+section.block { padding-block: clamp(52px, 7vw, 92px); }
+section.soft { background: var(--soft); border-block: 1px solid var(--line); }
+.kick { font-size: 13px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--red); }
+h2 { margin-top: 8px; font-weight: 800; font-size: clamp(26px, 3.4vw, 38px); line-height: 1.15; letter-spacing: -.02em; max-width: 22ch; }
+.sub { margin-top: 12px; color: var(--mute); max-width: 60ch; font-size: 16.5px; }
+.center { text-align: center; }
+.center h2, .center .sub { margin-inline: auto; }
+
+/* Feature cards */
+.grid { margin-top: 40px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.card { background: #fff; border: 1px solid var(--line); border-radius: var(--r); padding: 24px; transition: border-color .2s, box-shadow .2s, transform .2s; }
+.card:hover { border-color: #c9ccee; box-shadow: 0 14px 30px -18px rgba(46,49,146,.4); transform: translateY(-3px); }
+.ic { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: #eceeff; color: var(--navy); margin-bottom: 16px; }
+.card h3 { font-size: 16.5px; font-weight: 700; margin-bottom: 4px; }
+.card p { font-size: 14.5px; color: var(--mute); }
+
+/* Steps */
+.steps { margin-top: 40px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; list-style: none; counter-reset: s; }
+.steps li { counter-increment: s; background: #fff; border: 1px solid var(--line); border-radius: var(--r); padding: 22px; }
+.steps li::before { content: counter(s); display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: var(--navy); color: #fff; font-weight: 700; font-size: 15px; margin-bottom: 14px; }
+.steps h3 { font-size: 16.5px; font-weight: 700; }
+.steps p { margin-top: 4px; font-size: 14.5px; color: var(--mute); }
+
+/* Checklist */
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(24px, 5vw, 64px); align-items: start; }
+.list { list-style: none; display: grid; gap: 12px; }
+.list li { display: flex; gap: 14px; align-items: flex-start; background: #fff; border: 1px solid var(--line); border-radius: var(--r); padding: 16px 18px; font-size: 15px; color: var(--mute); }
+.list li b { color: var(--ink); display: block; font-weight: 700; }
+.list svg { color: var(--navy); margin-top: 2px; }
+
+/* Departments */
+.depts { margin-top: 40px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.dept { background: #fff; border: 1px solid var(--line); border-radius: var(--r); padding: 22px; transition: border-color .2s, transform .2s; }
+.dept:hover { border-color: var(--navy); transform: translateY(-3px); }
+.dept h3 { font-size: 16.5px; font-weight: 700; line-height: 1.3; min-height: 43px; }
+.dept span { display: inline-block; margin-top: 12px; font-size: 12.5px; font-weight: 600; color: var(--navy); background: #eceeff; padding: 4px 11px; border-radius: 99px; }
+
+/* Help */
+.help { display: grid; grid-template-columns: 1.2fr .8fr; gap: clamp(24px, 5vw, 56px); align-items: start; }
+.faq { margin-top: 24px; display: grid; gap: 10px; }
+details { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 0 20px; }
+details[open] { border-color: #c9ccee; }
+summary { list-style: none; cursor: pointer; padding: 16px 0; font-weight: 600; font-size: 15.5px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+summary::-webkit-details-marker { display: none; }
+summary::after { content: "+"; font-size: 22px; font-weight: 400; color: var(--navy); transition: transform .2s; }
+details[open] summary::after { transform: rotate(45deg); }
+details p { padding-bottom: 16px; color: var(--mute); font-size: 14.5px; }
+.contact { background: #fff; border: 1px solid var(--line); border-radius: var(--r); padding: 26px; position: sticky; top: 90px; }
+.contact h3 { font-size: 18px; font-weight: 800; margin-bottom: 14px; }
+.contact p { display: flex; gap: 12px; font-size: 14.5px; color: var(--mute); }
+.contact p + p { margin-top: 14px; }
+.contact svg { color: var(--navy); width: 20px; height: 20px; margin-top: 2px; }
+.contact a.m { color: var(--navy); font-weight: 600; overflow-wrap: anywhere; }
+.contact .btn { margin-top: 22px; width: 100%; }
+
+/* Footer */
+footer { border-top: 1px solid var(--line); background: #fff; font-size: 13.5px; color: var(--mute); }
+footer .wrap { display: flex; flex-wrap: wrap; gap: 10px 28px; justify-content: space-between; padding-block: 22px calc(22px + env(safe-area-inset-bottom, 0px)); }
+footer a { color: var(--navy); font-weight: 600; }
+footer .links { display: flex; gap: 18px; flex-wrap: wrap; }
+
+/* Reveal */
+.rv { opacity: 0; transform: translateY(18px); transition: opacity .6s ease, transform .6s ease; }
+.rv.in { opacity: 1; transform: none; }
+
+@media (max-width: 960px) {
+  .hero .wrap, .two, .help { grid-template-columns: 1fr; }
+  .grid { grid-template-columns: repeat(2, 1fr); }
+  .steps, .depts { grid-template-columns: repeat(2, 1fr); }
+  .contact { position: static; }
+  .mock { max-width: 520px; }
+}
+@media (max-width: 640px) {
+  .menu a.lnk { display: none; }
+  .brand b { font-size: 14.5px; }
+  .grid, .steps, .depts { grid-template-columns: 1fr; }
+  .cta .btn { flex: 1 1 100%; }
+  .menu .btn-line { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { transition: none !important; }
+  .rv { opacity: 1; transform: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="notice" id="notice" role="status"><div class="wrap" id="noticeText"></div></div>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="/" aria-label="MARGMOCOTH CBT home">
+      <img src="school-logo.png" alt="">
+      <b>MARGMOCOTH CBT</b>
+    </a>
+    <nav class="menu" aria-label="Primary">
+      <a class="lnk" href="#features">Features</a>
+      <a class="lnk" href="#how">How it works</a>
+      <a class="lnk" href="#departments">Departments</a>
+      <a class="lnk" href="#help">Help</a>
+      <div class="acts">
+        <a class="btn btn-line btn-sm" href="register.html" id="topRegister" hidden>Register</a>
+        <a class="btn btn-solid btn-sm" href="login.html">Student login</a>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="wrap">
+      <div>
+        <span class="pill"><i></i> Official exam portal · Owo, Ondo State</span>
+        <h1>Margaret Mosunmola College <span>computer-based exams</span></h1>
+        <p class="lead">Sign in, enter your access code, write your exam on your phone or computer, and see your results here when the college releases them.</p>
+        <div class="cta">
+          <a class="btn btn-solid" href="login.html">Student login
+            <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+          <a class="btn btn-line" href="register.html" id="heroRegister" hidden>Create your account</a>
+          <a class="btn btn-line" href="#how">How it works</a>
+        </div>
+        <p class="reg-note" id="regNote" hidden>Registration is closed right now. Use the registration link from your department, or ask the examination office.</p>
+        <div class="trust">
+          <span><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg>Works on any device</span>
+          <span><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg>Timed &amp; monitored</span>
+          <span><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg>Results online</span>
+        </div>
+      </div>
+
+      <div class="mock rv" aria-label="Preview of the exam screen" role="img">
+        <div class="m-bar">
+          <div class="m-dots"><i></i><i></i><i></i></div>
+          <span>Anatomy &amp; Physiology · Exam</span>
+          <span class="m-timer"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M9 2h6"/></svg>42:15</span>
+        </div>
+        <div class="m-body">
+          <div class="m-prog"><i></i></div>
+          <div class="m-meta"><span>Question 8 of 20</span><span>40% done</span></div>
+          <p class="m-q">Which organ is responsible for filtering blood and producing urine?</p>
+          <div class="m-opts">
+            <div class="opt"><b>A</b>Liver</div>
+            <div class="opt sel"><b>B</b>Kidney</div>
+            <div class="opt"><b>C</b>Spleen</div>
+            <div class="opt"><b>D</b>Pancreas</div>
+          </div>
+          <div class="m-foot"><span>Previous</span><span class="p">Next</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block soft" id="features">
+    <div class="wrap">
+      <div class="center rv">
+        <span class="kick">Features</span>
+        <h2>Everything for a smooth exam day</h2>
+        <p class="sub">The portal handles sign-in, exam access, timing, monitoring and results in one place.</p>
+      </div>
+      <div class="grid">
+        <article class="card rv"><div class="ic"><svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg></div><h3>Secure sign-in</h3><p>Only students registered by the college can log in with their name, level, department and password.</p></article>
+        <article class="card rv"><div class="ic"><svg viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M16 7l3 3"/></svg></div><h3>Access-code exams</h3><p>Your lecturer gives you a code on exam day. Without it, the exam stays locked.</p></article>
+        <article class="card rv"><div class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M9 2h6"/></svg></div><h3>Live countdown</h3><p>See your time left while you answer. When time is up, your exam is submitted automatically.</p></article>
+        <article class="card rv"><div class="ic"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg></div><h3>Fair and monitored</h3><p>The portal watches for rule breaking, such as leaving the exam page, so every student gets a fair chance.</p></article>
+        <article class="card rv"><div class="ic"><svg viewBox="0 0 24 24"><path d="M2 9a15 15 0 0120 0M5 12.5a10 10 0 0114 0M8.5 16a5 5 0 017 0"/><circle cx="12" cy="19" r="1"/></svg></div><h3>Network-aware</h3><p>If your internet drops and returns, it is logged as a network issue, not as cheating.</p></article>
+        <article class="card rv"><div class="ic"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></div><h3>Results online</h3><p>Once the college releases your results, view them from your dashboard anytime.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="how">
+    <div class="wrap">
+      <div class="center rv">
+        <span class="kick">How it works</span>
+        <h2>Four steps from login to result</h2>
+        <p class="sub">You only need a phone or computer with internet and your login details.</p>
+      </div>
+      <ol class="steps">
+        <li class="rv"><h3>Sign in</h3><p>Enter your full name, level, department and password from the examination office.</p></li>
+        <li class="rv"><h3>Open your exam</h3><p>On your dashboard, choose the exam available to you.</p></li>
+        <li class="rv"><h3>Enter access code</h3><p>Type the code from your lecturer to unlock the exam and start the timer.</p></li>
+        <li class="rv"><h3>Write and submit</h3><p>Answer before the timer ends, then submit. Results show when the college releases them.</p></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="block soft">
+    <div class="wrap two">
+      <div class="rv">
+        <span class="kick">Before you start</span>
+        <h2>Get ready for exam day</h2>
+        <p class="sub">A few simple habits keep your exam smooth and free of problems.</p>
+      </div>
+      <ul class="list">
+        <li class="rv"><svg viewBox="0 0 24 24"><rect x="3" y="7" width="16" height="10" rx="2"/><path d="M21 11v2M7 12h4"/></svg><span><b>Charge your device</b>Use a stable internet connection.</span></li>
+        <li class="rv"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 21h8"/></svg><span><b>Stay on the exam page</b>Leaving it can be counted as a violation.</span></li>
+        <li class="rv"><svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg><span><b>Keep your password private</b>Never share it with anyone.</span></li>
+        <li class="rv"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span><b>Be early</b>Sign in and have your access code ready before the exam starts.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="block" id="departments">
+    <div class="wrap">
+      <div class="center rv">
+        <span class="kick">Departments</span>
+        <h2>Who the portal is for</h2>
+        <p class="sub">Pick your department and level exactly as the college registered you.</p>
+      </div>
+      <div class="depts">
+        <div class="dept rv"><h3>Community Health</h3><span>100L – 300L</span></div>
+        <div class="dept rv"><h3>Public Health</h3><span>100L – 400L</span></div>
+        <div class="dept rv"><h3>Health Information Management (HIM)</h3><span>100L – 400L</span></div>
+        <div class="dept rv"><h3>Medical Laboratory</h3><span>100L – 400L</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block soft" id="help">
+    <div class="wrap help">
+      <div class="rv">
+        <span class="kick">Support</span>
+        <h2>Having trouble signing in?</h2>
+        <div class="faq">
+          <details><summary>My name is not found</summary><p>Type your name the way the college registered it, and choose the same level and department.</p></details>
+          <details><summary>I forgot my password</summary><p>Contact the examination office. Do not share your password with anyone.</p></details>
+          <details><summary>The page will not load</summary><p>Check your internet connection, then refresh the page.</p></details>
+          <details><summary>I do not have an access code</summary><p>Your lecturer gives the access code for each exam. Ask them before the exam starts.</p></details>
+          <details><summary>My internet dropped during an exam</summary><p>Reconnect and continue. The portal records it as a network issue. Tell your lecturer if the problem continues.</p></details>
+        </div>
+      </div>
+      <aside class="contact rv">
+        <h3>Examination office</h3>
+        <p><svg viewBox="0 0 24 24"><path d="M12 21s7-6 7-11a7 7 0 10-14 0c0 5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg><span>Alale Fadare Street, Idasen, Owo, Ondo State</span></p>
+        <p><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg><span><a class="m" id="contactEmail" href="mailto:Margmocoth.examinationsmedia@gmail.com">Margmocoth.examinationsmedia@gmail.com</a></span></p>
+        <a class="btn btn-solid" href="login.html">Go to student login</a>
+      </aside>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>&copy; <span id="yr"></span> Margaret Mosunmola College of Health Science and Technology, Owo</span>
+    <span class="links"><a href="admin-login.html">Staff login</a><span>Powered by Tribal Tech</span></span>
+  </div>
+</footer>
+
+<script>
+document.getElementById('yr').textContent = new Date().getFullYear();
+
+// Scroll reveal
+(function () {
+  var els = document.querySelectorAll('.rv');
+  if (!('IntersectionObserver' in window)) { els.forEach(function (e) { e.classList.add('in'); }); return; }
+  var io = new IntersectionObserver(function (en) {
+    en.forEach(function (x) { if (x.isIntersecting) { x.target.classList.add('in'); io.unobserve(x.target); } });
+  }, { threshold: .1 });
+  els.forEach(function (e, i) { e.style.transitionDelay = (i % 3) * 60 + 'ms'; io.observe(e); });
+})();
+
+// Live portal settings: maintenance mode, registration switch, contact email.
+(async function () {
+  try {
+    const s = await fetch('/api/settings/portal').then(function (r) { return r.json(); });
+
+    if (s.portal_open === false) {
+      document.getElementById('noticeText').textContent =
+        s.maintenance_msg || 'The exam portal is closed for now. Please check back later.';
+      document.getElementById('notice').classList.add('show');
+    }
+
+    if (s.registration_open) {
+      document.getElementById('heroRegister').hidden = false;
+      document.getElementById('topRegister').hidden = false;
+    } else {
+      document.getElementById('regNote').hidden = false;
+    }
+
+    if (s.contact_email) {
+      var a = document.getElementById('contactEmail');
+      a.textContent = s.contact_email;
+      a.href = 'mailto:' + s.contact_email;
+    }
+  } catch (e) {
+    document.getElementById('regNote').hidden = false;
+  }
+})();
+</script>
+<script src="/pwa.js"></script>
+</body>
+</html>

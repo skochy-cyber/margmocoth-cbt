@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="manifest" href="/manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MARGMOCOTH CBT">
+<meta name="theme-color" content="#2e3192">
+<link rel="apple-touch-icon" href="/icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Analytics – MARGMOCOTH CBT</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+</head>
+<body>
+<div class="admin-layout">
+ <div id="sidebarContainer"></div>
+ <div class="admin-main">
+ <div id="topbarContainer"></div>
+ <div class="content">
+
+ <div class="form-group no-print">
+ <label class="form-label">Select Exam</label>
+ <select id="examSelect" class="form-control form-select" style="max-width:320px;" onchange="loadAnalytics()">
+ <option value="">-- All Exams --</option>
+ </select>
+ </div>
+
+ <div class="stats-grid">
+ <div class="stat-card">
+ <div class="stat-icon"></div>
+ <div><div class="stat-value" id="avgScore">0%</div><div class="stat-label">Average Score</div></div>
+ </div>
+ <div class="stat-card">
+ <div class="stat-icon"></div>
+ <div><div class="stat-value" id="highScore">0%</div><div class="stat-label">Highest Score</div></div>
+ </div>
+ <div class="stat-card danger">
+ <div class="stat-icon"></div>
+ <div><div class="stat-value" id="lowScore">0%</div><div class="stat-label">Lowest Score</div></div>
+ </div>
+ <div class="stat-card warning">
+ <div class="stat-icon"></div>
+ <div><div class="stat-value" id="passRate">0%</div><div class="stat-label">Pass Rate (≥50%)</div></div>
+ </div>
+ <div class="stat-card info">
+ <div class="stat-icon"></div>
+ <div><div class="stat-value" id="failRate">0%</div><div class="stat-label">Fail Rate</div></div>
+ </div>
+ <div class="stat-card">
+ <div class="stat-icon"></div>
+ <div><div class="stat-value" id="totalSubs">0</div><div class="stat-label">Submissions</div></div>
+ </div>
+ </div>
+
+ <div class="charts-grid">
+ <div class="chart-card">
+ <h3 style="font-size:15px;font-weight:700;color:#1b1e45;margin-bottom:16px;">Score Distribution by Grade</h3>
+ <div style="position:relative;height:260px;">
+ <canvas id="gradeChart"></canvas>
+ </div>
+ </div>
+ <div class="chart-card">
+ <h3 style="font-size:15px;font-weight:700;color:#1b1e45;margin-bottom:16px;">Performance by Department</h3>
+ <div style="position:relative;height:260px;">
+ <canvas id="deptChart"></canvas>
+ </div>
+ </div>
+ <div class="chart-card">
+ <h3 style="font-size:15px;font-weight:700;color:#1b1e45;margin-bottom:16px;">Score Range Distribution</h3>
+ <div style="position:relative;height:260px;">
+ <canvas id="rangeChart"></canvas>
+ </div>
+ </div>
+ <div class="chart-card">
+ <h3 style="font-size:15px;font-weight:700;color:#1b1e45;margin-bottom:16px;">Pass vs Fail</h3>
+ <div style="position:relative;height:260px;">
+ <canvas id="passFailChart"></canvas>
+ </div>
+ </div>
+ </div>
+
+ </div>
+ </div>
+</div>
+
+<script src="js/admin.js"></script>
+<script>
+document.getElementById('sidebarContainer').innerHTML = getSidebarHTML('analytics.html');
+document.getElementById('topbarContainer').innerHTML  = getTopbarHTML('Analytics');
+checkAdmin();
+requireSuper();
+
+async function loadExams() {
+ const data = await apiGet('/api/admin/exams');
+ const sel  = document.getElementById('examSelect');
+ data.forEach(e => { sel.innerHTML += `<option value="${e.id}">${e.title}</option>`; });
+}
+
+async function loadAnalytics() {
+ const examId = document.getElementById('examSelect').value;
+ const url  = `/api/admin/analytics${examId ? '?exam_id='+examId : ''}`;
+ const data  = await apiGet(url);
+ if (!data.results || !data.results.length) return;
+
+ const pcts  = data.results.map(r => r.percentage);
+ const avg  = Math.round(pcts.reduce((a,b)=>a+b,0)/pcts.length);
+ const max  = Math.max(...pcts);
+ const min  = Math.min(...pcts);
+ const passed  = pcts.filter(p=>p>=50).length;
+ const passRate = Math.round((passed/pcts.length)*100);
+
+ document.getElementById('avgScore').textContent  = avg + '%';
+ document.getElementById('highScore').textContent = max + '%';
+ document.getElementById('lowScore').textContent  = min + '%';
+ document.getElementById('passRate').textContent  = passRate + '%';
+ document.getElementById('failRate').textContent  = (100-passRate) + '%';
+ document.getElementById('totalSubs').textContent = pcts.length;
+
+ // Grade chart
+ const grades = { A:0, B:0, C:0, D:0, E:0, F:0 };
+ pcts.forEach(p => {
+ if(p>=90) grades.A++;
+ else if(p>=80) grades.B++;
+ else if(p>=70) grades.C++;
+ else if(p>=60) grades.D++;
+ else if(p>=50) grades.E++;
+ else grades.F++;
+ });
+ destroyChart('gradeChart');
+ new Chart(document.getElementById('gradeChart'), {
+ type: 'bar',
+ data: {
+ labels: Object.keys(grades),
+ datasets: [{
+ label: 'Students',
+ data: Object.values(grades),
+ backgroundColor: ['#0f6b30','#34c462','#22a24e','#f59e0b','#4448b8','#dc2626'],
+ borderRadius: 10, borderWidth: 0, borderSkipped: false
+ }]
+ },
+ options: {
+ responsive: true,
+ maintainAspectRatio: false,
+ plugins: {
+ legend: { display: false },
+ tooltip: { backgroundColor:'#1b1e45', padding:10, cornerRadius:8 }
+ },
+ scales: {
+ y: { beginAtZero:true, ticks:{ stepSize:1, font:{size:12}, color:'#5b5f80' }, grid:{ color:'#f1f2fa' } },
+ x: { ticks:{ font:{size:12,weight:'600'}, color:'#374151' }, grid:{ display:false } }
+ }
+ }
+ });
+
+ // Dept chart
+ const deptMap = {};
+ data.results.forEach(r => {
+ if (!deptMap[r.department_name]) deptMap[r.department_name] = [];
+ deptMap[r.department_name].push(r.percentage);
+ });
+ const deptLabels = Object.keys(deptMap);
+ const deptAvgs  = deptLabels.map(d =>Math.round(deptMap[d].reduce((a,b)=>a+b,0)/deptMap[d].length));
+ destroyChart('deptChart');
+ new Chart(document.getElementById('deptChart'), {
+ type: 'bar',
+ data: {
+ labels: deptLabels.length ? deptLabels : ['No Data'],
+ datasets: [{
+ label: 'Avg Score %',
+ data: deptAvgs.length ? deptAvgs : [0],
+ backgroundColor: '#0f6b30', borderColor: '#063a1a', borderWidth: 2, borderRadius: 8
+ }]
+ },
+ options: {
+ indexAxis: 'y',
+ responsive: true,
+ maintainAspectRatio: false,
+ plugins: {
+ legend: { display: false },
+ tooltip: { backgroundColor:'#1b1e45', padding:10, cornerRadius:8, callbacks:{ label: ctx => 'Average: '+ctx.parsed.x+'%' } }
+ },
+ scales: {
+ x: { beginAtZero:true, max:100, grid:{ color:'#f1f2fa' }, ticks:{ font:{size:12}, color:'#5b5f80' } },
+ y: { ticks:{ font:{size:12,weight:'600'}, color:'#374151' }, grid:{ display:false } }
+ }
+ }
+ });
+
+ // Range chart
+ const ranges = {'0-20':0,'21-40':0,'41-60':0,'61-80':0,'81-100':0};
+ pcts.forEach(p => {
+ if(p<=20) ranges['0-20']++;
+ else if(p<=40) ranges['21-40']++;
+ else if(p<=60) ranges['41-60']++;
+ else if(p<=80) ranges['61-80']++;
+ else ranges['81-100']++;
+ });
+ destroyChart('rangeChart');
+ new Chart(document.getElementById('rangeChart'), {
+ type: 'line',
+ data: {
+ labels: Object.keys(ranges),
+ datasets: [{
+ label: 'Students',
+ data: Object.values(ranges),
+ borderColor: '#0f6b30', backgroundColor: 'rgba(15,107,48,0.1)',
+ fill: true, tension: 0.4,
+ pointBackgroundColor: '#0f6b30', pointBorderColor: '#fff',
+ pointBorderWidth: 3, pointRadius: 8, pointHoverRadius: 10
+ }]
+ },
+ options: {
+ responsive: true,
+ maintainAspectRatio: false,
+ plugins: {
+ legend: { display: false },
+ tooltip: { backgroundColor:'#1b1e45', padding:10, cornerRadius:8 }
+ },
+ scales: {
+ y: { beginAtZero:true, ticks:{ stepSize:1, font:{size:12}, color:'#5b5f80' }, grid:{ color:'#f1f2fa' } },
+ x: { ticks:{ font:{size:12,weight:'600'}, color:'#374151' }, grid:{ display:false } }
+ }
+ }
+ });
+
+ // Pass/Fail chart
+ destroyChart('passFailChart');
+ new Chart(document.getElementById('passFailChart'), {
+ type: 'doughnut',
+ data: {
+ labels: ['Passed','Failed'],
+ datasets: [{
+ data: [passed, pcts.length-passed],
+ backgroundColor: ['#0f6b30','#dc2626'],
+ borderWidth: 4, borderColor: '#ffffff', hoverOffset: 8
+ }]
+ },
+ options: {
+ responsive: true,
+ maintainAspectRatio: false,
+ cutout: '65%',
+ plugins: {
+ legend: { position:'bottom', labels:{ usePointStyle:true, padding:20, font:{size:13,weight:'600'}, color:'#374151' } },
+ tooltip: {
+ backgroundColor: '#1b1e45', padding:10, cornerRadius:8,
+ callbacks: { label: ctx => { const total = ctx.dataset.data.reduce((a,b)=>a+b,0); return ctx.label+': '+ctx.parsed+' ('+Math.round((ctx.parsed/total)*100)+'%)'; } }
+ }
+ }
+ }
+ });
+}
+
+function destroyChart(id) {
+ const existing = Chart.getChart(document.getElementById(id));
+ if (existing) existing.destroy();
+}
+
+loadExams();
+loadAnalytics();
+</script>
+<script src="js/ai-assistant.js" defer></script>
+<script src="/pwa.js"></script>
+</body>
+</html>

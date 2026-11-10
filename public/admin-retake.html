@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="manifest" href="/manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MARGMOCOTH CBT">
+<meta name="theme-color" content="#2e3192">
+<link rel="apple-touch-icon" href="/icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Retake Requests – MARGMOCOTH CBT</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+.retake-card {
+ background: var(--surface);
+ border: 1px solid var(--border);
+ border-radius: var(--r-lg);
+ padding: 18px 20px;
+ margin-bottom: 14px;
+ transition: box-shadow .2s;
+}
+.retake-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.07); }
+.retake-card-header {
+ display: flex; align-items: flex-start;
+ justify-content: space-between; gap: 12px;
+ flex-wrap: wrap; margin-bottom: 10px;
+}
+.retake-student { font-size: 15px; font-weight: 700; color: var(--text); }
+.retake-meta { font-size: 12px; color: var(--text-2); margin-top: 3px; }
+.retake-reason {
+ background: var(--n-50,#f6f7fc); border-radius: 8px;
+ padding: 10px 14px; font-size: 13px; color: var(--text);
+ margin: 10px 0; border-left: 3px solid var(--brand-400,#16a34a);
+}
+.status-pill {
+ display: inline-flex; align-items: center; gap: 5px;
+ padding: 4px 12px; border-radius: 999px;
+ font-size: 12px; font-weight: 700; white-space: nowrap;
+}
+.pill-pending { background:#fef9c3; color:#a16207; }
+.pill-approved { background:#dcfce7; color:#166534; }
+.pill-declined { background:#fee2e2; color:#991b1b; }
+
+.action-row {
+ display: flex; gap: 8px; flex-wrap: wrap;
+ align-items: flex-end; margin-top: 12px;
+}
+.note-input {
+ flex: 1; min-width: 160px;
+ border: 1px solid var(--border); border-radius: 8px;
+ padding: 8px 12px; font-size: 13px;
+ background: var(--surface); color: var(--text);
+ font-family: inherit;
+}
+.note-input:focus { outline: none; border-color: #16a34a; }
+
+/* Toggle switch */
+.toggle-wrap {
+ display: flex; align-items: center; gap: 10px;
+}
+.toggle {
+ position: relative; display: inline-block;
+ width: 44px; height: 24px;
+}
+.toggle input { opacity:0; width:0; height:0; }
+.toggle-slider {
+ position: absolute; inset:0; cursor: pointer;
+ background: #cdd0e6; border-radius: 24px;
+ transition: .3s;
+}
+.toggle-slider:before {
+ content:''; position:absolute;
+ width:18px; height:18px; border-radius:50%;
+ left:3px; bottom:3px; background:#fff;
+ transition:.3s;
+}
+.toggle input:checked + .toggle-slider { background: #16a34a; }
+.toggle input:checked + .toggle-slider:before { transform: translateX(20px); }
+.toggle-label { font-size: 13px; color: var(--text-2); font-weight: 600; }
+
+.exam-toggle-row {
+ display: flex; align-items: center;
+ justify-content: space-between;
+ padding: 12px 0; border-bottom: 1px solid var(--border);
+}
+.exam-toggle-row:last-child { border-bottom: none; }
+
+.filter-bar {
+ display: flex; gap: 10px; flex-wrap: wrap;
+ margin-bottom: 20px; align-items: center;
+}
+.filter-bar select {
+ padding: 8px 12px; border: 1px solid var(--border);
+ border-radius: var(--r-md); font-size: 13px;
+ background: var(--surface); color: var(--text);
+}
+.filter-bar input {
+ flex: 1; min-width: 160px;
+ padding: 8px 12px; border: 1px solid var(--border);
+ border-radius: var(--r-md); font-size: 13px;
+ background: var(--surface); color: var(--text);
+}
+
+.section-title {
+ font-size: 16px; font-weight: 800;
+ color: var(--text); margin: 0 0 14px;
+}
+
+/* ── Custom Confirm Dialog ──────────────────────────────────── */
+.confirm-overlay {
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(0,0,0,.50); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px; opacity: 0; pointer-events: none;
+  transition: opacity .2s;
+}
+.confirm-overlay.show { opacity: 1; pointer-events: all; }
+.confirm-box {
+  background: var(--surface, #fff);
+  border-radius: 20px;
+  padding: 28px 24px 22px;
+  width: 100%; max-width: 360px;
+  box-shadow: 0 24px 64px rgba(0,0,0,.22);
+  transform: scale(.94) translateY(12px);
+  transition: transform .25s cubic-bezier(.34,1.56,.64,1);
+  text-align: center;
+}
+.confirm-overlay.show .confirm-box { transform: scale(1) translateY(0); }
+.confirm-icon-wrap {
+  width: 54px; height: 54px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 16px;
+}
+.confirm-icon-wrap.warn   { background: #fff7ed; color: #2e3192; }
+.confirm-icon-wrap.danger { background: #fef2f2; color: #dc2626; }
+.confirm-icon-wrap.info   { background: #f0f1ff; color: #2e3192; }
+.confirm-icon-wrap svg { display: block; }
+.confirm-title {
+  font-size: 17px; font-weight: 800;
+  color: var(--text, #111); margin-bottom: 8px;
+}
+.confirm-msg {
+  font-size: 13px; color: var(--muted, var(--text-2, #666));
+  line-height: 1.6; margin-bottom: 24px;
+}
+.confirm-actions { display: flex; gap: 10px; }
+.confirm-actions button {
+  flex: 1; padding: 11px 0; border-radius: 12px;
+  font-size: 14px; font-weight: 700; border: none;
+  cursor: pointer; transition: opacity .15s, transform .1s;
+}
+.confirm-actions button:active { transform: scale(.97); }
+.confirm-btn-cancel { background: #f1f2fa; color: #1b1e45; }
+.confirm-btn-cancel:hover { opacity: .75; }
+.confirm-btn-ok        { color: #fff; }
+.confirm-btn-ok.warn   { background: #2e3192; }
+.confirm-btn-ok.danger { background: #dc2626; }
+.confirm-btn-ok.info   { background: #2e3192; }
+.confirm-btn-ok:hover  { opacity: .88; }
+</style>
+</head>
+<body>
+<div class="admin-layout">
+ <div id="sidebarContainer"></div>
+ <div class="admin-main">
+ <div id="topbarContainer"></div>
+ <div class="content">
+ <div id="alertBox"></div>
+
+ <!-- Page header -->
+ <div style="margin-bottom:24px;">
+ <h2 style="font-size:18px;font-weight:800;color:var(--text);margin:0;">Retake Requests</h2>
+ <p style="font-size:13px;color:var(--text-2);margin:4px 0 0;">
+ Review student retake requests. Approve or decline and the student receives an email notification.
+ </p>
+ </div>
+
+ <!-- Exam retake toggle settings -->
+ <div class="card" style="margin-bottom:24px;">
+ <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
+ <span>Retake Request Toggle (per Exam)</span>
+ <button onclick="loadToggles()" class="btn btn-secondary btn-sm">↻ Refresh</button>
+ </div>
+ <div class="card-body">
+ <p style="font-size:13px;color:var(--text-2);margin:0 0 16px;">
+ Turn off to prevent students from submitting retake requests for a specific exam. If off, students clicking the Retake button will see "Retake not allowed for this exam."
+ </p>
+ <div id="toggleList">
+ <div style="color:var(--text-2);text-align:center;padding:20px;">Loading exams…</div>
+ </div>
+ </div>
+ </div>
+
+ <!-- Filter bar -->
+ <div class="filter-bar">
+ <input type="text" id="searchInput" placeholder=" Search student or exam…" oninput="renderRequests()">
+ <select id="filterStatus" onchange="renderRequests()">
+ <option value="all">All Requests</option>
+ <option value="pending">Pending</option>
+ <option value="approved">Approved</option>
+ <option value="declined">Declined</option>
+ </select>
+ </div>
+
+ <!-- Request list -->
+ <div id="requestList">
+ <div style="text-align:center;padding:48px;color:var(--text-2);">Loading…</div>
+ </div>
+
+ </div>
+ </div>
+</div>
+
+<script src="js/admin.js"></script>
+<script>
+document.getElementById('sidebarContainer').innerHTML = getSidebarHTML('admin-retake.html');
+document.getElementById('topbarContainer').innerHTML = getTopbarHTML('Retake Requests');
+checkAdmin();
+requirePermission('manage_exams');
+
+let allRequests = [];
+let allExams = [];
+
+// ── Load retake requests ──────────────────────────────────────
+async function loadRequests() {
+ allRequests = await apiGet('/api/admin/retake-requests');
+ renderRequests();
+}
+
+function renderRequests() {
+ const search = document.getElementById('searchInput').value.toLowerCase();
+ const status = document.getElementById('filterStatus').value;
+ const list = document.getElementById('requestList');
+
+ const filtered = allRequests.filter(r => {
+ const matchSearch = !search ||
+ r.student_name.toLowerCase().includes(search) ||
+ r.matric.toLowerCase().includes(search) ||
+ r.exam_title.toLowerCase().includes(search);
+ const matchStatus = status === 'all' || r.status === status;
+ return matchSearch && matchStatus;
+ });
+
+ if (!filtered.length) {
+ list.innerHTML = `<div style="text-align:center;padding:48px;color:var(--text-2);">
+ ${allRequests.length ? 'No requests match your filter.' : 'No retake requests yet.'}
+ </div>`;
+ return;
+ }
+
+ list.innerHTML = filtered.map(r => {
+ const pillClass = r.status === 'approved' ? 'pill-approved'
+ : r.status === 'declined' ? 'pill-declined'
+ : 'pill-pending';
+ const pillLabel = r.status === 'approved' ? ' Approved'
+ : r.status === 'declined' ? ' Declined'
+ : '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2m6-2a10 10 0 11-20 0 10 10 0 0120 0z"/></svg> Pending';
+ const date = r.requested_at
+ ? new Date(r.requested_at).toLocaleString('en-GB',{ day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit' })
+ : '—';
+ const reviewedDate = r.reviewed_at
+ ? new Date(r.reviewed_at).toLocaleString('en-GB',{ day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit' })
+ : null;
+
+ const actionRow = r.status === 'pending' ? `
+ <div class="action-row">
+ <input type="text" class="note-input" id="note_${r.id}"
+ placeholder="Optional note to student (sent in email)…">
+ <button onclick="handleDecision('${r.id}','approve')"
+ class="btn btn-primary btn-sm">Approve</button>
+ <button onclick="handleDecision('${r.id}','decline')"
+ class="btn btn-secondary btn-sm">Decline</button>
+ </div>` : `
+ <div style="font-size:12px;color:var(--text-2);margin-top:8px;">
+ Reviewed: ${reviewedDate || '—'}
+ ${r.admin_note ? `<br><strong>Note sent:</strong> ${r.admin_note}` : ''}
+ ${r.student_email ? '' : '<br><span style="color:#f59e0b;">No email on file — student was not notified.</span>'}
+ </div>`;
+
+ return `
+ <div class="retake-card" id="card_${r.id}">
+ <div class="retake-card-header">
+ <div>
+ <div class="retake-student">${r.student_name} <span style="font-weight:400;color:var(--text-2);">(${r.matric})</span></div>
+ <div class="retake-meta"> ${r.exam_title} &nbsp;·&nbsp; ${date}</div>
+ ${r.student_email ? `<div class="retake-meta"> ${r.student_email}</div>` : '<div class="retake-meta" style="color:#f59e0b;">No email on file</div>'}
+ </div>
+ <span class="status-pill ${pillClass}">${pillLabel}</span>
+ </div>
+ <div class="retake-reason"> "${r.reason}"</div>
+ ${actionRow}
+ </div>`;
+ }).join('');
+}
+
+async function handleDecision(id, action) {
+ const note = document.getElementById(`note_${id}`)?.value.trim() || '';
+ const label = action === 'approve' ? 'approve' : 'decline';
+ const _ok = await showConfirm({ type:'warn', title:`${label.charAt(0).toUpperCase()+label.slice(1)} Request?`, msg:`This request will be <strong>${label}d</strong>. The student will be notified.`, okLabel: label.charAt(0).toUpperCase()+label.slice(1) });
+    if (!_ok) return;
+
+ const url = `/api/admin/retake-requests/${id}/${action}`;
+ const data = await apiPut(url, { admin_note: note });
+ if (data.success) {
+ showAlert(`Request ${action === 'approve' ? 'approved' : 'declined'} successfully.${note ? '' : ' (No email note — student still notified.)'}`, 'success');
+ loadRequests();
+ } else {
+ showAlert(data.message || 'Action failed.', 'danger');
+ }
+}
+
+// ── Exam retake toggles ───────────────────────────────────────
+async function loadToggles() {
+ const exams = await apiGet('/api/admin/exams');
+ allExams = exams;
+ const list = document.getElementById('toggleList');
+ if (!exams.length) {
+ list.innerHTML = '<div style="color:var(--text-2);font-size:13px;">No exams found.</div>';
+ return;
+ }
+ list.innerHTML = exams.map(e => `
+ <div class="exam-toggle-row">
+ <div>
+ <div style="font-size:14px;font-weight:600;color:var(--text);">${e.title}</div>
+ <div style="font-size:12px;color:var(--text-2);">${e.course_name || 'No course'}</div>
+ </div>
+ <div class="toggle-wrap">
+ <span class="toggle-label" id="tlabel_${e.id}">
+ ${e.retake_request_allowed !== false ? 'On' : 'Off'}
+ </span>
+ <label class="toggle">
+ <input type="checkbox" id="toggle_${e.id}"
+ ${e.retake_request_allowed !== false ? 'checked' : ''}
+ onchange="toggleRetake('${e.id}', this)">
+ <span class="toggle-slider"></span>
+ </label>
+ </div>
+ </div>`).join('');
+}
+
+async function toggleRetake(examId, checkbox) {
+ checkbox.disabled = true;
+ const data = await apiPut(`/api/admin/exams/${examId}/retake-toggle`, {});
+ checkbox.disabled = false;
+ if (data.success) {
+ checkbox.checked = data.retake_request_allowed;
+ const label = document.getElementById(`tlabel_${examId}`);
+ if (label) label.textContent = data.retake_request_allowed ? 'On' : 'Off';
+ } else {
+ checkbox.checked = !checkbox.checked; // revert
+ showAlert(data.message || 'Toggle failed.', 'danger');
+ }
+}
+
+loadRequests();
+loadToggles();
+</script>
+<script src="js/ai-assistant.js" defer></script>
+<script src="/pwa.js"></script>
+
+<!-- Confirm Dialog -->
+<div class="confirm-overlay" id="confirmModal">
+  <div class="confirm-box">
+    <div class="confirm-icon-wrap" id="confirmIconWrap">
+      <svg id="confirmIconSVG" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
+           width="26" height="26"></svg>
+    </div>
+    <div class="confirm-title" id="confirmTitle"></div>
+    <p class="confirm-msg" id="confirmMsg"></p>
+    <div class="confirm-actions">
+      <button class="confirm-btn-cancel" onclick="_confirmResolve(false)">Cancel</button>
+      <button class="confirm-btn-ok" id="confirmOkBtn" onclick="_confirmResolve(true)">Confirm</button>
+    </div>
+  </div>
+</div>
+<script>
+const _CSVG = {
+  warn:   '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
+  danger: '<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>',
+  info:   '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>'
+};
+let __confirmCb = null;
+function showConfirm({ type='warn', title, msg, okLabel='Confirm' }) {
+  document.getElementById('confirmIconWrap').className = 'confirm-icon-wrap ' + type;
+  document.getElementById('confirmIconSVG').innerHTML = _CSVG[type] || _CSVG.warn;
+  document.getElementById('confirmTitle').textContent = title;
+  document.getElementById('confirmMsg').innerHTML = msg;
+  const okBtn = document.getElementById('confirmOkBtn');
+  okBtn.textContent = okLabel;
+  okBtn.className = 'confirm-btn-ok ' + type;
+  document.getElementById('confirmModal').classList.add('show');
+  return new Promise(res => { __confirmCb = res; });
+}
+function _confirmResolve(val) {
+  document.getElementById('confirmModal').classList.remove('show');
+  if (__confirmCb) { __confirmCb(val); __confirmCb = null; }
+}
+document.getElementById('confirmModal').addEventListener('click', function(e) {
+  if (e.target === this) _confirmResolve(false);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="manifest" href="/manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MARGMOCOTH CBT">
+<meta name="theme-color" content="#2e3192">
+<link rel="apple-touch-icon" href="/icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Create Exam – MARGMOCOTH CBT</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+/* ── WIZARD SHELL ───────────────────────────────────────────── */
+.wizard-wrap { max-width: 700px; margin: 0 auto; }
+
+/* Progress steps */
+.steps {
+ display: flex; align-items: center; gap: 0;
+ margin-bottom: 28px; padding: 0 4px;
+}
+.step-item {
+ display: flex; align-items: center; flex: 1; gap: 0;
+}
+.step-circle {
+ width: 36px; height: 36px; border-radius: 50%;
+ display: flex; align-items: center; justify-content: center;
+ font-size: 13px; font-weight: 700; flex-shrink: 0;
+ transition: all .25s ease;
+ background: var(--n-200); color: var(--n-500);
+ border: 2px solid var(--n-200);
+}
+.step-circle.active  { background: var(--brand-500); color: #fff; border-color: var(--brand-500); box-shadow: 0 0 0 4px rgba(34,162,78,.18); }
+.step-circle.done  { background: var(--brand-600); color: #fff; border-color: var(--brand-600); }
+.step-label {
+ font-size: 11px; font-weight: 600; color: var(--text-2);
+ text-transform: uppercase; letter-spacing: .5px;
+ margin-left: 8px; white-space: nowrap;
+ transition: color .2s;
+}
+.step-label.active { color: var(--brand-600); }
+.step-connector {
+ flex: 1; height: 2px; background: var(--n-200); margin: 0 8px;
+ transition: background .3s;
+}
+.step-connector.done { background: var(--brand-500); }
+
+/* Step panels */
+.step-panel { display: none; animation: fadeUp .3s ease both; }
+.step-panel.active { display: block; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:none} }
+
+/* Duration quick-pick */
+.dur-grid {
+ display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px;
+ margin-bottom: 10px;
+}
+.dur-btn {
+ padding: 10px 4px; border: 2px solid var(--border);
+ border-radius: var(--r-sm); background: var(--surface-2);
+ font-size: 13px; font-weight: 600; color: var(--text-2);
+ cursor: pointer; text-align: center; transition: all .18s ease;
+}
+.dur-btn:hover  { border-color: var(--brand-500); color: var(--brand-600); background: var(--brand-50); }
+.dur-btn.active { border-color: var(--brand-500); background: var(--brand-50); color: var(--brand-700); }
+
+/* Toggle switch */
+.toggle-row {
+ display: flex; align-items: center; justify-content: space-between;
+ padding: 14px 16px; border: 1px solid var(--border);
+ border-radius: var(--r-md); background: var(--surface-2);
+ margin-bottom: 10px; gap: 12px;
+}
+.toggle-row:last-child { margin-bottom: 0; }
+.toggle-info {}
+.toggle-info strong { font-size: 14px; font-weight: 600; color: var(--text); display: block; }
+.toggle-info span  { font-size: 12px; color: var(--text-2); margin-top: 2px; display: block; }
+.toggle-switch {
+ position: relative; width: 46px; height: 26px; flex-shrink: 0;
+}
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.toggle-slider {
+ position: absolute; inset: 0; background: var(--n-300);
+ border-radius: 999px; cursor: pointer; transition: background .2s;
+}
+.toggle-slider::before {
+ content: ''; position: absolute;
+ width: 20px; height: 20px; border-radius: 50%;
+ left: 3px; top: 3px; background: #fff;
+ transition: transform .2s; box-shadow: 0 1px 4px rgba(0,0,0,.2);
+}
+.toggle-switch input:checked + .toggle-slider { background: var(--brand-500); }
+.toggle-switch input:checked + .toggle-slider::before { transform: translateX(20px); }
+
+
+
+/* Pool hint */
+.pool-hint {
+ font-size: 12px; color: var(--text-2); margin-top: 6px; line-height: 1.5;
+ padding: 8px 12px; background: var(--n-100); border-radius: var(--r-sm);
+}
+
+/* Nav buttons */
+.wizard-nav {
+ display: flex; justify-content: space-between; align-items: center;
+ margin-top: 24px; gap: 12px;
+}
+
+/* Summary review */
+.summary-grid {
+ display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+}
+.summary-item {
+ background: var(--surface-2); border: 1px solid var(--border);
+ border-radius: var(--r-md); padding: 12px 14px;
+}
+.summary-item .s-label { font-size: 11px; font-weight: 600; color: var(--text-2); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; }
+.summary-item .s-val  { font-size: 15px; font-weight: 700; color: var(--text); word-break: break-all; }
+.summary-item .s-val.code { font-family: monospace; font-size: 18px; letter-spacing: 2px; color: var(--brand-700); }
+
+/* Validation */
+.field-err { border-color: var(--danger) !important; }
+.err-msg  { font-size: 12px; color: var(--danger); margin-top: 4px; }
+
+/* ── Edit Exam Modal ──────────────────────────────────────────── */
+.edit-modal-backdrop {
+ display: none; position: fixed; inset: 0; z-index: 9999;
+ background: rgba(0,0,0,0.55); align-items: center; justify-content: center;
+ padding: 16px;
+}
+.edit-modal-backdrop.open { display: flex; }
+.edit-modal {
+ background: #fff; border-radius: 18px; width: 100%; max-width: 640px;
+ max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,.25);
+ animation: modalIn .25s ease;
+}
+@keyframes modalIn { from{opacity:0;transform:scale(.96)} to{opacity:1;transform:none} }
+.edit-modal-header {
+ display: flex; align-items: center; justify-content: space-between;
+ padding: 20px 24px 16px; border-bottom: 1px solid var(--border);
+ position: sticky; top: 0; background: #fff; z-index: 1;
+}
+.edit-modal-header h3 { font-size: 16px; font-weight: 700; color: var(--text); margin: 0; }
+.edit-modal-close {
+ background: var(--n-100); border: none; border-radius: 8px;
+ width: 32px; height: 32px; font-size: 18px; cursor: pointer;
+ display: flex; align-items: center; justify-content: center; color: var(--text-2);
+}
+.edit-modal-close:hover { background: var(--n-200); }
+.edit-modal-body { padding: 20px 24px; }
+.edit-modal-footer {
+ padding: 16px 24px; border-top: 1px solid var(--border);
+ display: flex; gap: 10px; justify-content: flex-end;
+ position: sticky; bottom: 0; background: #fff;
+}
+.edit-section-title {
+ font-size: 11px; font-weight: 700; text-transform: uppercase;
+ letter-spacing: .6px; color: var(--text-2); margin: 18px 0 10px;
+}
+.edit-section-title:first-child { margin-top: 0; }
+
+@media (max-width: 580px) {
+ .dur-grid { grid-template-columns: repeat(3, 1fr); }
+ .summary-grid { grid-template-columns: 1fr; }
+ .step-label { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="admin-layout">
+ <div id="sidebarContainer"></div>
+ <div class="admin-main">
+ <div id="topbarContainer"></div>
+ <div class="content">
+ <div id="alertBox"></div>
+
+ <!-- ── WIZARD ───────────────────────────────────────── -->
+ <div class="wizard-wrap">
+
+ <!-- Progress bar -->
+ <div class="steps" id="stepsBar">
+ <div class="step-item">
+ <div class="step-circle active" id="sc1">1</div>
+ <div class="step-label active"  id="sl1">Basics</div>
+ </div>
+ <div class="step-connector" id="cn1"></div>
+ <div class="step-item">
+ <div class="step-circle" id="sc2">2</div>
+ <div class="step-label"  id="sl2">Scope</div>
+ </div>
+ <div class="step-connector" id="cn2"></div>
+ <div class="step-item">
+ <div class="step-circle" id="sc3">3</div>
+ <div class="step-label"  id="sl3">Settings</div>
+ </div>
+ <div class="step-connector" id="cn3"></div>
+ <div class="step-item">
+ <div class="step-circle" id="sc4">4</div>
+ <div class="step-label"  id="sl4">Review</div>
+ </div>
+ </div>
+
+ <!-- ── STEP 1: BASICS ────────────────────────────── -->
+ <div class="step-panel active card" id="step1">
+ <div class="card-header">Exam Basics</div>
+ <div class="card-body">
+
+ <div class="form-group">
+ <label class="form-label">Exam Title *</label>
+ <input type="text" id="title" class="form-control"
+ placeholder="e.g. First Semester Anatomy Examination"
+ oninput="clearErr(this)">
+ <div class="err-msg" id="err-title"></div>
+ </div>
+
+
+ <div class="form-group" style="margin-top:20px;">
+ <label class="form-label">Duration *</label>
+ <div class="dur-grid" id="durGrid">
+ <button class="dur-btn" onclick="setDur(15)">15 min</button>
+ <button class="dur-btn" onclick="setDur(30)">30 min</button>
+ <button class="dur-btn active" onclick="setDur(60)">60 min</button>
+ <button class="dur-btn" onclick="setDur(90)">90 min</button>
+ <button class="dur-btn" onclick="setDur(120)">2 hrs</button>
+ </div>
+ <div style="display:flex;align-items:center;gap:8px;">
+ <input type="number" id="duration" class="form-control" value="60" min="1" max="480"
+ style="width:120px;" oninput="syncDurBtns(); clearErr(this)">
+ <span style="font-size:13px;color:var(--text-2);">minutes</span>
+ </div>
+ <div class="err-msg" id="err-dur"></div>
+ </div>
+
+ <div class="form-group" style="margin-top:20px;">
+ <label class="form-label">Course *</label>
+ <select id="quick_course_id" class="form-control form-select" oninput="clearErr(this)" onchange="document.getElementById('course_id').value=this.value">
+ <option value="">— Select Course —</option>
+ </select>
+ <div class="err-msg" id="err-course"></div>
+ <div style="font-size:12px;color:var(--text-2);margin-top:6px;">
+ Applies to all departments &amp; levels by default — use <strong>Next: Scope</strong> below to restrict it or add dates.
+ </div>
+ </div>
+
+ <div class="wizard-nav">
+ <span></span>
+ <div style="display:flex;gap:10px;">
+ <button class="btn btn-primary" onclick="quickCreateExam()" id="quickCreateBtn">Create Exam Now</button>
+ <button class="btn btn-ghost" onclick="goStep(2)">Next: Scope →</button>
+ </div>
+ </div>
+ </div>
+ </div>
+
+ <!-- ── STEP 2: SCOPE ─────────────────────────────── -->
+ <div class="step-panel card" id="step2">
+ <div class="card-header">Exam Scope</div>
+ <div class="card-body">
+
+ <div class="form-grid-2">
+ <div class="form-group">
+ <label class="form-label">Department</label>
+ <select id="department_id" class="form-control form-select" onchange="onDeptChange()">
+ <option value="">— All Departments —</option>
+ </select>
+ </div>
+ <div class="form-group">
+ <label class="form-label">Course *</label>
+ <select id="course_id" class="form-control form-select" oninput="clearErr(this)">
+ <option value="">— Select Course —</option>
+ </select>
+ <div class="err-msg" id="err-course2"></div>
+ </div>
+ </div>
+
+ <div class="form-group">
+ <label class="form-label">Level</label>
+ <select id="level_id" class="form-control form-select">
+ <option value="">— All Levels —</option>
+ </select>
+ </div>
+
+ <div class="form-grid-2" style="margin-top:8px;">
+ <div class="form-group">
+ <label class="form-label">Start Date <span style="font-weight:400;color:var(--text-2);">(optional)</span></label>
+ <input type="datetime-local" id="start_date" class="form-control">
+ </div>
+ <div class="form-group">
+ <label class="form-label">End Date <span style="font-weight:400;color:var(--text-2);">(optional)</span></label>
+ <input type="datetime-local" id="end_date" class="form-control">
+ </div>
+ </div>
+
+ <div class="form-group">
+ <label class="form-label">Instructions <span style="font-weight:400;color:var(--text-2);">— optional, supports $math$</span></label>
+ <textarea id="instructions" class="form-control" rows="3"
+ placeholder="Enter any special instructions for students…"></textarea>
+ </div>
+
+ <div class="wizard-nav">
+ <button class="btn btn-ghost" onclick="goStep(1)">← Back</button>
+ <button class="btn btn-primary" onclick="goStep(3)">Next: Settings →</button>
+ </div>
+ </div>
+ </div>
+
+ <!-- ── STEP 3: SETTINGS ──────────────────────────── -->
+ <div class="step-panel card" id="step3">
+ <div class="card-header">Exam Settings</div>
+ <div class="card-body">
+
+ <div class="toggle-row">
+ <div class="toggle-info">
+ <strong>Shuffle Questions</strong>
+ <span>Each student gets questions in a different random order</span>
+ </div>
+ <label class="toggle-switch">
+ <input type="checkbox" id="shuffle_questions" checked>
+ <span class="toggle-slider"></span>
+ </label>
+ </div>
+
+ <div class="toggle-row">
+ <div class="toggle-info">
+ <strong>Shuffle Answer Options</strong>
+ <span>Randomises the A/B/C/D order for every question</span>
+ </div>
+ <label class="toggle-switch">
+ <input type="checkbox" id="shuffle_answers">
+ <span class="toggle-slider"></span>
+ </label>
+ </div>
+
+ <div class="toggle-row">
+ <div class="toggle-info">
+ <strong>Allow Retake</strong>
+ <span>Students can attempt the exam more than once</span>
+ </div>
+ <label class="toggle-switch">
+ <input type="checkbox" id="allow_retake">
+ <span class="toggle-slider"></span>
+ </label>
+ </div>
+
+ <div class="form-group" style="margin-top:20px;">
+ <label class="form-label">Question Pool Size
+ <span style="font-weight:400;color:var(--text-2);"> — 0 = use all questions</span>
+ </label>
+ <input type="number" id="question_pool_size" class="form-control"
+ value="0" min="0" style="width:140px;"
+ placeholder="e.g. 30">
+ <div class="pool-hint">
+ If you upload 60 questions and set pool to 30, each student gets 30 randomly chosen questions — great for preventing answer sharing.
+ </div>
+ </div>
+
+ <div class="wizard-nav">
+ <button class="btn btn-ghost" onclick="goStep(2)">← Back</button>
+ <button class="btn btn-primary" onclick="goStep(4)">Next: Review →</button>
+ </div>
+ </div>
+ </div>
+
+ <!-- ── STEP 4: REVIEW ────────────────────────────── -->
+ <div class="step-panel card" id="step4">
+ <div class="card-header">Review &amp; Create</div>
+ <div class="card-body">
+ <div class="summary-grid" id="summaryGrid">
+ <!-- Filled by JS -->
+ </div>
+
+ <div style="margin-top:20px;padding:14px 16px;background:#fffbeb;border:1px solid #fcd34d;border-radius:var(--r-md);font-size:13px;color:#92400e;">
+ After creating, you'll be taken to <strong>Add Questions</strong>. Generate the access code anytime from <strong>Access Codes</strong> in the sidebar — students see the exam but cannot enter until you release the code.
+ </div>
+
+ <div class="wizard-nav">
+ <button class="btn btn-ghost" onclick="goStep(3)">← Back</button>
+ <button class="btn btn-primary btn-lg" onclick="createExam()" id="createBtn">Create Exam</button>
+ </div>
+ </div>
+ </div>
+
+ </div><!-- /wizard-wrap -->
+
+ <!-- ── EXISTING EXAMS TABLE ──────────────────────── -->
+ <div class="card" style="margin-top:28px;">
+ <div class="card-header">All Exams</div>
+ <div class="card-body" style="padding:0;">
+ <div class="table-wrapper">
+ <table>
+ <thead>
+ <tr>
+ <th>Title</th>
+ <th>Course</th>
+ <th>Duration</th>
+ <th>Retake</th>
+ <th>Questions</th>
+ <th>Actions</th>
+ </tr>
+ </thead>
+ <tbody id="examsTable">
+ <tr><td colspan="7" style="text-align:center;padding:32px;color:#5b5f80;">Loading exams...</td></tr>
+ </tbody>
+ </table>
+ </div>
+ </div>
+ </div>
+
+ </div>
+ </div>
+</div>
+
+<!-- ── EDIT EXAM MODAL ─────────────────────────────────────── -->
+<div class="edit-modal-backdrop" id="editModalBackdrop" onclick="if(event.target===this)closeEditModal()">
+ <div class="edit-modal">
+ <div class="edit-modal-header">
+ <h3>Edit Exam</h3>
+ <button class="edit-modal-close" onclick="closeEditModal()"></button>
+ </div>
+ <div class="edit-modal-body">
+ <input type="hidden" id="editExamId">
+
+ <div class="edit-section-title">Basics</div>
+ <div class="form-group">
+ <label class="form-label">Exam Title *</label>
+ <input type="text" id="editTitle" class="form-control" placeholder="Exam title">
+ </div>
+
+ <div class="form-group" style="margin-top:14px;">
+ <label class="form-label">Duration *</label>
+ <div class="dur-grid" id="editDurGrid">
+ <button class="dur-btn" onclick="setEditDur(15)">15 min</button>
+ <button class="dur-btn" onclick="setEditDur(30)">30 min</button>
+ <button class="dur-btn" onclick="setEditDur(60)">60 min</button>
+ <button class="dur-btn" onclick="setEditDur(90)">90 min</button>
+ <button class="dur-btn" onclick="setEditDur(120)">2 hrs</button>
+ </div>
+ <div style="display:flex;align-items:center;gap:8px;">
+ <input type="number" id="editDuration" class="form-control" min="1" max="480"
+ style="width:120px;" oninput="syncEditDurBtns()">
+ <span style="font-size:13px;color:var(--text-2);">minutes</span>
+ </div>
+ </div>
+
+ <div class="edit-section-title">Scope</div>
+ <div class="form-grid-2">
+ <div class="form-group">
+ <label class="form-label">Department</label>
+ <select id="editDepartment" class="form-control form-select" onchange="onEditDeptChange()">
+ <option value="">— All Departments —</option>
+ </select>
+ </div>
+ <div class="form-group">
+ <label class="form-label">Course *</label>
+ <select id="editCourse" class="form-control form-select">
+ <option value="">— Select Course —</option>
+ </select>
+ </div>
+ </div>
+ <div class="form-group">
+ <label class="form-label">Level</label>
+ <select id="editLevel" class="form-control form-select">
+ <option value="">— All Levels —</option>
+ </select>
+ </div>
+
+ <div class="form-grid-2" style="margin-top:8px;">
+ <div class="form-group">
+ <label class="form-label">Start Date</label>
+ <input type="datetime-local" id="editStartDate" class="form-control">
+ </div>
+ <div class="form-group">
+ <label class="form-label">End Date</label>
+ <input type="datetime-local" id="editEndDate" class="form-control">
+ </div>
+ </div>
+
+ <div class="form-group">
+ <label class="form-label">Instructions</label>
+ <textarea id="editInstructions" class="form-control" rows="3"></textarea>
+ </div>
+
+ <div class="edit-section-title">Settings</div>
+ <div class="toggle-row">
+ <div class="toggle-info">
+ <strong>Shuffle Questions</strong>
+ <span>Random order per student</span>
+ </div>
+ <label class="toggle-switch">
+ <input type="checkbox" id="editShuffleQ">
+ <span class="toggle-slider"></span>
+ </label>
+ </div>
+ <div class="toggle-row">
+ <div class="toggle-info">
+ <strong>Shuffle Answers</strong>
+ <span>Randomise A/B/C/D order</span>
+ </div>
+ <label class="toggle-switch">
+ <input type="checkbox" id="editShuffleA">
+ <span class="toggle-slider"></span>
+ </label>
+ </div>
+ <div class="toggle-row">
+ <div class="toggle-info">
+ <strong>Allow Retake</strong>
+ <span>Students can attempt more than once</span>
+ </div>
+ <label class="toggle-switch">
+ <input type="checkbox" id="editRetake">
+ <span class="toggle-slider"></span>
+ </label>
+ </div>
+ <div class="form-group" style="margin-top:14px;">
+ <label class="form-label">Question Pool Size <span style="font-weight:400;color:var(--text-2);">— 0 = all</span></label>
+ <input type="number" id="editPoolSize" class="form-control" min="0" style="width:140px;" placeholder="0">
+ </div>
+ </div><!-- /body -->
+ <div class="edit-modal-footer">
+ <button class="btn btn-ghost" onclick="closeEditModal()">Cancel</button>
+ <button class="btn btn-primary" id="editSaveBtn" onclick="saveEditExam()">Save Changes</button>
+ </div>
+ </div>
+</div>
+
+<script src="js/admin.js"></script>
+<script>
+document.getElementById('sidebarContainer').innerHTML = getSidebarHTML('create-exam.html');
+document.getElementById('topbarContainer').innerHTML  = getTopbarHTML('Create Exam');
+checkAdmin();
+requirePermission('manage_exams');
+
+// ── State ─────────────────────────────────────────────────────
+let currentStep = 1;
+const TOTAL  = 4;
+let allCourses  = [];
+
+// ── Step navigation ───────────────────────────────────────────
+function goStep(n) {
+ if (n > currentStep && !validateStep(currentStep)) return;
+ // Mark old step
+ const old = currentStep;
+ document.getElementById(`step${old}`).classList.remove('active');
+ document.getElementById(`sc${old}`).classList.remove('active');
+ document.getElementById(`sc${old}`).classList.add('done');
+ document.getElementById(`sc${old}`).textContent = '';
+ document.getElementById(`sl${old}`).classList.remove('active');
+
+ // Going back resets done state
+ if (n < old) {
+ for (let i = n; i <= old; i++) {
+ document.getElementById(`sc${i}`).classList.remove('done');
+ document.getElementById(`sc${i}`).textContent = i;
+ }
+ if (n > 1) document.getElementById(`cn${n-1}`).classList.add('done');
+ }
+
+ currentStep = n;
+ document.getElementById(`step${n}`).classList.add('active');
+ document.getElementById(`sc${n}`).classList.remove('done');
+ document.getElementById(`sc${n}`).classList.add('active');
+ document.getElementById(`sc${n}`).textContent = n;
+ document.getElementById(`sl${n}`).classList.add('active');
+
+ // Connectors
+ for (let i = 1; i < TOTAL; i++) {
+ document.getElementById(`cn${i}`).classList.toggle('done', i < n);
+ }
+
+ if (n === 4) buildSummary();
+ window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── Validation ────────────────────────────────────────────────
+function validateStep(n) {
+ let ok = true;
+ if (n === 1) {
+ const title = document.getElementById('title').value.trim();
+ const dur  = parseInt(document.getElementById('duration').value);
+ if (!title) { setErr('title', 'Exam title is required.'); ok = false; }
+ if (!dur || dur < 1) { setErr('dur', 'Please enter a valid duration.'); ok = false; }
+ }
+ if (n === 2) {
+ const course = document.getElementById('course_id').value;
+ if (!course) { setErr('course2', 'Please select a course.'); ok = false; }
+ }
+ return ok;
+}
+
+function setErr(key, msg) {
+ const el = document.getElementById(`err-${key}`);
+ if (el) el.textContent = msg;
+ const input = document.getElementById({ title:'title', code:'accessCode', dur:'duration', course:'quick_course_id', course2:'course_id' }[key] || key);
+ if (input) input.classList.add('field-err');
+}
+function clearErr(el) {
+ el.classList.remove('field-err');
+ const map = { title:'title', accessCode:'code', duration:'dur', quick_course_id:'course', course_id:'course2' };
+ const errEl = document.getElementById(`err-${map[el.id] || el.id}`);
+ if (errEl) errEl.textContent = '';
+}
+
+// ── Duration quick-pick ───────────────────────────────────────
+function setDur(val) {
+ document.getElementById('duration').value = val;
+ syncDurBtns();
+}
+function syncDurBtns() {
+ const val = parseInt(document.getElementById('duration').value);
+ document.querySelectorAll('.dur-btn').forEach(b => {
+ const bval = parseInt(b.textContent) * (b.textContent.includes('hr') ? 60 : 1);
+ b.classList.toggle('active', bval === val);
+ });
+}
+
+
+
+// ── Department → filter courses ───────────────────────────────
+async function onDeptChange() {
+ const deptId  = document.getElementById('department_id').value;
+ const sel  = document.getElementById('course_id');
+ const current = sel.value;
+ sel.innerHTML = '<option value="">— Select Course —</option>';
+
+ const filtered = deptId
+ ? allCourses.filter(c => c.department_id === deptId || !c.department_id)
+ : allCourses;
+
+ filtered.forEach(c => {
+ const o = document.createElement('option');
+ o.value = c.id;
+ o.textContent = c.name + (c.code ? ` (${c.code})` : '');
+ if (c.id === current) o.selected = true;
+ sel.appendChild(o);
+ });
+}
+
+// ── Summary ───────────────────────────────────────────────────
+function buildSummary() {
+ const deptSel  = document.getElementById('department_id');
+ const courseSel = document.getElementById('course_id');
+ const levelSel  = document.getElementById('level_id');
+ const startVal  = document.getElementById('start_date').value;
+ const endVal  = document.getElementById('end_date').value;
+ const dur  = document.getElementById('duration').value;
+
+ const fmtDt = v => v ? new Date(v).toLocaleString('en-GB', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '—';
+ const yesNo = id => `<span class="badge ${document.getElementById(id).checked ? 'badge-success' : 'badge-neutral'}">${document.getElementById(id).checked ? 'Yes' : 'No'}</span>`;
+ const pool  = document.getElementById('question_pool_size').value;
+
+ document.getElementById('summaryGrid').innerHTML = `
+ <div class="summary-item">
+ <div class="s-label">Exam Title</div>
+ <div class="s-val">${document.getElementById('title').value}</div>
+ </div>
+
+ <div class="summary-item">
+ <div class="s-label">Duration</div>
+ <div class="s-val">${dur} minutes</div>
+ </div>
+ <div class="summary-item">
+ <div class="s-label">Course</div>
+ <div class="s-val">${courseSel.options[courseSel.selectedIndex]?.text || '—'}</div>
+ </div>
+ <div class="summary-item">
+ <div class="s-label">Department</div>
+ <div class="s-val">${deptSel.value ? deptSel.options[deptSel.selectedIndex].text : 'All Departments'}</div>
+ </div>
+ <div class="summary-item">
+ <div class="s-label">Level</div>
+ <div class="s-val">${levelSel.value ? levelSel.options[levelSel.selectedIndex].text : 'All Levels'}</div>
+ </div>
+ <div class="summary-item">
+ <div class="s-label">Start → End</div>
+ <div class="s-val" style="font-size:13px;">${fmtDt(startVal)} → ${fmtDt(endVal)}</div>
+ </div>
+ <div class="summary-item">
+ <div class="s-label">Pool Size</div>
+ <div class="s-val">${pool === '0' || !pool ? 'All questions' : pool + ' random'}</div>
+ </div>
+ <div class="summary-item">
+ <div class="s-label">Shuffle Questions</div>
+ <div class="s-val">${yesNo('shuffle_questions')}</div>
+ </div>
+ <div class="summary-item">
+ <div class="s-label">Shuffle Answers</div>
+ <div class="s-val">${yesNo('shuffle_answers')}</div>
+ </div>
+ <div class="summary-item">
+ <div class="s-label">Allow Retake</div>
+ <div class="s-val">${yesNo('allow_retake')}</div>
+ </div>
+ `;
+}
+
+// ── WAT helper: treat datetime-local as WAT (UTC+1) ──────────
+function toWAT(val) {
+ if (!val) return null;
+ return val + ':00+01:00';
+}
+
+// ── Quick create (Step 1 shortcut) ─────────────────────────────
+async function quickCreateExam() {
+ const title = document.getElementById('title').value.trim();
+ const dur  = parseInt(document.getElementById('duration').value);
+ const course = document.getElementById('quick_course_id').value;
+
+ document.getElementById('err-title').textContent = '';
+ document.getElementById('err-dur').textContent  = '';
+ document.getElementById('err-course').textContent = '';
+ let ok = true;
+ if (!title) { document.getElementById('err-title').textContent = 'Exam title is required.'; ok = false; }
+ if (!dur || dur < 1) { document.getElementById('err-dur').textContent = 'Please enter a valid duration.'; ok = false; }
+ if (!course) { document.getElementById('err-course').textContent = 'Please select a course.'; ok = false; }
+ if (!ok) return;
+
+ // Keep the full wizard's course field in sync in case the user goes back
+ document.getElementById('course_id').value = course;
+
+ const admin  = JSON.parse(sessionStorage.getItem('admin') || '{}');
+ const payload = {
+ title, duration: dur,
+ course_id: course,
+ department_id: null, level_id: null,
+ start_date: null, end_date: null,
+ allow_retake: false,
+ shuffle_questions: true,
+ shuffle_answers: false,
+ question_pool_size: 0,
+ instructions: '',
+ created_by: admin.id || null
+ };
+
+ const btn = document.getElementById('quickCreateBtn');
+ btn.textContent = 'Creating…'; btn.disabled = true;
+ const data = await apiPost('/api/admin/create-exam', payload);
+ btn.textContent = 'Create Exam Now'; btn.disabled = false;
+
+ if (data.success) {
+ showAlert('Exam created! Redirecting to add questions…', 'success');
+ setTimeout(() => window.location.href = `add-question.html?exam_id=${data.id}`, 1400);
+ } else {
+ showAlert(data.message, 'danger');
+ }
+}
+
+// ── Create exam ───────────────────────────────────────────────
+async function createExam() {
+ const admin  = JSON.parse(sessionStorage.getItem('admin') || '{}');
+ const payload = {
+ title:  document.getElementById('title').value.trim(),
+ course_id:  document.getElementById('course_id').value || null,
+ department_id:  document.getElementById('department_id').value || null,
+ level_id:  document.getElementById('level_id').value || null,
+ duration:  parseInt(document.getElementById('duration').value),
+
+ start_date:  toWAT(document.getElementById('start_date').value),
+ end_date:  toWAT(document.getElementById('end_date').value),
+ allow_retake:  document.getElementById('allow_retake').checked,
+ shuffle_questions:  document.getElementById('shuffle_questions').checked,
+ shuffle_answers:  document.getElementById('shuffle_answers').checked,
+ question_pool_size: parseInt(document.getElementById('question_pool_size').value) || 0,
+ instructions:  document.getElementById('instructions').value.trim(),
+ created_by:  admin.id || null
+ };
+
+ const btn = document.getElementById('createBtn');
+ btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2m6-2a10 10 0 11-20 0 10 10 0 0120 0z"/></svg> Creating…'; btn.disabled = true;
+
+ const data = await apiPost('/api/admin/create-exam', payload);
+ btn.innerHTML = ' Create Exam'; btn.disabled = false;
+
+ if (data.success) {
+ showAlert('Exam created! Redirecting to add questions…', 'success');
+ setTimeout(() => window.location.href = `add-question.html?exam_id=${data.id}`, 1400);
+ } else {
+ showAlert(data.message, 'danger');
+ }
+}
+
+// ── Delete exam ───────────────────────────────────────────────
+async function deleteExam(id) {
+ if (!confirmDelete('Delete this exam and all its questions?')) return;
+ const data = await apiDelete(`/api/admin/exams/${id}`);
+ if (data.success) { showAlert('Exam deleted.', 'success'); loadExams(); }
+ else showAlert(data.message, 'danger');
+}
+
+// ── Load exams table ──────────────────────────────────────────
+async function loadExams() {
+ const admin = JSON.parse(sessionStorage.getItem('admin') || '{}');
+ const url  = admin.role === 'lecturer' ? `/api/admin/exams?lecturer_id=${admin.id}` : '/api/admin/exams';
+ const data  = await apiGet(url);
+ const tbody = document.getElementById('examsTable');
+ if (!data.length) {
+ tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:#5b5f80;">No exams created yet.</td></tr>';
+ return;
+ }
+ tbody.innerHTML = data.map(e => `
+ <tr>
+ <td><strong>${e.title}</strong></td>
+ <td>${e.course_name || '-'}</td>
+ <td>${e.duration} min</td>
+ <td>${e.allow_retake ? '<span class="badge badge-success">Yes</span>' : '<span class="badge badge-neutral">No</span>'}</td>
+ <td>${e.question_count || 0}</td>
+ <td style="display:flex;gap:6px;flex-wrap:wrap;">
+ <a href="add-question.html?exam_id=${e.id}" class="btn btn-primary btn-xs">Questions</a>
+ <button onclick="openEditModal('${e.id}')" class="btn btn-xs" style="background:#f0fdf4;color:#166534;border:1.5px solid #86efac;">Edit</button>
+ <button onclick="deleteExam('${e.id}')" class="btn btn-secondary btn-xs">Delete</button>
+ </td>
+ </tr>`).join('');
+}
+
+// ── Dropdowns ────────────────────────────────────────────────
+async function loadDropdowns() {
+ const [courses, depts, levels] = await Promise.all([
+ apiGet('/api/courses'), apiGet('/api/departments'), apiGet('/api/levels')
+ ]);
+
+ allCourses = courses;
+
+ // Courses (all, unfiltered initially)
+ const cSel = document.getElementById('course_id');
+ const qSel = document.getElementById('quick_course_id');
+ courses.forEach(c => {
+ const label = c.name + (c.code ? ` (${c.code})` : '');
+ const o1 = document.createElement('option'); o1.value = c.id; o1.textContent = label; cSel.appendChild(o1);
+ const o2 = document.createElement('option'); o2.value = c.id; o2.textContent = label; qSel.appendChild(o2);
+ });
+
+ // Departments
+ const dSel = document.getElementById('department_id');
+ depts.forEach(d => {
+ const o = document.createElement('option');
+ o.value = d.id; o.textContent = d.name;
+ dSel.appendChild(o);
+ });
+
+ // Levels
+ const lSel = document.getElementById('level_id');
+ levels.forEach(l => {
+ const o = document.createElement('option');
+ o.value = l.id; o.textContent = l.name;
+ lSel.appendChild(o);
+ });
+
+ // Lock dept for lecturers
+ const admin = JSON.parse(sessionStorage.getItem('admin') || '{}');
+ if (admin.role === 'lecturer' && admin.department_id) {
+ dSel.value  = admin.department_id;
+ dSel.disabled = true;
+ onDeptChange();
+ }
+}
+
+// ── Init ──────────────────────────────────────────────────────
+loadDropdowns();
+loadExams();
+
+// ── Edit Modal ────────────────────────────────────────────────
+let editAllCourses = [];
+
+async function openEditModal(examId) {
+ // Populate dropdowns if not done yet
+ if (!editAllCourses.length) await populateEditDropdowns();
+
+ const res = await apiGet(`/api/admin/exams/${examId}`);
+ if (!res.success) { showAlert('Failed to load exam.', 'danger'); return; }
+ const e = res.exam;
+
+ document.getElementById('editExamId').value  = e.id;
+ document.getElementById('editTitle').value  = e.title;
+ document.getElementById('editDuration').value  = e.duration;
+ syncEditDurBtns();
+
+ // Scope
+ document.getElementById('editDepartment').value = e.department_id || '';
+ await onEditDeptChange();
+ document.getElementById('editCourse').value  = e.course_id || '';
+ document.getElementById('editLevel').value  = e.level_id  || '';
+
+ // Dates — convert UTC ISO to datetime-local (WAT = UTC+1)
+ const toLocal = iso => {
+ if (!iso) return '';
+ const d = new Date(iso);
+ d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+ return d.toISOString().slice(0, 16);
+ };
+ document.getElementById('editStartDate').value  = toLocal(e.start_date);
+ document.getElementById('editEndDate').value  = toLocal(e.end_date);
+ document.getElementById('editInstructions').value = e.instructions || '';
+
+ // Settings
+ document.getElementById('editShuffleQ').checked  = e.shuffle_questions;
+ document.getElementById('editShuffleA').checked  = e.shuffle_answers;
+ document.getElementById('editRetake').checked  = e.allow_retake;
+ document.getElementById('editPoolSize').value  = e.question_pool_size || 0;
+
+ document.getElementById('editModalBackdrop').classList.add('open');
+ document.body.style.overflow = 'hidden';
+}
+
+function closeEditModal() {
+ document.getElementById('editModalBackdrop').classList.remove('open');
+ document.body.style.overflow = '';
+}
+
+async function saveEditExam() {
+ const id  = document.getElementById('editExamId').value;
+ const title = document.getElementById('editTitle').value.trim();
+ const dur  = parseInt(document.getElementById('editDuration').value);
+ if (!title) { showAlert('Exam title is required.', 'danger'); return; }
+ if (!dur || dur < 1) { showAlert('Enter a valid duration.', 'danger'); return; }
+
+ const btn = document.getElementById('editSaveBtn');
+ btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2m6-2a10 10 0 11-20 0 10 10 0 0120 0z"/></svg> Saving…'; btn.disabled = true;
+
+ const toWATLocal = val => val ? val + ':00+01:00' : null;
+
+ const payload = {
+ title,
+ duration:  dur,
+ course_id:  document.getElementById('editCourse').value  || null,
+ department_id:  document.getElementById('editDepartment').value || null,
+ level_id:  document.getElementById('editLevel').value  || null,
+ start_date:  toWATLocal(document.getElementById('editStartDate').value),
+ end_date:  toWATLocal(document.getElementById('editEndDate').value),
+ instructions:  document.getElementById('editInstructions').value.trim(),
+ shuffle_questions:  document.getElementById('editShuffleQ').checked,
+ shuffle_answers:  document.getElementById('editShuffleA').checked,
+ allow_retake:  document.getElementById('editRetake').checked,
+ question_pool_size: parseInt(document.getElementById('editPoolSize').value) || 0,
+ };
+
+ const data = await apiPut(`/api/admin/exams/${id}`, payload);
+ btn.innerHTML = ' Save Changes'; btn.disabled = false;
+
+ if (data.success) {
+ showAlert('Exam updated successfully!', 'success');
+ closeEditModal();
+ loadExams();
+ } else {
+ showAlert(data.message || 'Update failed.', 'danger');
+ }
+}
+
+function setEditDur(val) {
+ document.getElementById('editDuration').value = val;
+ syncEditDurBtns();
+}
+function syncEditDurBtns() {
+ const val = parseInt(document.getElementById('editDuration').value);
+ document.querySelectorAll('#editDurGrid .dur-btn').forEach(b => {
+ const bval = parseInt(b.textContent) * (b.textContent.includes('hr') ? 60 : 1);
+ b.classList.toggle('active', bval === val);
+ });
+}
+
+async function populateEditDropdowns() {
+ const [courses, depts, levels] = await Promise.all([
+ apiGet('/api/courses'), apiGet('/api/departments'), apiGet('/api/levels')
+ ]);
+ editAllCourses = courses;
+
+ const dSel = document.getElementById('editDepartment');
+ const lSel = document.getElementById('editLevel');
+ depts.forEach(d => { const o = document.createElement('option'); o.value = d.id; o.textContent = d.name; dSel.appendChild(o); });
+ levels.forEach(l => { const o = document.createElement('option'); o.value = l.id; o.textContent = l.name; lSel.appendChild(o); });
+}
+
+async function onEditDeptChange() {
+ const deptId  = document.getElementById('editDepartment').value;
+ const sel  = document.getElementById('editCourse');
+ const current = sel.value;
+ sel.innerHTML = '<option value="">— Select Course —</option>';
+ const filtered = deptId ? editAllCourses.filter(c => c.department_id === deptId || !c.department_id) : editAllCourses;
+ filtered.forEach(c => {
+ const o = document.createElement('option');
+ o.value = c.id; o.textContent = c.name + (c.code ? ` (${c.code})` : '');
+ if (c.id === current) o.selected = true;
+ sel.appendChild(o);
+ });
+}
+</script>
+<script src="js/ai-assistant.js" defer></script>
+<script src="/pwa.js"></script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+{
+  "name": "margmocoth-cbt",
+  "version": "1.0.0",
+  "description": "MARGMOCOTH CBT - Computer-Based Test portal for Margaret Mosunmola College of Health Science and Technology, Owo",
+  "main": "server.js",
+  "scripts": {
+    "dev": "NODE_ENV=development node server.js",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "archiver": "^7.0.1",
+    "bcryptjs": "^2.4.3",
+    "cloudinary": "^2.9.0",
+    "connect-mongo": "^5.1.0",
+    "cors": "^2.8.6",
+    "csv-parse": "^5.6.0",
+    "dotenv": "^16.6.1",
+    "express": "^4.22.1",
+    "express-session": "^1.19.0",
+    "mongoose": "^9.3.1",
+    "multer": "^1.4.5-lts.1"
+  }
+}

@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="manifest" href="/manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MARGMOCOTH CBT">
+<meta name="theme-color" content="#2e3192">
+<link rel="apple-touch-icon" href="/icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>My Profile — MARGMOCOTH CBT</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Bebas+Neue&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:        #14163f;
+  --navy-2:      #1a1c52;
+  --navy-3:      #24277a;
+  --blue:        #2e3192;
+  --blue-2:      #4448b8;
+  --blue-light:  #f0f1ff;
+  --blue-mid:    #e0e2ff;
+  --surface:     #ffffff;
+  --bg:          #f6f7fc;
+  --border:      #e6e8f3;
+  --border-2:    #cdd0e6;
+  --text-1:      #0f1230;
+  --text-2:      #4a4e73;
+  --text-3:      #8e92b3;
+  --green:       #059669;
+  --green-light: #ecfdf5;
+  --amber:       #d97706;
+  --amber-light: #fffbeb;
+  --red:         #dc2626;
+  --red-light:   #fef2f2;
+  --r-xl: 18px;
+  --r-lg: 14px;
+  --r-md: 10px;
+  --r-sm: 7px;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04);
+  --shadow-md: 0 4px 14px rgba(0,0,0,.1), 0 2px 4px rgba(0,0,0,.06);
+  --shadow-blue: 0 6px 20px rgba(46,49,146,.35);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  background: var(--bg);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  padding-bottom: 80px;
+  color: var(--text-1);
+}
+
+/* ── TOPBAR ─────────────────────────────────────── */
+.topbar {
+  background: var(--navy);
+  padding: 0 16px;
+  height: 54px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 200;
+  border-bottom: 1px solid rgba(255,255,255,.05);
+}
+.topbar-logo { display: flex; align-items: center; gap: 9px; }
+.topbar-logo img { width: 30px; height: 30px; border-radius: 8px; object-fit: cover; border: 1px solid rgba(255,255,255,.1); }
+.topbar-wordmark { line-height: 1; }
+.topbar-name {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 17px; letter-spacing: 1.5px; color: #fff; line-height: 1;
+}
+.topbar-sub {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 9.5px; font-weight: 500;
+  color: rgba(255,255,255,.35);
+  letter-spacing: .8px; text-transform: uppercase; margin-top: 1px;
+}
+.topbar-actions { display: flex; align-items: center; gap: 6px; }
+.t-btn {
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 10px;
+  width: 34px; height: 34px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: #fff; text-decoration: none;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 11px; font-weight: 700;
+  position: relative;
+}
+.t-btn img { width: 100%; height: 100%; border-radius: 9px; object-fit: cover; }
+.hamburger-btn {
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 10px;
+  width: 34px; height: 34px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 4.5px;
+  cursor: pointer; padding: 0;
+}
+.hamburger-btn span {
+  display: block; width: 16px; height: 1.8px;
+  background: rgba(255,255,255,.8); border-radius: 2px;
+  transition: transform .25s, opacity .25s, width .25s;
+}
+.hamburger-btn.open span:nth-child(1) { transform: translateY(6.3px) rotate(45deg); }
+.hamburger-btn.open span:nth-child(2) { opacity: 0; width: 0; }
+.hamburger-btn.open span:nth-child(3) { transform: translateY(-6.3px) rotate(-45deg); }
+
+/* ── SLIDE-IN NAV DRAWER ─────────────────────────── */
+.nav-overlay {
+  display: none; position: fixed; inset: 0; z-index: 300;
+  background: rgba(20,22,63,.65); backdrop-filter: blur(6px);
+}
+.nav-overlay.open { display: block; animation: fadeIn .2s ease; }
+@keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+
+.nav-drawer {
+  position: fixed; top: 0; left: 0; bottom: 0;
+  width: 270px; background: var(--navy);
+  z-index: 301; display: flex; flex-direction: column;
+  transform: translateX(-100%);
+  transition: transform .28s cubic-bezier(.22,1,.36,1);
+  border-right: 1px solid rgba(255,255,255,.07);
+}
+.nav-overlay.open .nav-drawer { transform: translateX(0); }
+
+.nav-head {
+  padding: 56px 20px 20px;
+  border-bottom: 1px solid rgba(255,255,255,.07);
+  background: linear-gradient(160deg, var(--navy-3) 0%, var(--navy) 100%);
+}
+.nav-avatar {
+  width: 58px; height: 58px; border-radius: 50%;
+  background: var(--blue);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px; letter-spacing: 1px; color: #fff;
+  margin-bottom: 12px; overflow: hidden;
+  border: 2px solid rgba(255,255,255,.15);
+  box-shadow: 0 4px 14px rgba(46,49,146,.4);
+}
+.nav-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.nav-student-name {
+  font-size: 14.5px; font-weight: 700; color: #fff;
+  letter-spacing: -.2px; margin-bottom: 3px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.nav-student-matric {
+  font-size: 11px; color: rgba(255,255,255,.4);
+  font-family: 'DM Mono', monospace;
+}
+.nav-student-badge {
+  display: inline-block; margin-top: 8px;
+  background: rgba(46,49,146,.3); border: 1px solid rgba(68,72,184,.4);
+  color: var(--blue-2); border-radius: 999px;
+  font-size: 10px; font-weight: 700;
+  padding: 3px 9px; letter-spacing: .3px;
+}
+
+.nav-body { flex: 1; overflow-y: auto; padding: 10px 0; }
+.nav-section-label {
+  font-size: 9px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1.4px; color: rgba(255,255,255,.25);
+  padding: 14px 20px 6px;
+}
+.nav-item {
+  display: flex; align-items: center; gap: 13px;
+  padding: 12px 20px; cursor: pointer;
+  text-decoration: none; color: rgba(255,255,255,.7);
+  font-size: 13.5px; font-weight: 600;
+  transition: background .15s, color .15s;
+  border-left: 3px solid transparent;
+  position: relative;
+}
+.nav-item:hover { background: rgba(255,255,255,.05); color: #fff; }
+.nav-item.active {
+  background: rgba(46,49,146,.18);
+  color: var(--blue-2);
+  border-left-color: var(--blue-2);
+}
+.nav-item-icon {
+  width: 32px; height: 32px; border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; background: rgba(255,255,255,.07);
+}
+.nav-item.active .nav-item-icon { background: rgba(46,49,146,.3); }
+.nav-item-badge {
+  margin-left: auto; background: var(--red);
+  color: #fff; border-radius: 999px;
+  font-size: 9px; font-weight: 700;
+  padding: 2px 7px; min-width: 18px; text-align: center;
+}
+
+.nav-foot {
+  padding: 16px 20px;
+  border-top: 1px solid rgba(255,255,255,.07);
+}
+.nav-logout {
+  width: 100%; padding: 11px;
+  background: rgba(220,38,38,.15); border: 1px solid rgba(220,38,38,.25);
+  color: #fca5a5; border-radius: var(--r-md);
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 13px; font-weight: 700;
+  cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: background .15s;
+}
+.nav-logout:hover { background: rgba(220,38,38,.25); }
+
+/* ── PAGE ─────────────────────────────────────────── */
+.page { max-width: 480px; margin: 0 auto; padding: 20px 16px 40px; }
+
+/* ── PROFILE HERO CARD ───────────────────────────── */
+.profile-hero {
+  background: linear-gradient(135deg, var(--navy) 0%, var(--navy-3) 100%);
+  border-radius: var(--r-xl); padding: 28px 20px 24px;
+  text-align: center; margin-bottom: 16px;
+  box-shadow: var(--shadow-md);
+  position: relative; overflow: hidden;
+}
+.profile-hero::before {
+  content: ''; position: absolute; top: -40px; right: -40px;
+  width: 140px; height: 140px; border-radius: 50%;
+  background: rgba(46,49,146,.12);
+}
+.profile-hero::after {
+  content: ''; position: absolute; bottom: -30px; left: -30px;
+  width: 100px; height: 100px; border-radius: 50%;
+  background: rgba(68,72,184,.08);
+}
+.hero-avatar {
+  width: 84px; height: 84px; border-radius: 50%;
+  background: var(--blue);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 30px; letter-spacing: 1px; color: #fff;
+  margin: 0 auto 14px; overflow: hidden;
+  border: 3px solid rgba(255,255,255,.2);
+  box-shadow: 0 8px 24px rgba(46,49,146,.5);
+  position: relative; z-index: 1;
+}
+.hero-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.hero-name {
+  font-size: 19px; font-weight: 700; color: #fff;
+  letter-spacing: -.3px; margin-bottom: 4px;
+  position: relative; z-index: 1;
+}
+.hero-matric {
+  font-size: 12px; color: rgba(255,255,255,.45);
+  font-family: 'DM Mono', monospace; margin-bottom: 12px;
+  position: relative; z-index: 1;
+}
+.hero-chips {
+  display: flex; flex-wrap: wrap; gap: 6px; justify-content: center;
+  position: relative; z-index: 1;
+}
+.hero-chip {
+  background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.15);
+  color: rgba(255,255,255,.8); border-radius: 999px;
+  font-size: 10.5px; font-weight: 600; padding: 4px 11px;
+}
+.hero-chip.blue { background: rgba(46,49,146,.35); border-color: rgba(68,72,184,.4); color: var(--blue-2); }
+
+/* ── SECTION CARDS ───────────────────────────────── */
+.section-card {
+  background: var(--surface); border-radius: var(--r-lg);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 12px; overflow: hidden;
+}
+.section-card-head {
+  padding: 13px 16px 11px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 9px;
+}
+.section-card-icon {
+  width: 30px; height: 30px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.sci-blue   { background: var(--blue-light); }
+.sci-green  { background: var(--green-light); }
+.sci-amber  { background: var(--amber-light); }
+.sci-red    { background: var(--red-light); }
+.section-card-title {
+  font-size: 13px; font-weight: 700; color: var(--text-1); letter-spacing: -.1px;
+}
+
+.info-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--bg);
+}
+.info-row:last-child { border-bottom: none; }
+.info-row-icon {
+  width: 34px; height: 34px; border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.iri-blue   { background: var(--blue-light); }
+.iri-purple { background: #f5f3ff; }
+.iri-green  { background: var(--green-light); }
+.iri-amber  { background: var(--amber-light); }
+.iri-navy   { background: #f1f2fa; }
+.info-row-body { flex: 1; min-width: 0; }
+.info-row-label {
+  font-size: 9.5px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .5px; color: var(--text-3); margin-bottom: 2px;
+}
+.info-row-value {
+  font-size: 13.5px; font-weight: 600; color: var(--text-1);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.info-row-value.empty { color: var(--border-2); font-weight: 400; font-style: italic; font-size: 12.5px; }
+
+/* ── QUICK ACTION ITEMS ──────────────────────────── */
+.action-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 13px 16px; cursor: pointer;
+  text-decoration: none;
+  border-bottom: 1px solid var(--bg);
+  transition: background .15s;
+}
+.action-row:last-child { border-bottom: none; }
+.action-row:hover { background: var(--bg); }
+.action-row-body { flex: 1; min-width: 0; }
+.action-row-title { font-size: 13.5px; font-weight: 600; color: var(--text-1); }
+.action-row-sub   { font-size: 11px; color: var(--text-3); margin-top: 1px; }
+.action-row-arrow { color: var(--text-3); flex-shrink: 0; }
+.action-row.danger .action-row-title { color: var(--red); }
+.action-row.danger .action-row-icon { background: var(--red-light); }
+
+/* ── PASSWORD FORM ───────────────────────────────── */
+.pw-form { padding: 14px 16px; display: none; border-top: 1px solid var(--bg); }
+.pw-form.open { display: block; }
+.pw-field { margin-bottom: 10px; }
+.pw-label { font-size: 10.5px; font-weight: 700; color: var(--text-3); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 5px; }
+.pw-input-wrap { position: relative; }
+.pw-input {
+  width: 100%; padding: 10px 38px 10px 12px;
+  border: 1.5px solid var(--border); border-radius: var(--r-sm);
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 13px; color: var(--text-1); background: var(--bg);
+  outline: none; transition: border-color .2s;
+}
+.pw-input:focus { border-color: var(--blue); background: #fff; }
+.pw-eye {
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; cursor: pointer; color: var(--text-3);
+  display: flex; align-items: center; justify-content: center;
+}
+.pw-submit {
+  width: 100%; padding: 11px; margin-top: 4px;
+  background: var(--blue); color: #fff; border: none;
+  border-radius: var(--r-md); font-family: 'Space Grotesk', sans-serif;
+  font-size: 13.5px; font-weight: 700; cursor: pointer;
+  transition: opacity .15s;
+}
+.pw-submit:hover { opacity: .9; }
+.pw-alert { font-size: 12px; font-weight: 600; padding: 8px 11px; border-radius: var(--r-sm); margin-top: 8px; }
+.pw-alert.err { background: var(--red-light); color: var(--red); }
+.pw-alert.ok  { background: var(--green-light); color: var(--green); }
+
+/* ── ALERT TOAST ─────────────────────────────────── */
+.toast {
+  position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
+  background: var(--navy); color: #fff;
+  padding: 10px 18px; border-radius: 999px;
+  font-size: 12.5px; font-weight: 600;
+  box-shadow: var(--shadow-md); z-index: 500;
+  white-space: nowrap; opacity: 0;
+  transition: opacity .3s;
+  pointer-events: none;
+}
+.toast.show { opacity: 1; }
+
+/* ── LOADING SKELETON ────────────────────────────── */
+.skel {
+  background: linear-gradient(90deg, #e6e8f3 25%, #f1f2fa 50%, #e6e8f3 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.3s infinite;
+  border-radius: 6px;
+}
+@keyframes shimmer { from { background-position: 200% 0 } to { background-position: -200% 0 } }
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<!-- NAV OVERLAY + DRAWER -->
+<div class="nav-overlay" id="navOverlay" onclick="closeNav(event)">
+  <div class="nav-drawer" id="navDrawer">
+
+    <div class="nav-head">
+      <div class="nav-avatar" id="navAvatar">?</div>
+      <div class="nav-student-name" id="navName">Loading…</div>
+      <div class="nav-student-matric" id="navMatric">—</div>
+      <div id="navBadges"></div>
+    </div>
+
+    <div class="nav-body">
+      <div class="nav-section-label">Main</div>
+      <a class="nav-item" href="dashboard.html">
+        <div class="nav-item-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        </div>
+        Dashboard
+      </a>
+      <a class="nav-item active" href="profile.html">
+        <div class="nav-item-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        My Profile
+      </a>
+      <a class="nav-item" href="notifications.html">
+        <div class="nav-item-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        </div>
+        Notifications
+        <span class="nav-item-badge" id="navNotifBadge" style="display:none;"></span>
+      </a>
+
+      <div class="nav-section-label">Exams</div>
+      <a class="nav-item" href="dashboard.html#exams">
+        <div class="nav-item-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        </div>
+        Available Exams
+      </a>
+
+      <div class="nav-section-label">Account</div>
+      <a class="nav-item" href="student-capture.html">
+        <div class="nav-item-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        </div>
+        Face Photo
+      </a>
+      <a class="nav-item" href="student-name-request.html">
+        <div class="nav-item-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </div>
+        Name / Matric Change
+      </a>
+      <a class="nav-item" href="dashboard.html#complaint">
+        <div class="nav-item-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        Raise a Complaint
+      </a>
+    </div>
+
+    <div class="nav-foot">
+      <button class="nav-logout" onclick="logout()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Log Out
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-logo">
+    <button class="hamburger-btn" id="hamburgerBtn" onclick="openNav()" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+    <div class="topbar-wordmark">
+      <div class="topbar-name">MARGMOCOTH CBT</div>
+      <div class="topbar-sub">My Profile</div>
+    </div>
+  </div>
+  <div class="topbar-actions">
+    <a class="t-btn" href="notifications.html" title="Notifications" id="bellBtn">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+    </a>
+    <a class="t-btn" href="dashboard.html" title="Dashboard">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+    </a>
+  </div>
+</div>
+
+<div class="page">
+
+  <!-- PROFILE HERO -->
+  <div class="profile-hero">
+    <div class="hero-avatar" id="heroAvatar">?</div>
+    <div class="hero-name" id="heroName">Loading…</div>
+    <div class="hero-matric" id="heroMatric">—</div>
+    <div class="hero-chips" id="heroChips"></div>
+  </div>
+
+  <!-- PERSONAL INFORMATION -->
+  <div class="section-card">
+    <div class="section-card-head">
+      <div class="section-card-icon sci-blue">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2e3192" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </div>
+      <div class="section-card-title">Personal Information</div>
+    </div>
+    <div class="info-row">
+      <div class="info-row-icon iri-blue">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2e3192" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </div>
+      <div class="info-row-body">
+        <div class="info-row-label">Full Name</div>
+        <div class="info-row-value" id="infoName"><span class="skel" style="width:120px;height:14px;display:block;"></span></div>
+      </div>
+    </div>
+    <div class="info-row">
+      <div class="info-row-icon iri-navy">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5b5f80" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+      </div>
+      <div class="info-row-body">
+        <div class="info-row-label">Level &amp; Department</div>
+        <div class="info-row-value" id="infoMatric" style="font-family:'DM Mono',monospace;font-size:12.5px;"><span class="skel" style="width:90px;height:14px;display:block;"></span></div>
+      </div>
+    </div>
+    <div class="info-row">
+      <div class="info-row-icon iri-purple">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      </div>
+      <div class="info-row-body">
+        <div class="info-row-label">Department</div>
+        <div class="info-row-value" id="infoDept"><span class="skel" style="width:100px;height:14px;display:block;"></span></div>
+      </div>
+    </div>
+    <div class="info-row">
+      <div class="info-row-icon iri-green">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      </div>
+      <div class="info-row-body">
+        <div class="info-row-label">Level</div>
+        <div class="info-row-value" id="infoLevel"><span class="skel" style="width:60px;height:14px;display:block;"></span></div>
+      </div>
+    </div>
+    <div class="info-row">
+      <div class="info-row-icon iri-amber">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 9.8 19.79 19.79 0 0 1 1.59 1.18 2 2 0 0 1 3.56 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.56a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+      </div>
+      <div class="info-row-body">
+        <div class="info-row-label">Phone</div>
+        <div class="info-row-value" id="infoPhone"><span class="skel" style="width:80px;height:14px;display:block;"></span></div>
+      </div>
+    </div>
+    <div class="info-row">
+      <div class="info-row-icon iri-blue">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2e3192" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+      </div>
+      <div class="info-row-body">
+        <div class="info-row-label">Email</div>
+        <div class="info-row-value" id="infoEmail" style="font-size:12.5px;"><span class="skel" style="width:110px;height:14px;display:block;"></span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- QUICK ACTIONS -->
+  <div class="section-card">
+    <div class="section-card-head">
+      <div class="section-card-icon sci-green">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+      </div>
+      <div class="section-card-title">Account Actions</div>
+    </div>
+    <a class="action-row" href="student-capture.html">
+      <div class="info-row-icon iri-blue">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2e3192" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      </div>
+      <div class="action-row-body">
+        <div class="action-row-title">Update Face Photo</div>
+        <div class="action-row-sub">Required for exam identity verification</div>
+      </div>
+      <div class="action-row-arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>
+    </a>
+    <a class="action-row" href="student-name-request.html">
+      <div class="info-row-icon iri-purple">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      </div>
+      <div class="action-row-body">
+        <div class="action-row-title">Request Name / Matric Change</div>
+        <div class="action-row-sub">Submit a correction request to admin</div>
+      </div>
+      <div class="action-row-arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>
+    </a>
+    <a class="action-row" href="dashboard.html#complaint">
+      <div class="info-row-icon" style="background:#f0fdf4;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      </div>
+      <div class="action-row-body">
+        <div class="action-row-title">Raise a Complaint</div>
+        <div class="action-row-sub">Having an issue? Admin will respond</div>
+      </div>
+      <div class="action-row-arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>
+    </a>
+  </div>
+
+  <!-- UPDATE CONTACT INFO -->
+  <div class="section-card">
+    <div class="section-card-head">
+      <div class="section-card-icon sci-blue">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2e3192" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      </div>
+      <div class="section-card-title">Update Contact Info</div>
+    </div>
+    <div style="padding:14px 16px;">
+      <div class="pw-field">
+        <div class="pw-label">Phone Number</div>
+        <div class="pw-input-wrap">
+          <input class="pw-input" type="tel" id="contactPhone" placeholder="e.g. 08012345678" inputmode="tel">
+        </div>
+      </div>
+      <div class="pw-field">
+        <div class="pw-label">Email Address</div>
+        <div class="pw-input-wrap">
+          <input class="pw-input" type="email" id="contactEmail" placeholder="e.g. you@gmail.com" inputmode="email">
+        </div>
+      </div>
+      <button class="pw-submit" onclick="doUpdateContact()">Save Changes</button>
+      <div id="contactAlert"></div>
+    </div>
+  </div>
+
+  <!-- FINGERPRINT LOGIN -->
+  <div class="section-card" id="bioCard" style="display:none;">
+    <div class="section-card-head">
+      <div class="section-card-icon" style="background:#f5f3ff;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 11c0-1.1.9-2 2-2s2 .9 2 2v4"/><path d="M7 12V9a5 5 0 0 1 10 0v1"/><path d="M5 12v-2a7 7 0 0 1 14 0v2"/><path d="M3 12V9a9 9 0 0 1 18 0v3"/></svg>
+      </div>
+      <div class="section-card-title">Fingerprint Login</div>
+    </div>
+    <div style="padding:14px 16px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+        <span class="bio-dot" id="bioDot" style="width:9px;height:9px;border-radius:50%;background:var(--border-2);flex-shrink:0;"></span>
+        <span id="bioStatusText" style="font-size:13.5px;font-weight:600;color:var(--text-1);">Checking…</span>
+      </div>
+      <button class="pw-submit" id="bioRegisterBtn" onclick="doRegisterBiometric()" style="display:none;background:var(--blue);">Register Fingerprint</button>
+      <button class="pw-submit" id="bioRemoveBtn" onclick="doRemoveBiometric()" style="display:none;background:var(--red-light);color:var(--red);border:1px solid #fecaca;">Remove Fingerprint</button>
+      <div id="bioAlert" style="margin-top:8px;"></div>
+    </div>
+  </div>
+
+  <!-- CHANGE PASSWORD -->
+  <div class="section-card">
+    <div class="section-card-head">
+      <div class="section-card-icon sci-amber">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      </div>
+      <div class="section-card-title">Change Password</div>
+    </div>
+    <div class="action-row" onclick="togglePwForm()" style="cursor:pointer;">
+      <div class="info-row-icon iri-amber">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <div class="action-row-body">
+        <div class="action-row-title">Update Password</div>
+        <div class="action-row-sub">Change your login password</div>
+      </div>
+      <div class="action-row-arrow" id="pwToggleIcon" style="transition:transform .2s;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+    </div>
+    <div class="pw-form" id="pwForm">
+      <div class="pw-field">
+        <div class="pw-label">Current Password</div>
+        <div class="pw-input-wrap">
+          <input class="pw-input" type="password" id="pwOld" placeholder="Enter current password" autocomplete="current-password">
+          <button class="pw-eye" onclick="togglePwEye('pwOld')" type="button">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="pw-field">
+        <div class="pw-label">New Password</div>
+        <div class="pw-input-wrap">
+          <input class="pw-input" type="password" id="pwNew" placeholder="Min. 6 characters" autocomplete="new-password">
+          <button class="pw-eye" onclick="togglePwEye('pwNew')" type="button">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="pw-field">
+        <div class="pw-label">Confirm New Password</div>
+        <div class="pw-input-wrap">
+          <input class="pw-input" type="password" id="pwConfirm" placeholder="Repeat new password" autocomplete="new-password">
+          <button class="pw-eye" onclick="togglePwEye('pwConfirm')" type="button">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+      <button class="pw-submit" onclick="doChangePassword()">Update Password</button>
+      <div id="pwAlert"></div>
+    </div>
+  </div>
+
+  <!-- DANGER ZONE -->
+  <div class="section-card">
+    <div class="section-card-head">
+      <div class="section-card-icon sci-red">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </div>
+      <div class="section-card-title">Session</div>
+    </div>
+    <div class="action-row danger" onclick="logout()">
+      <div class="info-row-icon" style="background:var(--red-light);">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </div>
+      <div class="action-row-body">
+        <div class="action-row-title">Log Out</div>
+        <div class="action-row-sub">End your current session</div>
+      </div>
+      <div class="action-row-arrow" style="color:var(--red);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>
+    </div>
+  </div>
+
+</div><!-- /page -->
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── AUTH ──────────────────────────────────────────
+let student = JSON.parse(sessionStorage.getItem('student') || 'null');
+if (student && !student.id) { sessionStorage.removeItem('student'); student = null; }
+if (!student || !student.id) {
+  const stored  = JSON.parse(localStorage.getItem('mcht_student') || 'null');
+  const loginAt = localStorage.getItem('mcht_login_at');
+  const age     = loginAt ? Date.now() - Number(loginAt) : Infinity;
+  if (stored?.id && age < 7 * 24 * 3600 * 1000)
+    { student = stored; sessionStorage.setItem('student', JSON.stringify(student)); }
+}
+if (!student || !student.id) { window.location.replace('login.html'); throw new Error('unauthenticated'); }
+
+// ── HELPERS ───────────────────────────────────────
+function escHtml(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function showToast(msg, dur = 2800) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), dur);
+}
+function setVal(id, val) {
+  const el = document.getElementById(id);
+  el.textContent = val || 'Not set';
+  el.className = 'info-row-value' + (val ? '' : ' empty');
+}
+
+// ── POPULATE UI ───────────────────────────────────
+function populateProfile(s) {
+  // Hero
+  const initials = (s.name || '?').split(' ').map(w => w[0] || '').slice(0, 2).join('').toUpperCase();
+  const heroAv = document.getElementById('heroAvatar');
+  if (s.profile_photo_url) {
+    heroAv.style.background = 'none';
+    heroAv.innerHTML = `<img src="${s.profile_photo_url}" alt="photo">`;
+  } else {
+    heroAv.textContent = initials || '?';
+    heroAv.style.background = '';
+  }
+  document.getElementById('heroName').textContent   = s.name   || '—';
+  document.getElementById('heroMatric').textContent = [s.level, s.department].filter(Boolean).join(' · ') || '—';
+  const chipsEl = document.getElementById('heroChips');
+  chipsEl.innerHTML = '';
+  if (s.department) chipsEl.innerHTML += `<span class="hero-chip">${escHtml(s.department)}</span>`;
+  if (s.level)      chipsEl.innerHTML += `<span class="hero-chip blue">${escHtml(s.level)}</span>`;
+
+  // Info rows
+  setVal('infoName',   s.name);
+  setVal('infoMatric', [s.level, s.department].filter(Boolean).join(' · '));
+  setVal('infoDept',   s.department);
+  setVal('infoLevel',  s.level);
+  setVal('infoPhone',  s.phone);
+  setVal('infoEmail',  s.email);
+
+  // Nav drawer
+  const navAv = document.getElementById('navAvatar');
+  if (s.profile_photo_url) {
+    navAv.style.background = 'none';
+    navAv.innerHTML = `<img src="${s.profile_photo_url}" alt="photo">`;
+  } else {
+    navAv.textContent = initials || '?';
+    navAv.style.background = '';
+  }
+  document.getElementById('navName').textContent   = s.name   || '—';
+  document.getElementById('navMatric').textContent = [s.level, s.department].filter(Boolean).join(' · ') || '—';
+  const navBadges = document.getElementById('navBadges');
+  navBadges.innerHTML = '';
+  if (s.department) navBadges.innerHTML += `<span class="nav-student-badge">${escHtml(s.department)}</span> `;
+}
+
+// Populate from cache immediately, then refresh from server
+populateProfile(student);
+prefillContact(student);
+
+async function fetchFreshProfile() {
+  try {
+    const data = await fetch(`/api/student/profile?student_id=${student.id}`).then(r => r.json());
+    if (data.success) {
+      Object.assign(student, data.student);
+      sessionStorage.setItem('student', JSON.stringify(student));
+      try { localStorage.setItem('mcht_student', JSON.stringify(student)); } catch(_) {}
+      populateProfile(data.student);
+    }
+  } catch(_) {}
+}
+// ── CONTACT UPDATE ────────────────────────────────
+function prefillContact(s) {
+  const phoneEl = document.getElementById('contactPhone');
+  const emailEl = document.getElementById('contactEmail');
+  if (phoneEl && s.phone && s.phone !== 'Not set') phoneEl.value = s.phone;
+  if (emailEl && s.email) emailEl.value = s.email;
+}
+
+async function doUpdateContact() {
+  const phone    = document.getElementById('contactPhone').value.trim();
+  const email    = document.getElementById('contactEmail').value.trim();
+  const alertEl  = document.getElementById('contactAlert');
+  alertEl.innerHTML = '';
+  if (!phone && !email) {
+    alertEl.innerHTML = '<div class="pw-alert err">Enter at least a phone number or email.</div>'; return;
+  }
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    alertEl.innerHTML = '<div class="pw-alert err">Enter a valid email address.</div>'; return;
+  }
+  try {
+    const data = await fetch('/api/student/update-contact', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ student_id: student.id, phone: phone || undefined, email: email || undefined })
+    }).then(r => r.json());
+    if (data.success) {
+      if (phone) student.phone = phone;
+      if (email) student.email = email;
+      sessionStorage.setItem('student', JSON.stringify(student));
+      try { localStorage.setItem('mcht_student', JSON.stringify(student)); } catch(_) {}
+      populateProfile(student);
+      alertEl.innerHTML = '<div class="pw-alert ok">✓ Contact info updated!</div>';
+      showToast('✓ Contact info saved');
+    } else {
+      alertEl.innerHTML = `<div class="pw-alert err">${escHtml(data.message || 'Update failed. Try again.')}</div>`;
+    }
+  } catch(_) {
+    alertEl.innerHTML = '<div class="pw-alert err">Network error. Please try again.</div>';
+  }
+}
+
+// ── FINGERPRINT ───────────────────────────────────
+async function initBioSection() {
+  if (!window.PublicKeyCredential) return;
+  const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().catch(() => false);
+  if (!available) return;
+  document.getElementById('bioCard').style.display = 'block';
+  await refreshBioStatus();
+}
+
+async function refreshBioStatus() {
+  const dot = document.getElementById('bioDot');
+  const statusText = document.getElementById('bioStatusText');
+  const regBtn = document.getElementById('bioRegisterBtn');
+  const remBtn = document.getElementById('bioRemoveBtn');
+  try {
+    const data = await fetch(`/api/webauthn/status?student_id=${student.id}`).then(r => r.json());
+    if (data.registered) {
+      dot.style.background = 'var(--green)';
+      statusText.textContent = 'Fingerprint registered';
+      regBtn.style.display = 'none';
+      remBtn.style.display = 'block';
+    } else {
+      dot.style.background = 'var(--border-2)';
+      statusText.textContent = 'No fingerprint registered';
+      regBtn.style.display = 'block';
+      remBtn.style.display = 'none';
+    }
+  } catch(_) { statusText.textContent = 'Could not check status'; }
+}
+
+async function doRegisterBiometric() {
+  const alertEl = document.getElementById('bioAlert');
+  const btn = document.getElementById('bioRegisterBtn');
+  alertEl.innerHTML = '';
+  btn.disabled = true; btn.textContent = 'Waiting for fingerprint…';
+  try {
+    const optData = await fetch(`/api/webauthn/registration-options?matric=${encodeURIComponent(student.matric)}`).then(r => r.json());
+    if (!optData.success) {
+      alertEl.innerHTML = `<div class="pw-alert err">${escHtml(optData.message || 'Could not start registration.')}</div>`;
+      btn.disabled = false; btn.textContent = 'Register Fingerprint'; return;
+    }
+    const opts = optData.options;
+    opts.challenge = Uint8Array.from(atob(opts.challenge.replace(/-/g,'+').replace(/_/g,'/')), c => c.charCodeAt(0));
+    opts.user.id  = Uint8Array.from(atob(opts.user.id.replace(/-/g,'+').replace(/_/g,'/')), c => c.charCodeAt(0));
+    const credential = await navigator.credentials.create({ publicKey: opts });
+    const credId = btoa(String.fromCharCode(...new Uint8Array(credential.rawId))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+    const pubKey = btoa(String.fromCharCode(...new Uint8Array(credential.response.getPublicKey ? credential.response.getPublicKey() : new ArrayBuffer(0)))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+    const regData = await fetch('/api/webauthn/register', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ credential_id: credId, public_key: pubKey, matric: student.matric })
+    }).then(r => r.json());
+    if (regData.success) {
+      alertEl.innerHTML = '<div class="pw-alert ok">✓ Fingerprint registered! You can now log in with your fingerprint.</div>';
+      await refreshBioStatus();
+    } else {
+      alertEl.innerHTML = `<div class="pw-alert err">${escHtml(regData.message || 'Registration failed.')}</div>`;
+    }
+  } catch(e) {
+    alertEl.innerHTML = `<div class="pw-alert err">${e.name === 'NotAllowedError' ? 'Fingerprint scan was cancelled.' : 'Registration failed: ' + e.message}</div>`;
+  }
+  btn.disabled = false; btn.textContent = 'Register Fingerprint';
+}
+
+async function doRemoveBiometric() {
+  const alertEl = document.getElementById('bioAlert');
+  const btn = document.getElementById('bioRemoveBtn');
+  alertEl.innerHTML = '';
+  btn.disabled = true; btn.textContent = 'Removing…';
+  try {
+    const data = await fetch('/api/webauthn/deregister', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ student_id: student.id })
+    }).then(r => r.json());
+    if (data.success) {
+      alertEl.innerHTML = '<div class="pw-alert ok">Fingerprint removed.</div>';
+      await refreshBioStatus();
+    } else {
+      alertEl.innerHTML = `<div class="pw-alert err">${escHtml(data.message || 'Could not remove.')}</div>`;
+    }
+  } catch(_) {
+    alertEl.innerHTML = '<div class="pw-alert err">Server error. Try again.</div>';
+  }
+  btn.disabled = false; btn.textContent = 'Remove Fingerprint';
+}
+
+// Init bio after profile loads
+fetchFreshProfile().then(() => {
+  prefillContact(student);
+  initBioSection();
+});
+
+// ── NAV DRAWER ────────────────────────────────────
+function openNav() {
+  document.getElementById('navOverlay').classList.add('open');
+  document.getElementById('hamburgerBtn').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeNav(e) {
+  // close if clicking the overlay backdrop (not the drawer itself)
+  if (e && e.target !== document.getElementById('navOverlay')) return;
+  _closeNav();
+}
+function _closeNav() {
+  document.getElementById('navOverlay').classList.remove('open');
+  document.getElementById('hamburgerBtn').classList.remove('open');
+  document.body.style.overflow = '';
+}
+// Close on Escape
+document.addEventListener('keydown', e => { if (e.key === 'Escape') _closeNav(); });
+
+// ── LOGOUT ────────────────────────────────────────
+function logout() {
+  localStorage.removeItem('mcht_student');
+  localStorage.removeItem('mcht_login_at');
+  sessionStorage.clear();
+  window.location.href = 'login.html';
+}
+
+// ── PASSWORD FORM ─────────────────────────────────
+let pwFormOpen = false;
+function togglePwForm() {
+  pwFormOpen = !pwFormOpen;
+  document.getElementById('pwForm').classList.toggle('open', pwFormOpen);
+  document.getElementById('pwToggleIcon').style.transform = pwFormOpen ? 'rotate(180deg)' : '';
+  if (!pwFormOpen) {
+    ['pwOld','pwNew','pwConfirm'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('pwAlert').innerHTML = '';
+  }
+}
+function togglePwEye(id) {
+  const inp = document.getElementById(id);
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+async function doChangePassword() {
+  const old_pw  = document.getElementById('pwOld').value;
+  const new_pw  = document.getElementById('pwNew').value;
+  const conf_pw = document.getElementById('pwConfirm').value;
+  const alertEl = document.getElementById('pwAlert');
+  alertEl.innerHTML = '';
+  if (!old_pw) { alertEl.innerHTML = '<div class="pw-alert err">Enter your current password.</div>'; return; }
+  if (!new_pw || new_pw.length < 6) { alertEl.innerHTML = '<div class="pw-alert err">New password must be at least 6 characters.</div>'; return; }
+  if (new_pw !== conf_pw) { alertEl.innerHTML = '<div class="pw-alert err">New passwords do not match.</div>'; return; }
+  try {
+    const data = await fetch('/api/student/change-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ student_id: student.id, old_password: old_pw, new_password: new_pw })
+    }).then(r => r.json());
+    if (data.success) {
+      alertEl.innerHTML = '<div class="pw-alert ok">Password updated successfully!</div>';
+      ['pwOld','pwNew','pwConfirm'].forEach(id => document.getElementById(id).value = '');
+      showToast('✓ Password updated');
+    } else {
+      alertEl.innerHTML = `<div class="pw-alert err">${escHtml(data.message || 'Failed. Try again.')}</div>`;
+    }
+  } catch(_) {
+    alertEl.innerHTML = '<div class="pw-alert err">Network error. Please try again.</div>';
+  }
+}
+</script>
+</body>
+</html>

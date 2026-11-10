@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="manifest" href="/manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MARGMOCOTH CBT">
+<meta name="theme-color" content="#2e3192">
+<link rel="apple-touch-icon" href="/icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>View Results – MARGMOCOTH CBT</title>
+<link rel="stylesheet" href="css/style.css">
+<!-- SheetJS for Excel export -->
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<!-- jsPDF + AutoTable for PDF export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<style>
+.export-btn-group { display: flex; gap: 8px; flex-shrink: 0; align-items: flex-end; }
+.export-btn {
+ display: inline-flex; align-items: center; gap: 6px;
+ padding: 9px 14px; border: none; border-radius: 8px;
+ font-family: inherit; font-size: 13px; font-weight: 700;
+ cursor: pointer; transition: all .2s; white-space: nowrap;
+}
+.export-btn-excel { background: #166534; color: #fff; }
+.export-btn-excel:hover { background: #14532d; }
+.export-btn-pdf  { background: #9f1239; color: #fff; }
+.export-btn-pdf:hover  { background: #881337; }
+.export-btn-print { background: #4448b8; color: #fff; }
+.export-btn-print:hover { background: #2e3192; }
+
+/* ── Custom Confirm Dialog ──────────────────────────────────── */
+.confirm-overlay {
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(0,0,0,.50); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px; opacity: 0; pointer-events: none;
+  transition: opacity .2s;
+}
+.confirm-overlay.show { opacity: 1; pointer-events: all; }
+.confirm-box {
+  background: var(--surface, #fff);
+  border-radius: 20px;
+  padding: 28px 24px 22px;
+  width: 100%; max-width: 360px;
+  box-shadow: 0 24px 64px rgba(0,0,0,.22);
+  transform: scale(.94) translateY(12px);
+  transition: transform .25s cubic-bezier(.34,1.56,.64,1);
+  text-align: center;
+}
+.confirm-overlay.show .confirm-box { transform: scale(1) translateY(0); }
+.confirm-icon-wrap {
+  width: 54px; height: 54px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 16px;
+}
+.confirm-icon-wrap.warn   { background: #fff7ed; color: #2e3192; }
+.confirm-icon-wrap.danger { background: #fef2f2; color: #dc2626; }
+.confirm-icon-wrap.info   { background: #f0f1ff; color: #2e3192; }
+.confirm-icon-wrap svg { display: block; }
+.confirm-title {
+  font-size: 17px; font-weight: 800;
+  color: var(--text, #111); margin-bottom: 8px;
+}
+.confirm-msg {
+  font-size: 13px; color: var(--muted, var(--text-2, #666));
+  line-height: 1.6; margin-bottom: 24px;
+}
+.confirm-actions { display: flex; gap: 10px; }
+.confirm-actions button {
+  flex: 1; padding: 11px 0; border-radius: 12px;
+  font-size: 14px; font-weight: 700; border: none;
+  cursor: pointer; transition: opacity .15s, transform .1s;
+}
+.confirm-actions button:active { transform: scale(.97); }
+.confirm-btn-cancel { background: #f1f2fa; color: #1b1e45; }
+.confirm-btn-cancel:hover { opacity: .75; }
+.confirm-btn-ok        { color: #fff; }
+.confirm-btn-ok.warn   { background: #2e3192; }
+.confirm-btn-ok.danger { background: #dc2626; }
+.confirm-btn-ok.info   { background: #2e3192; }
+.confirm-btn-ok:hover  { opacity: .88; }
+
+/* ── Toast ── */
+.vr-toast {
+  position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(10px);
+  z-index: 10000; background: #1b1e45; color: #fff;
+  padding: 11px 18px; border-radius: 12px; font-size: 13px; font-weight: 600;
+  box-shadow: 0 8px 28px rgba(0,0,0,.2); opacity: 0;
+  transition: opacity .2s, transform .2s; pointer-events: none;
+  display: flex; align-items: center; gap: 8px;
+}
+.vr-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.vr-toast.warn { background: #2e3192; }
+
+/* Score Scaling Panel */
+.scale-panel {
+ background: #f0fdf4; border: 1.5px solid #bbf7d0; border-radius: 10px;
+ padding: 14px 18px; margin-top: 14px; display: flex; gap: 14px;
+ flex-wrap: wrap; align-items: flex-end;
+}
+.scale-panel label { font-size: 12px; font-weight: 700; color: #166534; display: block; margin-bottom: 4px; }
+.scale-input { width: 90px; padding: 7px 10px; border: 1.5px solid #86efac; border-radius: 7px;
+ font-size: 14px; font-weight: 700; color: #14532d; background: #fff; outline: none; }
+.scale-input:focus { border-color: #16a34a; box-shadow: 0 0 0 2px #bbf7d040; }
+.scale-badge { background: #166534; color: #fff; border-radius: 7px; padding: 7px 14px;
+ font-size: 13px; font-weight: 700; white-space: nowrap; align-self: flex-end; }
+.scale-info { font-size: 12px; color: #15803d; align-self: flex-end; padding-bottom: 2px; }
+.scaled-score { font-weight: 700; color: #14532d; }
+</style>
+</head>
+<body>
+<div class="admin-layout">
+ <div id="sidebarContainer"></div>
+ <div class="admin-main">
+ <div id="topbarContainer"></div>
+ <div class="content">
+
+ <!-- PRINT HEADER -->
+ <div class="print-header">
+ <h2>MARGMOCOTH CBT</h2>
+ <h3>i-CBT Examination Results</h3>
+ <p>Printed on: <span id="printDate"></span></p>
+ </div>
+
+ <div class="card no-print" style="margin-bottom:20px;">
+ <div class="card-body">
+ <div style="margin-bottom:14px;">
+ <button onclick="window.location.href='admin-dashboard.html'" style="background:#1e3a5f;color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">&#8592; Back to Dashboard</button>
+ </div>
+ <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+ <div class="form-group" style="margin:0;flex:1;min-width:200px;">
+ <label class="form-label">Filter by Exam</label>
+ <select id="filterExam" class="form-control form-select" onchange="loadResults()">
+ <option value="">-- All Exams --</option>
+ </select>
+ </div>
+ <div class="form-group" style="margin:0;flex:1;min-width:160px;">
+ <label class="form-label">Filter by Department</label>
+ <select id="filterDept" class="form-control form-select" onchange="onDeptFilterChange()">
+ <option value="">-- All Departments --</option>
+ </select>
+ </div>
+ <div class="form-group" style="margin:0;flex:1;min-width:160px;">
+ <label class="form-label">Filter by Sub-Department</label>
+ <select id="filterSubDept" class="form-control form-select" onchange="loadResults()">
+ <option value="">-- All Sub-Departments --</option>
+ </select>
+ </div>
+ <div class="form-group" style="margin:0;flex:1;min-width:160px;">
+ <label class="form-label">Search</label>
+ <input type="text" id="searchR" class="form-control" placeholder="Name or matric..." oninput="filterResults()">
+ </div>
+ <div class="export-btn-group">
+ <button onclick="window.print()" class="export-btn export-btn-print">Print</button>
+ <button onclick="exportExcel()" class="export-btn export-btn-excel">Export Excel</button>
+ <button onclick="exportPDF()" class="export-btn export-btn-pdf">Export PDF</button>
+ <button onclick="deleteDuplicates()" class="export-btn" style="background:#b45309;color:#fff;" title="Remove duplicate submissions — keeps highest score per student">Clean Duplicates</button>
+ </div>
+ </div>
+
+ <!-- SCORE SCALING PANEL -->
+ <div class="scale-panel">
+ <div>
+ <label>Total Questions</label>
+ <input type="number" id="scaleTotalQ" class="scale-input" min="1" placeholder="e.g. 40"
+ oninput="updateScaling()" style="width:80px;">
+ </div>
+ <div>
+ <label>Total Mark (Out of)</label>
+ <input type="number" id="scaleTotalMark" class="scale-input" min="1" placeholder="e.g. 10"
+ oninput="updateScaling()">
+ </div>
+ <div id="scaleResult" class="scale-badge" style="background:#8e92b3;">Enter values above</div>
+ <div id="scaleInfo" class="scale-info"></div>
+ <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#166534;padding-bottom:2px;cursor:pointer;">
+ <input type="checkbox" id="scaleActive" onchange="renderResults(displayedResults)" style="width:15px;height:15px;accent-color:#16a34a;">
+ Show scaled score in table &amp; exports
+ </label>
+ </div>
+ </div>
+ </div>
+
+ <div class="stats-grid no-print" style="margin-bottom:22px;">
+ <div class="stat-card">
+ <div class="stat-icon"></div>
+ <div><div class="stat-value" id="rTotal">0</div><div class="stat-label">Total Submissions</div></div>
+ </div>
+ <div class="stat-card">
+ <div class="stat-icon"></div>
+ <div><div class="stat-value" id="rAvg">0%</div><div class="stat-label">Average Score</div></div>
+ </div>
+ <div class="stat-card">
+ <div class="stat-icon"></div>
+ <div><div class="stat-value" id="rHighest">0%</div><div class="stat-label">Highest Score</div></div>
+ </div>
+ <div class="stat-card danger">
+ <div class="stat-icon"></div>
+ <div><div class="stat-value" id="rLowest">0%</div><div class="stat-label">Lowest Score</div></div>
+ </div>
+ </div>
+
+ <div class="card">
+ <div class="card-header">Exam Results</div>
+ <div class="card-body" style="padding:0;">
+ <div class="table-wrapper">
+ <table>
+ <thead>
+ <tr>
+ <th>#</th><th>Student Name</th><th>Matric</th><th>Department</th><th>Sub-Dept</th>
+ <th>Level</th><th>Exam</th><th>Score</th><th id="scaledColHeader" style="display:none;">Scaled Score</th><th>%</th><th>Grade</th>
+ <th>Date</th><th class="no-print">Action</th>
+ </tr>
+ </thead>
+ <tbody id="resultsTbody">
+ <tr><td colspan="12" style="text-align:center;padding:32px;color:#5b5f80;">Loading...</td></tr>
+ </tbody>
+ </table>
+ </div>
+ </div>
+ </div>
+
+ </div>
+ </div>
+</div>
+
+<script src="js/admin.js"></script>
+<script>
+document.getElementById('sidebarContainer').innerHTML = getSidebarHTML('view-results.html');
+document.getElementById('topbarContainer').innerHTML  = getTopbarHTML('Results & Export');
+checkAdmin();
+requirePermission('view_results');
+document.getElementById('printDate').textContent = new Date().toLocaleString();
+
+let allDepartments = [];
+let allResults = [];
+let displayedResults = [];
+
+async function loadDropdowns() {
+ const admin = JSON.parse(sessionStorage.getItem('admin') || '{}');
+ const examsUrl = admin.role === 'lecturer' ? `/api/admin/exams?lecturer_id=${admin.id}` : '/api/admin/exams';
+ const [exams, depts] = await Promise.all([apiGet(examsUrl), apiGet('/api/departments')]);
+ allDepartments = depts;
+ const esel = document.getElementById('filterExam');
+ const dsel = document.getElementById('filterDept');
+ exams.forEach(e => { esel.innerHTML += `<option value="${e.id}">${e.title}</option>`; });
+ depts.forEach(d => { dsel.innerHTML += `<option value="${d.name}">${d.name}</option>`; });
+ populateSubDeptOptions();
+}
+
+function populateSubDeptOptions() {
+ const deptName = document.getElementById('filterDept').value;
+ const ssel = document.getElementById('filterSubDept');
+ const prev = ssel.value;
+ let subs;
+ if (deptName) {
+ const d = allDepartments.find(d => d.name === deptName);
+ subs = (d && d.sub_departments) || [];
+ } else {
+ subs = [...new Set(allDepartments.flatMap(d => d.sub_departments || []))].sort();
+ }
+ ssel.innerHTML = '<option value="">-- All Sub-Departments --</option>' +
+ subs.map(s => `<option value="${s}">${s}</option>`).join('');
+ if (subs.includes(prev)) ssel.value = prev;
+}
+
+function onDeptFilterChange() {
+ populateSubDeptOptions();
+ loadResults();
+}
+
+async function loadResults() {
+ const tbody = document.getElementById('resultsTbody');
+ tbody.innerHTML = '<tr><td colspan="13" style="text-align:center;padding:32px;color:#5b5f80;">Loading...</td></tr>';
+ try {
+ const admin  = JSON.parse(sessionStorage.getItem('admin') || '{}');
+ const examId = document.getElementById('filterExam').value;
+ const dept  = document.getElementById('filterDept').value;
+ const subDept = document.getElementById('filterSubDept').value;
+ let url = '/api/admin/results?';
+ if (admin.role === 'lecturer') url += `lecturer_id=${admin.id}&`;
+ if (examId) url += `exam_id=${examId}&`;
+ if (dept)  url += `department=${encodeURIComponent(dept)}&`;
+ if (subDept) url += `sub_department=${encodeURIComponent(subDept)}&`;
+ const res = await fetch(url, { headers: { 'X-Admin-Token': sessionStorage.getItem('adminToken') || '' } });
+ const data = await res.json();
+ if (!Array.isArray(data)) throw new Error(data.error || 'Unexpected server response');
+ allResults = data.slice().sort((a,b) => a.student_name.localeCompare(b.student_name));
+ filterResults();
+ updateStats(allResults);
+ } catch(e) {
+ tbody.innerHTML = `<tr><td colspan="12" style="text-align:center;padding:32px;color:#dc2626;"> ${e.message || 'Failed to load results. Please refresh.'}</td></tr>`;
+ }
+}
+
+function updateStats(data) {
+ document.getElementById('rTotal').textContent = data.length;
+ if (!data.length) return;
+ const pcts = data.map(r => r.percentage);
+ document.getElementById('rAvg').textContent  = Math.round(pcts.reduce((a,b)=>a+b,0)/pcts.length) + '%';
+ document.getElementById('rHighest').textContent = Math.max(...pcts) + '%';
+ document.getElementById('rLowest').textContent  = Math.min(...pcts) + '%';
+}
+
+// ── SCORE SCALING ─────────────────────────────────────────
+function getScaling() {
+ const active = document.getElementById('scaleActive')?.checked;
+ if (!active) return null;
+ const q  = parseFloat(document.getElementById('scaleTotalQ')?.value);
+ const tm = parseFloat(document.getElementById('scaleTotalMark')?.value);
+ if (!q || !tm || q <= 0 || tm <= 0) return null;
+ return { totalQ: q, totalMark: tm, perQ: tm / q };
+}
+
+function calcScaled(correct, scaling) {
+ if (!scaling) return null;
+ return (correct * scaling.perQ).toFixed(2);
+}
+
+function updateScaling() {
+ const q  = parseFloat(document.getElementById('scaleTotalQ')?.value);
+ const tm = parseFloat(document.getElementById('scaleTotalMark')?.value);
+ const badge = document.getElementById('scaleResult');
+ const info  = document.getElementById('scaleInfo');
+ if (!q || !tm || q <= 0 || tm <= 0) {
+ badge.textContent = 'Enter values above';
+ badge.style.background = '#8e92b3';
+ if (info) info.textContent = '';
+ renderResults(displayedResults);
+ return;
+ }
+ const perQ = (tm / q).toFixed(4);
+ badge.textContent = `1 question = ${(tm/q) % 1 === 0 ? (tm/q) : parseFloat(perQ)} mark${tm/q !== 1 ? 's' : ''}`;
+ badge.style.background = '#166534';
+ if (info) info.textContent = `Max score: ${tm} | Per question: ${perQ}`;
+ renderResults(displayedResults);
+}
+
+function filterResults() {
+ const q = document.getElementById('searchR').value.toLowerCase();
+ displayedResults = allResults
+ .filter(r => !q || r.student_name.toLowerCase().includes(q) || r.matric.toLowerCase().includes(q))
+ .sort((a, b) => a.student_name.localeCompare(b.student_name));
+ renderResults(displayedResults);
+}
+
+function getGrade(pct) {
+ if (pct >= 90) return { grade:'A', cls:'badge-success' };
+ if (pct >= 80) return { grade:'B', cls:'badge-success' };
+ if (pct >= 70) return { grade:'C', cls:'badge-info' };
+ if (pct >= 60) return { grade:'D', cls:'badge-warning' };
+ if (pct >= 50) return { grade:'E', cls:'badge-warning' };
+ return { grade:'F', cls:'badge-danger' };
+}
+
+function renderResults(data) {
+ const tbody = document.getElementById('resultsTbody');
+ const scaling = getScaling();
+ const scaledHeader = document.getElementById('scaledColHeader');
+ if (scaledHeader) scaledHeader.style.display = scaling ? '' : 'none';
+
+ if (!data.length) {
+ tbody.innerHTML = `<tr><td colspan="${scaling ? 13 : 12}" style="text-align:center;padding:32px;color:#5b5f80;">No results found.</td></tr>`;
+ return;
+ }
+ tbody.innerHTML = data.map((r, i) => {
+ const { grade, cls } = getGrade(r.percentage);
+ const scaled = calcScaled(r.correct, scaling);
+ const scaledCell = scaling
+ ? `<td class="scaled-score">${scaled} / ${scaling.totalMark}</td>`
+ : '';
+ return `<tr>
+ <td>${i+1}</td>
+ <td><strong>${r.student_name}</strong></td>
+ <td><code>${r.matric}</code></td>
+ <td>${r.department_name || '-'}</td>
+ <td>${r.sub_department || '-'}</td>
+ <td>${r.level_name || '-'}</td>
+ <td>${r.exam_title}</td>
+ <td>${r.correct}/${r.total}</td>
+ ${scaledCell}
+ <td><span class="badge ${r.percentage>=50?'badge-success':'badge-danger'}">${r.percentage}%</span></td>
+ <td><span class="badge ${cls}">${grade}</span></td>
+ <td>${formatDate(r.submitted_at)}</td>
+ <td class="no-print" style="display:flex;gap:6px;align-items:center;">
+ <button onclick='printOne(${JSON.stringify(r)})'
+ style="background:#2e3192;color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;display:inline-flex;align-items:center;gap:4px;"
+ title="Print result">
+ <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+ Print
+ </button>
+ <button onclick="deleteResult('${r.id}', this)"
+ style="background:#fee2e2;color:#dc2626;border:none;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;display:inline-flex;align-items:center;gap:4px;"
+ title="Delete result">
+ <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+ Delete
+ </button>
+ </td>
+ </tr>`;
+ }).join('');
+}
+
+async function deleteResult(id, btn) {
+ const _ok = await showConfirm({ type:'danger', title:'Delete Result?', msg:'This exam result will be permanently deleted. This cannot be undone.', okLabel:'Delete' });
+ if (!_ok) return;
+ btn.disabled = true;
+ try {
+   const r = await apiDelete(`/api/admin/results/${id}`);
+   if (r.success) {
+     allResults = allResults.filter(x => x.id !== id);
+     filterResults();
+     vrToast('Result deleted.', 'warn', 2500);
+   } else {
+     vrToast(r.message || 'Delete failed.', 'warn');
+     btn.disabled = false;
+   }
+ } catch(e) { vrToast('Server error.', 'warn'); btn.disabled = false; }
+}
+
+//  NEW: Delete duplicate submissions — keeps the highest score per student+exam.
+// Targets the 0-score ghost entries created when students double-tapped Submit.
+async function deleteDuplicates() {
+ const examId = new URLSearchParams(location.search).get('exam_id') || '';
+ const scope  = examId ? 'this exam' : 'ALL exams';
+ const _ok2 = await showConfirm({ type:'danger', title:'Remove Duplicates?', msg:`Duplicate submissions for <strong>${scope}</strong> will be removed. Only the highest score per student is kept. This cannot be undone.`, okLabel:'Remove Duplicates' });
+    if (!_ok2) return;
+
+ try {
+ const url = '/api/admin/results/duplicates' + (examId ? `?exam_id=${examId}` : '');
+ const r = await fetch(url, { method: 'DELETE', headers: { 'X-Admin-Token': getAdminToken() } });
+ const data = await r.json();
+ if (data.success) {
+ showAlert(` Cleaned ${data.deleted} duplicate result(s). Reloading…`, 'success');
+ setTimeout(() => location.reload(), 1500);
+ } else {
+ showAlert(' ' + (data.message || 'Failed to clean duplicates.'), 'danger');
+ }
+ } catch(e) { showAlert('Server error cleaning duplicates.', 'danger'); }
+}
+
+function printOne(result) {
+ const { grade } = getGrade(result.percentage);
+ const w = window.open('', '_blank');
+ w.document.write(`<html><head><title>Result Sheet</title>
+ <style>
+ body{font-family:serif;padding:40px;max-width:700px;margin:0 auto}
+ h2,h3{text-align:center}
+ table{width:100%;border-collapse:collapse;margin:20px 0}
+ td{padding:12px;border:1px solid #ddd}
+ td:first-child{font-weight:bold;background:#f8f8f8;width:40%}
+ .score-box{background:#0f6b30;color:white;text-align:center;padding:20px;border-radius:10px;margin:20px 0}
+ .score-box h2{font-size:48px;margin:0}
+ .footer{text-align:center;margin-top:30px;font-size:12px;color:#666;border-top:2px solid #0f6b30;padding-top:14px}
+</style></head><body>
+ <h2>MARGMOCOTH CBT</h2>
+ <h3>Official Examination Result Sheet</h3>
+ <div class="score-box">
+ <h2>${result.percentage}%</h2>
+ <p style="margin:0;font-size:18px;">Grade ${grade}</p>
+ </div>
+ <table>
+ <tr><td>Student Name</td><td>${result.student_name}</td></tr>
+ <tr><td>Matric Number</td><td>${result.matric}</td></tr>
+ <tr><td>Department</td><td>${result.department_name || '-'}</td></tr>
+ ${result.sub_department ? `<tr><td>Sub-Department</td><td>${result.sub_department}</td></tr>` : ''}
+ <tr><td>Level</td><td>${result.level_name || '-'}</td></tr>
+ <tr><td>Exam Title</td><td>${result.exam_title}</td></tr>
+ <tr><td>Score</td><td>${result.correct} / ${result.total}</td></tr>
+ ${(()=>{ const s=getScaling(); return s ? `<tr><td>Scaled Score</td><td><strong>${calcScaled(result.correct,s)} / ${s.totalMark}</strong></td></tr>` : ''; })()}
+ <tr><td>Percentage</td><td>${result.percentage}%</td></tr>
+ <tr><td>Grade</td><td>${grade}</td></tr>
+ <tr><td>Date</td><td>${new Date(result.submitted_at).toLocaleString()}</td></tr>
+ </table>
+ <div class="footer">Generated by MARGMOCOTH CBT System | Powered by Tribal Tech</div>
+ <script>window.print();<\/script>
+</body></html>`);
+}
+
+// ── EXCEL EXPORT ──────────────────────────────────────────
+function exportExcel() {
+ const data = displayedResults.length ? displayedResults : allResults;
+ if (!data.length) { vrToast('No results to export.'); return; }
+ const scaling = getScaling();
+
+ const headers = scaling
+ ? ['S/N', 'NAME', 'MATRIC NO', 'DEPARTMENT', 'SUB-DEPT', 'RAW SCORE', `SCORE / ${scaling.totalMark}`, '%']
+ : ['S/N', 'NAME', 'MATRIC NO', 'DEPARTMENT', 'SUB-DEPT', 'SCORE', '%'];
+
+ const colCount = headers.length;
+ const scaleNote = scaling
+ ? `Score Scaling: ${scaling.totalQ} questions × ${(scaling.totalMark/scaling.totalQ).toFixed(4)} = ${scaling.totalMark} total marks`
+ : '';
+
+ const wsData = [
+ ['MARGMOCOTH CBT'],
+ ['i-CBT Examination Results'],
+ [`Generated: ${new Date().toLocaleString()}`],
+ scaleNote ? [scaleNote] : [],
+ [],
+ headers
+ ].filter(row => row.length > 0 || true);
+
+ data.forEach((r, i) => {
+ if (scaling) {
+ wsData.push([
+ i + 1,
+ r.student_name,
+ r.matric,
+ r.department_name || '-',
+ r.sub_department || '-',
+ `${r.correct}/${r.total}`,
+ parseFloat(calcScaled(r.correct, scaling)),
+ r.percentage + '%'
+ ]);
+ } else {
+ wsData.push([
+ i + 1,
+ r.student_name,
+ r.matric,
+ r.department_name || '-',
+ r.sub_department || '-',
+ `${r.correct}/${r.total}`,
+ r.percentage + '%'
+ ]);
+ }
+ });
+
+ const wb = XLSX.utils.book_new();
+ const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+ ws['!cols'] = scaling
+ ? [{ wch: 5 }, { wch: 28 }, { wch: 16 }, { wch: 18 }, { wch: 18 }, { wch: 12 }, { wch: 16 }, { wch: 8 }]
+ : [{ wch: 5 }, { wch: 28 }, { wch: 16 }, { wch: 18 }, { wch: 18 }, { wch: 12 }, { wch: 8 }];
+ ws['!merges'] = [
+ { s: { r: 0, c: 0 }, e: { r: 0, c: colCount - 1 } },
+ { s: { r: 1, c: 0 }, e: { r: 1, c: colCount - 1 } },
+ { s: { r: 2, c: 0 }, e: { r: 2, c: colCount - 1 } },
+ ...(scaleNote ? [{ s: { r: 3, c: 0 }, e: { r: 3, c: colCount - 1 } }] : [])
+ ];
+
+ XLSX.utils.book_append_sheet(wb, ws, 'Results');
+ XLSX.writeFile(wb, `MARGMOCOTH CBT_Results_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+// ── PDF EXPORT ─────────────────────────────────────────────
+function exportPDF() {
+ const data = displayedResults.length ? displayedResults : allResults;
+ if (!data.length) { vrToast('No results to export.'); return; }
+
+ const { jsPDF } = window.jspdf;
+ const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+ // Resolve course & level from filter or data
+ const examSel  = document.getElementById('filterExam');
+ const deptSel  = document.getElementById('filterDept');
+ const subDeptSel = document.getElementById('filterSubDept');
+ const examText = examSel && examSel.value
+ ? examSel.options[examSel.selectedIndex].text
+ : (data.length ? (new Set(data.map(r => r.exam_title)).size === 1 ? data[0].exam_title : 'Multiple Exams') : '—');
+ const levelVals = [...new Set(data.map(r => r.level_name).filter(Boolean))];
+ const levelText = levelVals.length === 1 ? levelVals[0] : (levelVals.length > 1 ? levelVals.join(', ') : '—');
+ const deptText  = deptSel && deptSel.value
+ ? deptSel.options[deptSel.selectedIndex].text
+ : (data.length ? (new Set(data.map(r => r.department_name)).size === 1 ? data[0].department_name : 'All Departments') : '—');
+ const subDeptText = subDeptSel && subDeptSel.value
+ ? subDeptSel.options[subDeptSel.selectedIndex].text
+ : (data.length ? (new Set(data.map(r => r.sub_department).filter(Boolean)).size === 1 ? data.find(r=>r.sub_department).sub_department : null) : null);
+
+ // Header block — taller to fit course & level
+ doc.setFillColor(15, 107, 48);
+ doc.rect(0, 0, 210, 40, 'F');
+ doc.setTextColor(255, 255, 255);
+ doc.setFontSize(13);
+ doc.setFont('helvetica', 'bold');
+ doc.text('MARGMOCOTH CBT', 105, 9, { align: 'center' });
+ doc.setFontSize(9);
+ doc.setFont('helvetica', 'normal');
+ doc.text('i-CBT Examination Results', 105, 15, { align: 'center' });
+ doc.setFontSize(7);
+ doc.text(`Generated: ${new Date().toLocaleString()}`, 105, 20, { align: 'center' });
+
+ // Course, Level, Department sub-header row
+ doc.setFontSize(8);
+ doc.setFont('helvetica', 'bold');
+ doc.text(`Course: ${examText}`, 14, 28);
+ doc.text(`Level: ${levelText}`, 14, 34);
+ doc.setFont('helvetica', 'normal');
+ doc.setFontSize(7.5);
+ doc.text(`Dept: ${deptText}`, 140, 28);
+ if (subDeptText) doc.text(`Sub-Dept: ${subDeptText}`, 140, 34);
+
+ const scaling = getScaling();
+
+ // Scaling note under header
+ if (scaling) {
+ doc.setTextColor(15, 107, 48);
+ doc.setFontSize(7.5);
+ doc.setFont('helvetica', 'italic');
+ doc.text(`Score Scaling: ${scaling.totalQ} Qs × ${(scaling.totalMark/scaling.totalQ).toFixed(4)} = ${scaling.totalMark} total marks`, 105, 44, { align: 'center' });
+ }
+
+ // Scaled: S/N | NAME | MATRIC NO | SCORE/x  (clean — no raw score, no %)
+ // Unscaled: S/N | NAME | MATRIC NO | SCORE | %
+ const head = scaling
+ ? [['S/N', 'NAME', 'MATRIC NO', `SCORE / ${scaling.totalMark}`]]
+ : [['S/N', 'NAME', 'MATRIC NO', 'SCORE', '%']];
+
+ const body = data.map((r, i) => scaling
+ ? [i+1, r.student_name, r.matric, calcScaled(r.correct, scaling)]
+ : [i+1, r.student_name, r.matric, `${r.correct}/${r.total}`, r.percentage+'%']
+ );
+
+ const colSpan = head[0].length;
+
+ doc.autoTable({
+ head,
+ body,
+ startY: scaling ? 48 : 44,
+ theme: 'grid',
+ headStyles: {
+ fillColor: [15, 107, 48],
+ textColor: [255, 255, 255],
+ fontStyle: 'bold',
+ fontSize: 9
+ },
+ bodyStyles: { fontSize: 9, cellPadding: 3 },
+ alternateRowStyles: { fillColor: [240, 248, 244] },
+ columnStyles: scaling ? {
+ 0: { halign: 'center', cellWidth: 14 },
+ 2: { halign: 'center', cellWidth: 40 },
+ 3: { halign: 'center', cellWidth: 30 }
+ } : {
+ 0: { halign: 'center', cellWidth: 14 },
+ 2: { halign: 'center', cellWidth: 36 },
+ 3: { halign: 'center', cellWidth: 24 },
+ 4: { halign: 'center', cellWidth: 16 }
+ },
+ foot: [[{ content: 'MARGMOCOTH CBT System | Powered by Tribal Tech', colSpan, styles: { halign: 'center', fontSize: 7, textColor: [100,100,100] } }]],
+ footStyles: { fillColor: [248, 250, 252] }
+ });
+
+ doc.save(`MARGMOCOTH CBT_Results_${new Date().toISOString().slice(0,10)}.pdf`);
+}
+
+async function init() {
+ // If no token, admin session is stale — force re-login
+ const token = sessionStorage.getItem('adminToken');
+ const admin = JSON.parse(sessionStorage.getItem('admin') || 'null');
+ if (!token || !admin) {
+ sessionStorage.clear();
+ window.location.href = 'admin-login.html';
+ return;
+ }
+ try {
+ await loadDropdowns();
+ } catch(e) {
+ console.warn('Dropdown load failed:', e);
+ }
+ loadResults();
+}
+init();
+</script>
+<script src="js/ai-assistant.js" defer></script>
+
+<div class="vr-toast" id="vrToast"></div>
+
+<!-- Confirm Dialog -->
+<div class="confirm-overlay" id="confirmModal">
+  <div class="confirm-box">
+    <div class="confirm-icon-wrap" id="confirmIconWrap">
+      <svg id="confirmIconSVG" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
+           width="26" height="26"></svg>
+    </div>
+    <div class="confirm-title" id="confirmTitle"></div>
+    <p class="confirm-msg" id="confirmMsg"></p>
+    <div class="confirm-actions">
+      <button class="confirm-btn-cancel" onclick="_confirmResolve(false)">Cancel</button>
+      <button class="confirm-btn-ok" id="confirmOkBtn" onclick="_confirmResolve(true)">Confirm</button>
+    </div>
+  </div>
+</div>
+<script>
+
+function vrToast(msg, type='warn', ms=3000) {
+  const t = document.getElementById('vrToast');
+  t.textContent = msg; t.className = 'vr-toast ' + type;
+  requestAnimationFrame(() => requestAnimationFrame(() => t.classList.add('show')));
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.remove('show'), ms);
+}
+
+const _CSVG = {
+  warn:   '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
+  danger: '<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>',
+  info:   '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>'
+};
+let __confirmCb = null;
+function showConfirm({ type='warn', title, msg, okLabel='Confirm' }) {
+  document.getElementById('confirmIconWrap').className = 'confirm-icon-wrap ' + type;
+  document.getElementById('confirmIconSVG').innerHTML = _CSVG[type] || _CSVG.warn;
+  document.getElementById('confirmTitle').textContent = title;
+  document.getElementById('confirmMsg').innerHTML = msg;
+  const okBtn = document.getElementById('confirmOkBtn');
+  okBtn.textContent = okLabel;
+  okBtn.className = 'confirm-btn-ok ' + type;
+  document.getElementById('confirmModal').classList.add('show');
+  return new Promise(res => { __confirmCb = res; });
+}
+function _confirmResolve(val) {
+  document.getElementById('confirmModal').classList.remove('show');
+  if (__confirmCb) { __confirmCb(val); __confirmCb = null; }
+}
+document.getElementById('confirmModal').addEventListener('click', function(e) {
+  if (e.target === this) _confirmResolve(false);
+});
+</script>
+</body>
+</html>

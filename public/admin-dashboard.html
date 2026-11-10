@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="manifest" href="/manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MARGMOCOTH CBT">
+<meta name="theme-color" content="#2e3192">
+<link rel="apple-touch-icon" href="/icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard – MARGMOCOTH CBT</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="admin-layout">
+ <div id="sidebarContainer"></div>
+ <div class="admin-main">
+ <div id="topbarContainer"></div>
+ <div class="content">
+
+ <!-- STATS -->
+ <div class="stats-grid">
+ <div class="stat-card">
+ <div class="stat-icon"><svg viewBox="0 0 20 20" fill="none" width="22" height="22"><circle cx="7" cy="6" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M1 17c0-3.31 2.69-6 6-6s6 2.69 6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="14" cy="6" r="2.5" stroke="currentColor" stroke-width="1.2" opacity=".6"/><path d="M17 17c0-2.76-1.34-5.1-3.26-5.74" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity=".6"/></svg></div>
+ <div>
+ <div class="stat-value" id="totalStudents">—</div>
+ <div class="stat-label">Total Students</div>
+ </div>
+ </div>
+ <div class="stat-card danger">
+ <div class="stat-icon"><svg viewBox="0 0 20 20" fill="none" width="22" height="22"><rect x="3" y="2" width="12" height="16" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M6 7h8M6 11h6M6 15h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+ <div>
+ <div class="stat-value" id="totalExams">—</div>
+ <div class="stat-label">Total Exams</div>
+ </div>
+ </div>
+ <div class="stat-card warning">
+ <div class="stat-icon"><svg viewBox="0 0 20 20" fill="none" width="22" height="22"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5"/><path d="M8 8c0-1.1.9-2 2-2s2 .9 2 2c0 1.5-2 2-2 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="10" cy="14.5" r="1" fill="currentColor"/></svg></div>
+ <div>
+ <div class="stat-value" id="totalQuestions">—</div>
+ <div class="stat-label">Total Questions</div>
+ </div>
+ </div>
+ <div class="stat-card info">
+ <div class="stat-icon"><svg viewBox="0 0 20 20" fill="none" width="22" height="22"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5"/><path d="M6.5 10.5l2.5 2.5 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+ <div>
+ <div class="stat-value" id="totalResults">—</div>
+ <div class="stat-label">Submissions</div>
+ </div>
+ </div>
+ </div>
+
+ <!-- DEPARTMENT PERFORMANCE -->
+ <div class="card" style="margin-bottom:22px;">
+ <div class="card-header">
+ <span>Department Performance</span>
+ </div>
+ <div class="card-body" style="padding:0;">
+ <div class="table-wrapper">
+ <table>
+ <thead>
+ <tr>
+ <th>Department</th>
+ <th>Students</th>
+ <th>Submissions</th>
+ <th>Avg Score</th>
+ <th>Pass Rate</th>
+ </tr>
+ </thead>
+ <tbody id="deptTable">
+ <tr><td colspan="5" style="text-align:center;padding:24px;color:#5b5f80;">Loading...</td></tr>
+ </tbody>
+ </table>
+ </div>
+ </div>
+ </div>
+
+ <!-- RECENT EXAMS -->
+ <div class="card" style="margin-bottom:22px;">
+ <div class="card-header">
+ <span>Recent Exams</span>
+ <a href="create-exam.html" class="btn btn-accent btn-sm" style="margin-left:auto;">+ New Exam</a>
+ </div>
+ <div class="card-body" style="padding:0;">
+ <div class="table-wrapper">
+ <table>
+ <thead>
+ <tr>
+ <th>Exam Title</th>
+ <th>Course</th>
+ <th>Duration</th>
+ <th>Questions</th>
+ <th>Submissions</th>
+ <th>Status</th>
+ <th>Action</th>
+ </tr>
+ </thead>
+ <tbody id="examsTable">
+ <tr><td colspan="7" style="text-align:center;padding:32px;color:#5b5f80;">Loading exams...</td></tr>
+ </tbody>
+ </table>
+ </div>
+ </div>
+ </div>
+
+ 
+
+ <!-- RECENT RESULTS -->
+ <div class="card">
+ <div class="card-header">
+ <span>Recent Submissions</span>
+ <a href="view-results.html" class="btn btn-outline-white btn-sm" style="margin-left:auto;">View All</a>
+ </div>
+ <div class="card-body" style="padding:0;">
+ <div class="table-wrapper">
+ <table>
+ <thead>
+ <tr>
+ <th>Student</th>
+ <th>Matric</th>
+ <th>Exam</th>
+ <th>Score</th>
+ <th>Percentage</th>
+ <th>Date</th>
+ </tr>
+ </thead>
+ <tbody id="resultsTable">
+ <tr><td colspan="6" style="text-align:center;padding:32px;color:#5b5f80;">Loading results...</td></tr>
+ </tbody>
+ </table>
+ </div>
+ </div>
+ </div>
+
+ </div>
+ </div>
+</div>
+
+<script src="js/admin.js"></script>
+<script>
+document.getElementById('sidebarContainer').innerHTML = getSidebarHTML('admin-dashboard.html');
+document.getElementById('topbarContainer').innerHTML = getTopbarHTML('Dashboard');
+checkAdmin();
+
+async function loadDashboard() {
+ try {
+ const admin = JSON.parse(sessionStorage.getItem('admin') || '{}');
+ const isLec = admin.role === 'lecturer';
+ const url = isLec ? `/api/admin/stats?lecturer_id=${admin.id}` : '/api/admin/stats';
+ const data = await apiGet(url);
+
+ // Show scoped label for lecturers
+ if (isLec && data.department_name) {
+ document.getElementById('totalStudents').closest('.stat-card').querySelector('.stat-label').textContent
+ = `Students (${data.department_name})`;
+ document.getElementById('totalExams').closest('.stat-card').querySelector('.stat-label').textContent
+ = 'My Exams';
+ document.getElementById('totalResults').closest('.stat-card').querySelector('.stat-label').textContent
+ = 'My Submissions';
+ }
+
+ document.getElementById('totalStudents').textContent = data.students ?? 0;
+ document.getElementById('totalExams').textContent = data.exams ?? 0;
+ document.getElementById('totalQuestions').textContent = data.questions ?? 0;
+ document.getElementById('totalResults').textContent = data.results ?? 0;
+
+ // Recent exams
+ const tbody = document.getElementById('examsTable');
+ if (data.recentExams && data.recentExams.length) {
+ tbody.innerHTML = data.recentExams.map(e => `
+ <tr>
+ <td><strong>${e.title}</strong></td>
+ <td>${e.course_name || '-'}</td>
+ <td>${e.duration} min</td>
+ <td>${e.question_count || 0}</td>
+ <td>${e.submission_count || 0}</td>
+ <td><span class="badge badge-success">Active</span></td>
+ <td><a href="add-question.html?exam_id=${e.id}" class="btn btn-primary btn-xs">+ Questions</a></td>
+ </tr>`).join('');
+ } else {
+ tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:#5b5f80;">No exams yet. <a href="create-exam.html" style="color:#0f6b30;font-weight:700;">Create one</a></td></tr>';
+ }
+
+ // Recent results
+ const rtbody = document.getElementById('resultsTable');
+ if (data.recentResults && data.recentResults.length) {
+ rtbody.innerHTML = data.recentResults.map(r => `
+ <tr>
+ <td><strong>${r.student_name}</strong></td>
+ <td><code>${r.matric}</code></td>
+ <td>${r.exam_title}</td>
+ <td>${r.correct}/${r.total}</td>
+ <td><span class="badge ${r.percentage >= 50 ? 'badge-success' : 'badge-danger'}">${r.percentage}%</span></td>
+ <td>${formatDate(r.submitted_at)}</td>
+ </tr>`).join('');
+ } else {
+ rtbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:#5b5f80;">No results yet.</td></tr>';
+ }
+
+ // Department performance table
+ const analytics = await apiGet('/api/admin/analytics');
+ const deptMap = {};
+ (analytics.results || []).forEach(r => {
+ const dept = r.department_name || 'Unknown';
+ if (!deptMap[dept]) deptMap[dept] = { submissions: 0, totalPct: 0, passed: 0, students: new Set() };
+ deptMap[dept].submissions++;
+ deptMap[dept].totalPct += r.percentage;
+ deptMap[dept].students.add(r.matric);
+ if (r.percentage >= 50) deptMap[dept].passed++;
+ });
+
+ const deptTable = document.getElementById('deptTable');
+ const depts = Object.entries(deptMap);
+ if (depts.length) {
+ deptTable.innerHTML = depts.map(([name, d]) => {
+ const avg = Math.round(d.totalPct / d.submissions);
+ const passRate = Math.round((d.passed / d.submissions) * 100);
+ return `<tr>
+ <td><strong>${name}</strong></td>
+ <td>${d.students.size}</td>
+ <td>${d.submissions}</td>
+ <td><span class="badge badge-info">${avg}%</span></td>
+ <td><span class="badge ${passRate >= 50 ? 'badge-success' : 'badge-danger'}">${passRate}%</span></td>
+ </tr>`;
+ }).join('');
+ } else {
+ deptTable.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:#5b5f80;">No results yet.</td></tr>';
+ }
+
+ } catch(e) {
+ console.error('Dashboard load error:', e);
+ document.getElementById('examsTable').innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:#dc2626;">Error loading data. Please refresh.</td></tr>';
+ document.getElementById('resultsTable').innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:#dc2626;">Error loading data. Please refresh.</td></tr>';
+ document.getElementById('deptTable').innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:#dc2626;">Error loading data.</td></tr>';
+ }
+}
+
+loadDashboard();
+</script>
+<script src="js/ai-assistant.js" defer></script>
+<script src="/pwa.js"></script>
+</body>
+</html>

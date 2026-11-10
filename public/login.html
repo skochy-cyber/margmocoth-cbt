@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="manifest" href="/manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MARGMOCOTH CBT">
+<meta name="theme-color" content="#2e3192">
+<link rel="apple-touch-icon" href="/icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="40x40" href="/school-favicon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>MARGMOCOTH CBT — Student Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-text-size-adjust: 100%; }
+
+:root {
+  --bg: #f0f2f5;
+  --surface: #ffffff;
+  --surface2: #f7f7f8;
+  --border: rgba(0,0,0,0.08);
+  --border-hover: rgba(0,0,0,0.18);
+  --accent: #2e3192;
+  --accent2: #4448b8;
+  --accent-dim: rgba(46,49,146,0.10);
+  --accent-glow: rgba(46,49,146,0.20);
+  --text: #0d0d0d;
+  --text-sub: #555555;
+  --text-muted: #aaaaaa;
+  --success: #16a34a;
+  --error: #dc2626;
+  --font-head: 'Syne', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  min-height: 100vh;
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* ── Background: clean flat ── */
+.bg-mesh { display: none; }
+.bg-grid  { display: none; }
+
+/* ── Page layout ── */
+.page {
+  min-height: 100vh; position: relative; z-index: 2;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 32px 16px 80px;
+}
+
+/* ── Status pill ── */
+.status-pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius: 999px; padding: 7px 16px;
+  margin-bottom: 28px;
+  backdrop-filter: blur(12px);
+  animation: riseIn 0.5s cubic-bezier(.22,1,.36,1) both;
+}
+.status-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 8px var(--success);
+  animation: dotPulse 2s ease infinite;
+}
+.status-dot.closed { background: var(--error); box-shadow: 0 0 8px var(--error); animation: none; }
+@keyframes dotPulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.status-pill span {
+  font-family: var(--font-body);
+  font-size: 11px; font-weight: 600; letter-spacing: 1.2px;
+  text-transform: uppercase; color: var(--text-sub);
+}
+
+/* ── Card ── */
+.card {
+  width: 100%; max-width: 440px;
+  background: var(--surface);
+  border: 1px solid rgba(0,0,0,0.06);
+  border-radius: 24px; overflow: hidden;
+  box-shadow:
+    0 2px 8px rgba(0,0,0,0.06),
+    0 12px 40px rgba(0,0,0,0.08);
+  animation: riseIn .65s cubic-bezier(.22,1,.36,1) both .1s;
+}
+@keyframes riseIn {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ── Card header ── */
+.card-head {
+  padding: 36px 28px 28px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  position: relative; overflow: hidden;
+  text-align: center;
+}
+.card-head::before {
+  content: '';
+  position: absolute; top: -40px; left: 50%; transform: translateX(-50%);
+  width: 200px; height: 200px;
+  background: radial-gradient(circle, rgba(46,49,146,0.08) 0%, transparent 65%);
+  pointer-events: none;
+}
+.card-head.closed::before {
+  background: radial-gradient(circle, rgba(220,38,38,0.08) 0%, transparent 65%);
+}
+
+.logo-wrap {
+  width: 72px; height: 72px; margin: 0 auto 18px;
+  background: var(--surface);
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden; position: relative; z-index: 1;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+}
+.logo-wrap img { width: 100%; height: 100%; object-fit: contain; padding: 8px; background: white; }
+.logo-fallback {
+  font-family: var(--font-head);
+  font-size: 22px; font-weight: 800;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+
+.brand-name {
+  font-family: var(--font-head);
+  font-size: 22px; font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.5px;
+  position: relative; z-index: 1;
+  line-height: 1.2;
+}
+.brand-name span {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.brand-sub {
+  font-size: 11px; font-weight: 500; letter-spacing: 2px;
+  text-transform: uppercase; color: var(--text-muted);
+  margin-top: 6px; position: relative; z-index: 1;
+}
+
+/* ── Portal closed panel ── */
+.portal-closed-panel {
+  display: none; padding: 28px 20px; text-align: center;
+}
+.closed-icon-wrap {
+  width: 56px; height: 56px; border-radius: 16px;
+  background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 16px;
+}
+.closed-title {
+  font-family: var(--font-head);
+  font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 6px;
+}
+.closed-subtitle {
+  font-size: 11px; font-weight: 600; color: var(--error);
+  letter-spacing: 1.2px; text-transform: uppercase; margin-bottom: 14px;
+}
+.closed-msg {
+  font-size: 13px; color: var(--text-sub); line-height: 1.7;
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.12);
+  border-radius: 12px; padding: 14px 16px; margin-bottom: 16px;
+}
+.maint-steps { display: flex; flex-direction: column; gap: 10px; text-align: left; }
+.maint-step {
+  display: flex; align-items: flex-start; gap: 10px;
+  font-size: 13px; color: var(--text-sub); line-height: 1.5;
+}
+.maint-step-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent); flex-shrink: 0; margin-top: 6px;
+}
+
+/* ── Card body ── */
+.card-body { padding: 28px; }
+
+/* ── Submitted banner ── */
+.submitted-banner {
+  display: none;
+  background: rgba(34,197,94,0.08);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 14px; padding: 18px 16px;
+  margin-bottom: 20px; text-align: center;
+  animation: riseIn .4s ease both;
+}
+.sub-check {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: rgba(34,197,94,0.15);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 10px;
+}
+.sub-title { font-family: var(--font-head); font-size: 15px; font-weight: 700; color: var(--success); margin-bottom: 4px; }
+.sub-msg { font-size: 13px; color: var(--text-sub); line-height: 1.5; }
+
+/* ── Welcome line ── */
+.welcome-line {
+  font-size: 13px; font-weight: 500; color: var(--text-sub);
+  text-align: center; margin-bottom: 22px;
+}
+
+/* ── Alert ── */
+#alertBox { margin-bottom: 16px; }
+.alert-msg {
+  padding: 11px 14px; border-radius: 10px;
+  font-size: 13px; font-weight: 500;
+  display: flex; align-items: center; gap: 8px;
+  animation: alertIn .25s ease;
+}
+@keyframes alertIn { from{opacity:0;transform:translateY(-5px)} to{opacity:1;transform:none} }
+.alert-err {
+  background: rgba(239,68,68,0.06);
+  color: #b91c1c;
+  border: 1px solid rgba(239,68,68,0.18);
+}
+.alert-ok {
+  background: rgba(34,197,94,0.06);
+  color: #15803d;
+  border: 1px solid rgba(34,197,94,0.18);
+}
+
+/* ── Fields ── */
+.field { margin-bottom: 18px; }
+.field-label {
+  display: block; font-size: 11px; font-weight: 600;
+  color: var(--text-sub); margin-bottom: 8px;
+  text-transform: uppercase; letter-spacing: 0.8px;
+}
+.field-wrap { position: relative; }
+.field-icon {
+  position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+  color: var(--text-muted); pointer-events: none;
+  display: flex; align-items: center; justify-content: center;
+}
+.field-input {
+  width: 100%; padding: 13px 14px 13px 42px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-family: var(--font-body); font-size: 14px; font-weight: 400;
+  color: var(--text);
+  transition: all .2s ease;
+  -webkit-appearance: none;
+}
+.field-input::placeholder { color: var(--text-muted); }
+.field-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: rgba(249,115,22,0.04);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+.field-input:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.toggle-password {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; cursor: pointer;
+  color: var(--text-muted); padding: 4px;
+  display: flex; align-items: center; justify-content: center;
+  transition: color 0.2s;
+}
+.toggle-password:hover { color: var(--text-sub); }
+.toggle-password svg {
+  width: 18px; height: 18px; fill: none; stroke: currentColor;
+  stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+}
+
+select.field-input {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%23555' stroke-width='2'%3E%3Cpath d='m4 6 4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center;
+  padding-right: 40px; appearance: none; cursor: pointer;
+}
+select.field-input option { background: #ffffff; color: #111111; }
+
+/* ── Login button ── */
+.login-btn {
+  width: 100%; padding: 14px; border: none; border-radius: 12px;
+  cursor: pointer;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+  color: #fff;
+  font-family: var(--font-body); font-size: 15px; font-weight: 600;
+  margin-top: 6px;
+  box-shadow: 0 4px 20px var(--accent-glow);
+  transition: all .2s ease;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  letter-spacing: 0.2px;
+}
+.login-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px var(--accent-glow);
+  filter: brightness(1.05);
+}
+.login-btn:active { transform: scale(.98); }
+.login-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+/* ── Biometric btn ── */
+#biometricWrap { display: none; margin-top: 10px; }
+.biometric-btn {
+  width: 100%; padding: 12px; border: 1px solid var(--border);
+  border-radius: 12px; background: var(--surface2); color: var(--text-sub);
+  font-family: var(--font-body); font-size: 14px; font-weight: 600;
+  cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: all .2s;
+}
+.biometric-btn:hover { border-color: var(--border-hover); color: var(--text); }
+
+/* ── Forgot link ── */
+.forgot-link-wrap { text-align: center; margin-top: 14px; }
+.forgot-link {
+  color: var(--text-muted); font-size: 13px; text-decoration: none;
+  transition: color .2s; background: none; border: none; cursor: pointer;
+  font-family: var(--font-body);
+}
+.forgot-link:hover { color: var(--accent); }
+
+/* ── Forgot panel ── */
+.forgot-panel {
+  display: none; margin-top: 16px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 16px; padding: 20px;
+}
+.forgot-panel-title {
+  font-family: var(--font-head); font-size: 14px; font-weight: 700;
+  color: var(--accent); margin-bottom: 12px;
+}
+.fp-input {
+  width: 100%; padding: 11px 14px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; font-size: 14px;
+  color: var(--text); font-family: var(--font-body);
+  box-sizing: border-box; margin-bottom: 10px;
+  outline: none; transition: border-color .2s;
+}
+.fp-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+.fp-input::placeholder { color: var(--text-muted); }
+.fp-input-otp {
+  font-size: 22px; letter-spacing: 10px; text-align: center; font-weight: 700;
+}
+.fp-desc { font-size: 13px; color: var(--text-sub); line-height: 1.6; margin-bottom: 12px; }
+.fp-btn-row { display: flex; gap: 8px; }
+.fp-btn {
+  flex: 1; padding: 10px; border-radius: 10px;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  font-family: var(--font-body); transition: all .2s;
+}
+.fp-btn-cancel {
+  background: transparent; border: 1px solid var(--border); color: var(--text-sub);
+}
+.fp-btn-cancel:hover { border-color: var(--border-hover); color: var(--text); }
+.fp-btn-primary {
+  background: var(--accent); border: none; color: #fff;
+  box-shadow: 0 2px 12px var(--accent-glow);
+}
+.fp-btn-primary:hover { filter: brightness(1.08); }
+.fp-btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+.fp-result { font-size: 13px; border-radius: 8px; padding: 9px 12px; margin-bottom: 8px; }
+.fp-result.err { background: rgba(239,68,68,0.06); color: #b91c1c; border: 1px solid rgba(239,68,68,0.18); }
+.fp-result.ok  { background: rgba(34,197,94,0.06);  color: #15803d; border: 1px solid rgba(34,197,94,0.18); }
+.fp-resend-btn {
+  background: none; border: none; color: var(--text-muted);
+  font-size: 12px; cursor: pointer; font-family: var(--font-body);
+  text-decoration: underline; display: none; margin-top: 8px;
+}
+
+/* ── Card footer ── */
+.card-foot {
+  border-top: 1px solid var(--border);
+  padding: 14px 28px; text-align: center;
+  font-size: 12px; color: var(--text-muted);
+}
+.card-foot a { color: var(--accent); font-weight: 600; text-decoration: none; }
+.card-foot a:hover { text-decoration: underline; }
+
+/* ── Footer ticker ── */
+.footer-ticker {
+  position: fixed; bottom: 0; left: 0; width: 100%; z-index: 1000;
+  background: var(--surface2);
+  border-top: 1px solid var(--border);
+  padding: 8px 0; overflow: hidden;
+}
+.ticker-track {
+  display: inline-flex; white-space: nowrap;
+  animation: ticker 35s linear infinite;
+}
+.ticker-track span {
+  font-family: var(--font-body); font-size: 11px; font-weight: 600;
+  color: var(--text-muted); letter-spacing: 1px;
+  text-transform: uppercase; padding-right: 80px;
+}
+.ticker-track span b { color: var(--accent); font-weight: 600; }
+@keyframes ticker { from{transform:translateX(100vw)} to{transform:translateX(-100%)} }
+
+/* ── OBJ Chat ── */
+.obj-fab {
+  position: fixed; bottom: 50px; right: 18px; z-index: 9999;
+  width: 52px; height: 52px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border: none; cursor: pointer;
+  box-shadow: 0 4px 20px var(--accent-glow);
+  display: flex; align-items: center; justify-content: center;
+  transition: transform .2s, box-shadow .2s;
+  animation: fabPulse 3s ease infinite;
+}
+.obj-fab:hover { transform: scale(1.08); }
+@keyframes fabPulse {
+  0%,100% { box-shadow: 0 4px 20px var(--accent-glow); }
+  50% { box-shadow: 0 4px 30px rgba(249,115,22,0.45); }
+}
+.obj-fab-label {
+  position: fixed; bottom: 110px; right: 14px; z-index: 9999;
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text-sub); font-size: 11px; font-weight: 600;
+  padding: 6px 12px; border-radius: 20px; white-space: nowrap; cursor: pointer;
+  animation: labelBounce 2.5s ease-in-out infinite;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+}
+.obj-fab-label::after {
+  content: ''; position: absolute; bottom: -6px; right: 18px;
+  border: 5px solid transparent; border-top-color: var(--surface2); border-bottom: none;
+}
+@keyframes labelBounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
+.obj-fab-label.hidden { display: none; }
+
+.obj-chat-window {
+  position: fixed; bottom: 50px; right: 80px; z-index: 9997;
+  width: min(340px, calc(100vw - 24px)); max-height: 520px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 20px; box-shadow: 0 12px 48px rgba(0,0,0,0.12);
+  display: none; flex-direction: column; overflow: hidden;
+  animation: chatIn .25s cubic-bezier(.22,1,.36,1);
+}
+@media (max-width: 420px) { .obj-chat-window { right: 12px; left: 12px; width: auto; } }
+.obj-chat-window.open { display: flex; }
+@keyframes chatIn { from{opacity:0;transform:scale(.92) translateY(10px)} to{opacity:1;transform:none} }
+
+.obj-chat-head {
+  background: var(--surface2); border-bottom: 1px solid var(--border);
+  padding: 14px 16px; display: flex; align-items: center; gap: 10px;
+}
+.obj-chat-avatar {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.obj-chat-head h4 { font-family: var(--font-head); font-size: 13px; font-weight: 700; color: var(--text); margin: 0 0 2px; }
+.obj-chat-head p  { font-size: 11px; color: var(--text-muted); margin: 0; }
+.obj-chat-close {
+  margin-left: auto; background: var(--surface); border: 1px solid var(--border);
+  color: var(--text-sub); width: 28px; height: 28px; border-radius: 50%; cursor: pointer;
+  font-size: 13px; display: flex; align-items: center; justify-content: center;
+  transition: all .2s;
+}
+.obj-chat-close:hover { color: var(--text); border-color: var(--border-hover); }
+
+.obj-chat-body {
+  flex: 1; overflow-y: auto; padding: 14px 14px 8px;
+  display: flex; flex-direction: column; gap: 10px; max-height: 340px;
+}
+.obj-bubble {
+  padding: 9px 13px; border-radius: 14px; font-size: 13px; line-height: 1.55;
+  max-width: 85%; word-break: break-word; font-family: var(--font-body);
+}
+.obj-bubble.bot  { background: var(--surface2); color: var(--text-sub); align-self: flex-start; border-bottom-left-radius: 4px; border: 1px solid var(--border); }
+.obj-bubble.user { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; }
+.obj-typing { align-self: flex-start; display: flex; gap: 4px; padding: 10px 14px; }
+.obj-typing span {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--text-muted);
+  animation: typingDot .8s ease infinite;
+}
+.obj-typing span:nth-child(2) { animation-delay: .15s; }
+.obj-typing span:nth-child(3) { animation-delay: .3s; }
+@keyframes typingDot { 0%,80%,100%{transform:scale(1)} 40%{transform:scale(1.4)} }
+
+.obj-chat-foot {
+  padding: 10px 12px; border-top: 1px solid var(--border);
+  display: flex; gap: 8px; align-items: flex-end;
+}
+.obj-chat-foot input {
+  flex: 1; border: 1px solid var(--border); border-radius: 10px;
+  padding: 9px 12px; font-size: 13px; outline: none;
+  background: var(--surface2); color: var(--text); font-family: var(--font-body);
+  transition: border-color .2s;
+}
+.obj-chat-foot input:focus { border-color: var(--accent); }
+.obj-chat-foot input::placeholder { color: var(--text-muted); }
+.obj-chat-foot button {
+  width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border: none; color: #fff; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .2s;
+}
+.obj-chat-foot button:hover { transform: scale(1.08); }
+.obj-chat-foot button:disabled { opacity: .4; cursor: not-allowed; }
+
+/* ── Responsive ── */
+@media (max-width: 480px) {
+  .card { border-radius: 20px; }
+  .card-body { padding: 24px 20px; }
+  .brand-name { font-size: 19px; }
+}
+@media (max-width: 360px) {
+  .status-pill { display: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="bg-mesh"></div>
+<div class="bg-grid"></div>
+
+<div class="page">
+
+  <div class="status-pill" id="portalBadge">
+    <span class="status-dot" id="portalDot"></span>
+    <span id="portalBadgeText">Secure Examination Portal</span>
+  </div>
+
+  <div class="card">
+
+    <!-- Card Header -->
+    <div class="card-head" id="cardHead">
+      <div class="logo-wrap">
+        <img src="school-logo.png" alt="MARGMOCOTH CBT Logo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div class="logo-fallback" style="display:none;width:100%;height:100%;align-items:center;justify-content:center;">T</div>
+      </div>
+      <div class="brand-name" id="schoolName">MARGMOCOTH<span> CBT</span></div>
+      <div class="brand-sub">CBT Examination System</div>
+    </div>
+
+    <!-- Card Body -->
+    <div class="card-body" id="loginBody">
+
+      <!-- Maintenance panel -->
+      <div class="portal-closed-panel" id="portalClosedPanel">
+        <div class="closed-icon-wrap">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+        </div>
+        <div class="closed-title">System Maintenance</div>
+        <div class="closed-subtitle">Temporarily Unavailable</div>
+        <div class="closed-msg" id="closedMsg">
+          MARGMOCOTH CBT is currently undergoing scheduled maintenance. We are working to restore full access as quickly as possible.
+        </div>
+        <div class="maint-steps">
+          <div class="maint-step"><div class="maint-step-dot"></div><span>Your registration and exam records are <strong>safe</strong> and unaffected.</span></div>
+          <div class="maint-step"><div class="maint-step-dot"></div><span>You will receive a push notification once the portal is back online.</span></div>
+          <div class="maint-step"><div class="maint-step-dot"></div><span>For urgent matters, contact your department administrator.</span></div>
+        </div>
+      </div>
+
+      <!-- Login form -->
+      <div id="loginForm">
+
+        <!-- Submitted banner -->
+        <div class="submitted-banner" id="submittedBanner">
+          <div class="sub-check">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </div>
+          <div class="sub-title">Exam Submitted Successfully</div>
+          <div class="sub-msg">Your answers have been recorded.<br>Contact your administrator for results.</div>
+        </div>
+
+        <div class="welcome-line" id="welcomeLine">Sign in to continue</div>
+        <div id="alertBox"></div>
+
+        <!-- Full Name -->
+        <div class="field">
+          <label class="field-label">Full Name</label>
+          <div class="field-wrap">
+            <span class="field-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+              </svg>
+            </span>
+            <input type="text" id="studentName" class="field-input"
+                   placeholder="e.g. John Adeyemi"
+                   autocomplete="off">
+          </div>
+        </div>
+
+        <!-- Level -->
+        <div class="field">
+          <label class="field-label">Level</label>
+          <div class="field-wrap">
+            <span class="field-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+              </svg>
+            </span>
+            <select id="studentClass" class="field-input">
+              <option value="">Select your level</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Department -->
+        <div class="field">
+          <label class="field-label">Department</label>
+          <div class="field-wrap">
+            <span class="field-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
+              </svg>
+            </span>
+            <select id="department" class="field-input" onchange="onDeptChange()">
+              <option value="">Select your department</option>
+            </select>
+          </div>
+        </div>
+
+        <button class="login-btn" onclick="doLogin()" id="loginBtn">
+          <span>Sign In</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>
+          </svg>
+        </button>
+
+
+    </div>
+
+    <div class="card-foot" id="cardFoot">
+      Having issues? Contact your school administrator.
+    </div>
+
+  </div>
+</div>
+
+<!-- Footer ticker -->
+<footer class="footer-ticker">
+  <div class="ticker-track">
+    <span id="marqueeText">Powered by <b>Tribal Tech</b> &nbsp;&#183;&nbsp; MARGMOCOTH CBT System &nbsp;&#183;&nbsp; Powered by <b>Tribal Tech</b> &nbsp;&#183;&nbsp; MARGMOCOTH CBT System &nbsp;&#183;&nbsp; Powered by <b>Tribal Tech</b> &nbsp;&#183;&nbsp; MARGMOCOTH CBT System</span>
+  </div>
+</footer>
+
+<!-- OBJ Chat FAB -->
+<div class="obj-fab-label" id="objFabLabel" onclick="toggleObjChat()">Having login issues?</div>
+<button class="obj-fab" onclick="toggleObjChat()" id="objFab" title="Login help">
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+  </svg>
+</button>
+
+<!-- Chat Window -->
+<div class="obj-chat-window" id="objChatWindow">
+  <div class="obj-chat-head">
+    <div class="obj-chat-avatar">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+      </svg>
+    </div>
+    <div>
+      <h4>MARGMOCOTH Login Assistant</h4>
+      <p>Here to help with login issues</p>
+    </div>
+    <button class="obj-chat-close" onclick="toggleObjChat()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  </div>
+  <div class="obj-chat-body" id="objChatBody"></div>
+  <div class="obj-chat-foot">
+    <input type="text" id="objInput" placeholder="Describe your issue..."
+      enterkeyhint="send" inputmode="text"
+      onkeyup="if(event.key==='Enter'||event.keyCode===13) sendObjMsg()">
+    <button onclick="sendObjMsg()" id="objSendBtn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+      </svg>
+    </button>
+  </div>
+</div>
+</div>
+
+<script>
+// ===== PORTAL CHECK =====
+async function checkPortal() {
+  try {
+    const res  = await fetch('/api/settings/portal');
+    const data = await res.json();
+    if (data.school_name) {
+      document.getElementById('schoolName').textContent = data.school_name;
+    }
+    if (data.marquee_text) {
+      const t = data.marquee_text;
+      document.getElementById('marqueeText').innerHTML =
+        `Powered by <b>Tribal Tech</b> &nbsp;&#183;&nbsp; ${t} &nbsp;&#183;&nbsp; Powered by <b>Tribal Tech</b> &nbsp;&#183;&nbsp; ${t}`;
+    }
+    if (data.contact_email) {
+      document.getElementById('contactLink').href = `mailto:${data.contact_email}`;
+    }
+    if (!data.portal_open) {
+      document.getElementById('portalDot').classList.add('closed');
+      document.getElementById('portalBadgeText').textContent = 'Under Maintenance';
+      document.getElementById('cardHead').classList.add('closed');
+      document.getElementById('loginForm').style.display         = 'none';
+      document.getElementById('portalClosedPanel').style.display = 'block';
+      if (data.maintenance_msg) {
+        document.getElementById('closedMsg').textContent = data.maintenance_msg;
+      }
+      return false;
+    }
+    return true;
+  } catch(e) { return true; }
+}
+
+// ===== SUBMITTED BANNER =====
+if (sessionStorage.getItem('examSubmitted') === 'true') {
+  sessionStorage.removeItem('examSubmitted');
+  sessionStorage.removeItem('currentExam');
+  document.getElementById('submittedBanner').style.display = 'block';
+  document.getElementById('welcomeLine').style.display     = 'none';
+}
+
+async function loadDepartments() {
+  try {
+    const res  = await fetch('/api/departments');
+    const list = await res.json();
+    const sel  = document.getElementById('department');
+    list.forEach(d => {
+      const o = document.createElement('option');
+      o.value = d.id; o.textContent = d.name;
+      sel.appendChild(o);
+    });
+  } catch(e) {}
+  try {
+    const res  = await fetch('/api/levels');
+    const list = await res.json();
+    const sel  = document.getElementById('studentClass');
+    list.forEach(l => {
+      const o = document.createElement('option');
+      o.value = l.id; o.textContent = l.name;
+      sel.appendChild(o);
+    });
+  } catch(e) {}
+}
+
+function onDeptChange() {}
+
+async function doLogin() {
+  const name        = document.getElementById('studentName').value.trim();
+  const level_id    = document.getElementById('studentClass').value;
+  const department  = document.getElementById('department').value;
+  const box         = document.getElementById('alertBox');
+  const btn         = document.getElementById('loginBtn');
+  box.innerHTML     = '';
+
+  if (!name) {
+    box.innerHTML = '<div class="alert-msg alert-err">Please enter your full name.</div>';
+    return;
+  }
+  if (!level_id) {
+    box.innerHTML = '<div class="alert-msg alert-err">Please select your class.</div>';
+    return;
+  }
+  if (!department) {
+    box.innerHTML = '<div class="alert-msg alert-err">Please select your department.</div>';
+    return;
+  }
+
+  btn.disabled  = true;
+  btn.innerHTML = '<span>Signing in...</span>';
+
+  try {
+    const res  = await fetch('/api/student-login', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ name, level_id, department_id: department })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      box.innerHTML = '<div class="alert-msg alert-ok">Login successful! Redirecting...</div>';
+      localStorage.setItem('mcht_student', JSON.stringify(data.student));
+      localStorage.setItem('mcht_login_at', new Date().toISOString());
+      sessionStorage.setItem('student', JSON.stringify(data.student));
+      setTimeout(() => window.location.href = 'dashboard.html', 800);
+    } else {
+      box.innerHTML = `<div class="alert-msg alert-err">${data.message}</div>`;
+      btn.disabled  = false;
+      btn.innerHTML = '<span>Sign In</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>';
+    }
+  } catch(e) {
+    box.innerHTML = '<div class="alert-msg alert-err">Server error. Please try again.</div>';
+    btn.disabled  = false;
+    btn.innerHTML = '<span>Sign In</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>';
+  }
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+checkPortal();
+loadDepartments();
+checkBiometricAvailability();
+
+// ── Biometric (WebAuthn) — disabled: requires matric, which MARGMOCOTH CBT no longer uses ──
+async function checkBiometricAvailability() { /* disabled */ }
+async function doBiometricLogin() {
+  document.getElementById('alertBox').innerHTML = '<div class="alert-msg alert-err">Fingerprint login is unavailable. Please sign in with your name, class and arm.</div>';
+}
+
+// ── OBJ Assistant ──────────────────────────────────────────
+let objOpen    = false;
+let objStarted = false;
+let objHistory = [];
+
+let objSessionKey = sessionStorage.getItem('obj_session_key');
+if (!objSessionKey) {
+  objSessionKey = 'login-' + Date.now() + '-' + Math.random().toString(36).slice(2,9);
+  sessionStorage.setItem('obj_session_key', objSessionKey);
+}
+
+function toggleObjChat() {
+  objOpen = !objOpen;
+  document.getElementById('objChatWindow').classList.toggle('open', objOpen);
+  if (objOpen) document.getElementById('objFabLabel').classList.add('hidden');
+  document.getElementById('objFab').style.display = objOpen ? 'none' : 'flex';
+  if (objOpen && !objStarted) {
+    objStarted = true;
+    appendObjBubble('bot', 'Hi! I\'m the MARGMOCOTH Login Assistant.\n\nI can help if you\'re having trouble logging in. Tell me:\n\n- What error message do you see?\n- Or describe what\'s happening when you try to log in.');
+  }
+  if (objOpen) setTimeout(() => document.getElementById('objInput').focus(), 100);
+}
+
+function appendObjBubble(role, text) {
+  const body = document.getElementById('objChatBody');
+  const div  = document.createElement('div');
+  div.className = 'obj-bubble ' + role;
+  div.style.whiteSpace = 'pre-wrap';
+  div.textContent = text;
+  body.appendChild(div);
+  body.scrollTop = body.scrollHeight;
+}
+function showObjTyping() {
+  const body = document.getElementById('objChatBody');
+  const div  = document.createElement('div');
+  div.className = 'obj-typing'; div.id = 'objTyping';
+  div.innerHTML = '<span></span><span></span><span></span>';
+  body.appendChild(div);
+  body.scrollTop = body.scrollHeight;
+}
+function hideObjTyping() {
+  const el = document.getElementById('objTyping');
+  if (el) el.remove();
+}
+
+async function sendObjMsg() {
+  const input = document.getElementById('objInput');
+  const msg   = input.value.trim();
+  if (!msg) return;
+  input.value = '';
+  input.disabled = true;
+  document.getElementById('objSendBtn').disabled = true;
+
+  appendObjBubble('user', msg);
+  objHistory.push({ role: 'user', content: msg });
+  showObjTyping();
+
+  try {
+    const res  = await fetch('/api/login-assistant', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: objHistory.slice(-10), session_key: objSessionKey })
+    });
+    const data = await res.json();
+    hideObjTyping();
+    const reply = data.reply || 'I had trouble responding. Please try again.';
+    objHistory.push({ role: 'assistant', content: reply });
+    appendObjBubble('bot', reply);
+  } catch(e) {
+    hideObjTyping();
+    appendObjBubble('bot', 'Connection issue. Please try again.');
+  }
+
+  input.disabled = false;
+  document.getElementById('objSendBtn').disabled = false;
+  input.focus();
+}
+</script>
+<script src="/pwa.js"></script>
+</body>
+</html>

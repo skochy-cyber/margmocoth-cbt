@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="manifest" href="/manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MARGMOCOTH CBT">
+<meta name="theme-color" content="#2e3192">
+<link rel="apple-touch-icon" href="/icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Live Exam Monitor – MARGMOCOTH CBT</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+body { background:#f1f2fa; font-family:'DM Sans',system-ui,sans-serif; }
+.topbar { background:#0f6b30; color:#fff; padding:14px 24px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+.topbar h1 { font-size:17px; font-weight:800; margin:0; }
+.wrap { max-width:1300px; margin:0 auto; padding:20px 16px 80px; }
+.summary-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:14px; margin-bottom:22px; }
+.summary-card { background:#fff; border-radius:12px; padding:16px 18px; border:1px solid #e6e8f3; }
+.summary-card .num { font-size:28px; font-weight:800; color:#0f6b30; }
+.summary-card .lbl { font-size:12px; color:#5b5f80; font-weight:600; margin-top:2px; }
+.summary-card.danger .num { color:#dc2626; }
+.refresh-bar { display:flex; align-items:center; gap:12px; margin-bottom:18px; flex-wrap:wrap; }
+.refresh-bar .btn { padding:8px 16px; border-radius:8px; font-size:12px; font-weight:700; border:none; cursor:pointer; }
+.btn-primary { background:#0f6b30; color:#fff; }
+.btn-ghost  { background:#f1f2fa; color:#4a4e73; border:1px solid #e6e8f3; }
+.last-updated { font-size:12px; color:#8e92b3; }
+.pulse { display:inline-block; width:8px; height:8px; border-radius:50%; background:#22c55e; animation:pulse 1.5s infinite; margin-right:6px; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.3)} }
+.table-wrap { background:#fff; border-radius:14px; overflow:hidden; border:1px solid #e6e8f3; overflow-x:auto; }
+table { width:100%; border-collapse:collapse; min-width:900px; }
+thead th { background:#f6f7fc; padding:12px 14px; text-align:left; font-size:11px; font-weight:800; color:#5b5f80; text-transform:uppercase; letter-spacing:.4px; border-bottom:1px solid #e6e8f3; }
+tbody tr { border-bottom:1px solid #f1f2fa; transition:background .1s; }
+tbody tr:hover { background:#f6f7fc; }
+tbody tr.row-critical { background:#fff5f5; }
+tbody tr.row-critical:hover { background:#fee2e2; }
+tbody td { padding:12px 14px; font-size:13px; color:#1b1e45; vertical-align:top; }
+.badge { display:inline-flex; align-items:center; padding:3px 9px; border-radius:999px; font-size:11px; font-weight:800; }
+.badge-green  { background:#dcfce7; color:#166534; }
+.badge-orange { background:#fff7ed; color:#9a3412; }
+.badge-red  { background:#fee2e2; color:#991b1b; }
+.timer-bar { height:5px; background:#e6e8f3; border-radius:999px; margin-top:4px; overflow:hidden; }
+.timer-fill { height:100%; border-radius:999px; transition:width .5s; }
+.empty-state { text-align:center; padding:60px 0; color:#8e92b3; }
+.empty-state .icon { font-size:48px; margin-bottom:12px; }
+
+/* Violation sub-type pills */
+.sub-badge { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:6px; font-size:10px; font-weight:700; white-space:nowrap; margin:2px 2px 0 0; }
+.sub-tab_switch  { background:#fef3c7; color:#92400e; border:1px solid #fcd34d; }
+.sub-focus_loss  { background:#ede9fe; color:#5b21b6; border:1px solid #c4b5fd; }
+.sub-duplicate_ip  { background:#fee2e2; color:#991b1b; border:1px solid #fca5a5; }
+.sub-fullscreen_exit { background:#f0fdf4; color:#166534; border:1px solid #86efac; }
+.sub-face  { background:#fff7ed; color:#9a3412; border:1px solid #fdba74; }
+.sub-voice  { background:#fdf4ff; color:#7e22ce; border:1px solid #e9d5ff; }
+.sub-other  { background:#f1f2fa; color:#4a4e73; border:1px solid #cdd0e6; }
+
+.viol-detail-list { margin-top:4px; }
+.viol-time { font-size:10px; color:#8e92b3; margin-left:4px; }
+
+/* Concurrent login alerts */
+.violations-tab { margin-top:28px; }
+.violations-tab h2 { font-size:15px; font-weight:800; color:#1b1e45; margin-bottom:14px; }
+.viol-card { background:#fff; border-radius:12px; padding:14px 18px; border:1.5px solid #fca5a5; margin-bottom:10px; display:flex; align-items:flex-start; gap:14px; flex-wrap:wrap; }
+.viol-meta { flex:1; min-width:0; }
+.viol-name { font-size:13px; font-weight:700; color:#1b1e45; }
+.viol-detail { font-size:12px; color:#5b5f80; margin-top:3px; }
+
+/* New: violation type counts summary per student row */
+.vtype-summary { display:flex; flex-wrap:wrap; gap:3px; margin-top:5px; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+ <h1> <span class="pulse"></span>Live Exam Monitor</h1>
+ <div style="display:flex;align-items:center;gap:10px;">
+ <span id="liveCount" style="background:rgba(255,255,255,.2);border-radius:999px;padding:4px 12px;font-size:12px;font-weight:700;">— Active</span>
+ <a href="admin-dashboard.html" class="btn btn-ghost" style="font-size:12px;padding:6px 14px;">← Dashboard</a>
+ </div>
+</div>
+
+<div class="wrap">
+
+ <div class="summary-row">
+ <div class="summary-card">
+ <div class="num" id="sumActive">—</div>
+ <div class="lbl">Active Students</div>
+ </div>
+ <div class="summary-card">
+ <div class="num" id="sumViol">—</div>
+ <div class="lbl">Total Violations</div>
+ </div>
+ <div class="summary-card">
+ <div class="num" id="sumTabSwitch">—</div>
+ <div class="lbl">Tab Switches</div>
+ </div>
+ <div class="summary-card">
+ <div class="num" id="sumFocusLoss">—</div>
+ <div class="lbl">Focus Loss</div>
+ </div>
+ <div class="summary-card">
+ <div class="num" id="sumExams">—</div>
+ <div class="lbl">Exams Running</div>
+ </div>
+ <div class="summary-card danger">
+ <div class="num" id="sumCritical">—</div>
+ <div class="lbl">Critical (≥3 violations)</div>
+ </div>
+ </div>
+
+ <div class="refresh-bar">
+ <button class="btn btn-primary" onclick="loadData()">Refresh Now</button>
+ <label style="font-size:12px;font-weight:600;color:#5b5f80;">
+ Auto-refresh:
+ <select id="autoInterval" onchange="setupAutoRefresh()" style="margin-left:6px;border-radius:6px;border:1px solid #e6e8f3;padding:4px 8px;font-size:12px;">
+ <option value="0">Off</option>
+ <option value="10000">Every 10s</option>
+ <option value="15000" selected>Every 15s</option>
+ <option value="30000">Every 30s</option>
+ <option value="60000">Every 60s</option>
+ </select>
+ </label>
+ <span class="last-updated" id="lastUpdated"></span>
+ </div>
+
+ <div class="table-wrap">
+ <table>
+ <thead>
+ <tr>
+ <th>Student</th>
+ <th>Matric</th>
+ <th>Exam</th>
+ <th>Progress</th>
+ <th>Time Left</th>
+ <th>Violations</th>
+ <th>Last Violation</th>
+ <th>Answered</th>
+ </tr>
+ </thead>
+ <tbody id="tableBody">
+ <tr><td colspan="8" class="empty-state"><div class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2m6-2a10 10 0 11-20 0 10 10 0 0120 0z"/></svg></div><div>Loading…</div></td></tr>
+ </tbody>
+ </table>
+ </div>
+
+ <!-- Concurrent Login Alerts -->
+ <div class="violations-tab">
+ <h2>Suspicious Concurrent Logins (Last Hour)</h2>
+ <div id="concurrentList"><div style="color:#8e92b3;font-size:13px;">Loading…</div></div>
+ </div>
+
+</div>
+
+<script src="js/admin.js"></script>
+<script>
+checkAdmin();
+
+let refreshTimer = null;
+
+const SUB_LABELS = {
+ tab_switch:  ' Tab Switch',
+ focus_loss:  ' Focus Loss',
+ duplicate_ip:  ' Dup. IP',
+ fullscreen_exit: ' Fullscreen',
+ face:  ' Face',
+ voice:  ' Voice',
+ other:  ' Other'
+};
+
+function subBadge(sub) {
+ const label = SUB_LABELS[sub] || (' ' + sub);
+ const cls  = 'sub-badge sub-' + (sub || 'other');
+ return `<span class="${cls}">${label}</span>`;
+}
+
+function timeAgo(ts) {
+ if (!ts) return '';
+ const diff = Math.round((Date.now() - new Date(ts)) / 1000);
+ if (diff < 60)  return diff + 's ago';
+ if (diff < 3600) return Math.round(diff / 60) + 'm ago';
+ return Math.round(diff / 3600) + 'h ago';
+}
+
+async function loadData() {
+ await Promise.all([loadSessions(), loadConcurrent()]);
+ document.getElementById('lastUpdated').textContent = 'Last updated: ' + new Date().toLocaleTimeString();
+}
+
+async function loadSessions() {
+ const tbody = document.getElementById('tableBody');
+ try {
+ const data = await apiGet('/api/admin/live-exams');
+ if (!data.success) { tbody.innerHTML = `<tr><td colspan="8" style="padding:20px;color:#dc2626;">${data.message}</td></tr>`; return; }
+
+ const sessions = data.sessions || [];
+ document.getElementById('liveCount').textContent  = `${sessions.length} Active`;
+ document.getElementById('sumActive').textContent  = sessions.length;
+ document.getElementById('sumExams').textContent  = new Set(sessions.map(s => s.exam_title)).size;
+
+ const totalViol  = sessions.reduce((a,s) => a + (s.violations||0), 0);
+ const critical  = sessions.filter(s => (s.violations||0) >= 3).length;
+ const allRecent  = sessions.flatMap(s => s.recent_violations || []);
+ const tabSwitches  = allRecent.filter(v => v.sub_type === 'tab_switch').length;
+ const focusLosses  = allRecent.filter(v => v.sub_type === 'focus_loss').length;
+
+ document.getElementById('sumViol').textContent  = totalViol;
+ document.getElementById('sumTabSwitch').textContent = tabSwitches;
+ document.getElementById('sumFocusLoss').textContent = focusLosses;
+ document.getElementById('sumCritical').textContent  = critical;
+
+ if (!sessions.length) {
+ tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="icon"></div><div>No active exam sessions right now.</div></div></td></tr>`;
+ return;
+ }
+
+ tbody.innerHTML = sessions.map(s => {
+ const pct = s.remaining_min > 0 ? Math.round((s.remaining_min / (s.elapsed_min + s.remaining_min)) * 100) : 0;
+ const fillColor = pct > 50 ? '#22c55e' : pct > 20 ? '#f59e0b' : '#ef4444';
+ const vBadge = s.violations === 0 ? 'badge-green' : s.violations < 3 ? 'badge-orange' : 'badge-red';
+ const isCritical = s.violations >= 3;
+
+ // Last violation detail
+ const lv = s.last_violation;
+ const lastViolCell = lv
+ ? `${subBadge(lv.sub_type)}<span class="viol-time">${timeAgo(lv.timestamp)}</span>
+ <div style="font-size:10px;color:#8e92b3;margin-top:2px;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${lv.reason}">${lv.reason}</div>`
+ : `<span style="color:#8e92b3;font-size:12px;">—</span>`;
+
+ // Sub-type breakdown pills
+ const recent = s.recent_violations || [];
+ const typeCounts = {};
+ recent.forEach(v => { typeCounts[v.sub_type] = (typeCounts[v.sub_type] || 0) + 1; });
+ const typeBreakdown = Object.entries(typeCounts).map(([k,n]) =>
+ `<span class="sub-badge sub-${k}">${SUB_LABELS[k] || k} ×${n}</span>`
+ ).join('');
+
+ return `<tr class="${isCritical ? 'row-critical' : ''}">
+ <td style="font-weight:700;">${s.student_name}${isCritical ? ' ' : ''}</td>
+ <td style="color:#5b5f80;">${s.matric}</td>
+ <td>${s.exam_title}</td>
+ <td style="min-width:100px;">
+ <div style="font-size:11px;color:#5b5f80;">${s.elapsed_min}m elapsed</div>
+ <div class="timer-bar"><div class="timer-fill" style="width:${pct}%;background:${fillColor};"></div></div>
+ </td>
+ <td style="font-weight:700;color:${pct < 20 ? '#ef4444' : '#1b1e45'};">${s.remaining_min}m</td>
+ <td>
+ <span class="badge ${vBadge}">${s.violations} violation${s.violations !== 1 ? 's' : ''}</span>
+ ${typeBreakdown ? `<div class="vtype-summary">${typeBreakdown}</div>` : ''}
+ </td>
+ <td>${lastViolCell}</td>
+ <td>${s.answered}</td>
+ </tr>`;
+ }).join('');
+ } catch(e) {
+ tbody.innerHTML = `<tr><td colspan="8" style="padding:20px;color:#dc2626;">Error: ${e.message}</td></tr>`;
+ }
+}
+
+async function loadConcurrent() {
+ const el = document.getElementById('concurrentList');
+ try {
+ const data = await apiGet('/api/admin/concurrent-logins');
+ if (!data.success || !data.suspicious.length) {
+ el.innerHTML = '<div style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:14px 18px;font-size:13px;color:#166534;font-weight:600;">No suspicious concurrent logins detected in the last hour.</div>';
+ return;
+ }
+ el.innerHTML = data.suspicious.map(s => {
+ const recentLogins = (s.logins || []).slice(0, 5).map(l =>
+ `<div style="font-size:11px;color:#5b5f80;margin-top:3px;">
+ <span style="font-family:monospace;background:#f1f2fa;padding:1px 6px;border-radius:4px;">${l.ip}</span>
+ <span class="viol-time">${timeAgo(l.created_at)}</span>
+ <span style="color:#8e92b3;"> — ${(l.user_agent||'').substring(0,40)}…</span>
+ </div>`
+ ).join('');
+ return `
+ <div class="viol-card">
+ <div style="font-size:28px;"></div>
+ <div class="viol-meta">
+ <div class="viol-name">${s.name} <span style="font-weight:400;color:#5b5f80;">(${s.matric})</span></div>
+ <div class="viol-detail">Logged in from <strong>${s.ip_count} different IP addresses</strong> in the last hour</div>
+ ${recentLogins}
+ </div>
+ <span class="badge badge-red"> ${s.ip_count} IPs</span>
+ </div>
+ `;
+ }).join('');
+ } catch(e) {
+ el.innerHTML = `<div style="color:#dc2626;font-size:13px;">Error loading: ${e.message}</div>`;
+ }
+}
+
+function setupAutoRefresh() {
+ clearInterval(refreshTimer);
+ const ms = parseInt(document.getElementById('autoInterval').value);
+ if (ms > 0) refreshTimer = setInterval(loadData, ms);
+}
+
+loadData();
+setupAutoRefresh();
+</script>
+<script src="/pwa.js"></script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+{
+  "name": "MARGMOCOTH CBT",
+  "short_name": "MARGMOCOTH CBT",
+  "description": "MARGMOCOTH CBT — Computer Based Testing System",
+  "start_url": "/login.html",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#14163f",
+  "theme_color": "#2e3192",
+  "categories": ["education"],
+  "icons": [
+    { "src": "/icons/icon-48.png",           "sizes": "48x48",   "type": "image/png" },
+    { "src": "/icons/icon-72.png",           "sizes": "72x72",   "type": "image/png" },
+    { "src": "/icons/icon-96.png",           "sizes": "96x96",   "type": "image/png" },
+    { "src": "/icons/icon-144.png",          "sizes": "144x144", "type": "image/png" },
+    { "src": "/icons/icon-180.png",          "sizes": "180x180", "type": "image/png" },
+    { "src": "/icons/icon-192.png",          "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icons/icon-512.png",          "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "screenshots": [],
+  "prefer_related_applications": false
+}

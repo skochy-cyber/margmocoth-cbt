@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="manifest" href="/manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MARGMOCOTH CBT">
+<meta name="theme-color" content="#2e3192">
+<link rel="apple-touch-icon" href="/icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manage Levels – MARGMOCOTH CBT</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="admin-layout">
+ <div id="sidebarContainer"></div>
+ <div class="admin-main">
+ <div id="topbarContainer"></div>
+ <div class="content">
+ <div id="alertBox"></div>
+
+ <div style="display:grid;grid-template-columns:1fr 1fr;gap:22px;">
+
+ <div class="card">
+ <div class="card-header">Add Level</div>
+ <div class="card-body">
+ <div class="form-group">
+ <label class="form-label">Level Name *</label>
+ <input type="text" id="className" class="form-control" placeholder="e.g. 100, 200, 300, 400">
+ </div>
+ <button onclick="addClass()" class="btn btn-primary">Add Level</button>
+
+ <div style="margin-top:20px;padding:16px;background:#f4f4f5;border-radius:12px;border:1px solid #e4e4e7;">
+ <div style="font-size:13px;font-weight:700;color:#1b1e45;margin-bottom:10px;">Quick Select Common Classs:</div>
+ <div style="display:flex;gap:8px;flex-wrap:wrap;">
+ <button onclick="document.getElementById('className').value='100'" class="btn btn-ghost btn-sm">100</button>
+ <button onclick="document.getElementById('className').value='200'" class="btn btn-ghost btn-sm">200</button>
+ <button onclick="document.getElementById('className').value='300'" class="btn btn-ghost btn-sm">300</button>
+ <button onclick="document.getElementById('className').value='400'" class="btn btn-ghost btn-sm">400</button>
+ </div>
+ </div>
+ </div>
+ </div>
+
+ <div class="card">
+ <div class="card-header">All Classs</div>
+ <div class="card-body" style="padding:0;">
+ <div class="table-wrapper">
+ <table>
+ <thead>
+ <tr>
+ <th>#</th>
+ <th>Level</th>
+ <th>Students</th>
+ <th>Action</th>
+ </tr>
+ </thead>
+ <tbody id="classsList">
+ <tr><td colspan="4" style="text-align:center;padding:32px;color:#5b5f80;">Loading classs...</td></tr>
+ </tbody>
+ </table>
+ </div>
+ </div>
+ </div>
+
+ </div>
+ </div>
+ </div>
+</div>
+
+<script src="js/admin.js"></script>
+<script>
+document.getElementById('sidebarContainer').innerHTML = getSidebarHTML('manage-classs.html');
+document.getElementById('topbarContainer').innerHTML  = getTopbarHTML('Manage Levels');
+checkAdmin();
+requirePermission('manage_config');
+
+async function loadClasss() {
+ const data  = await apiGet('/api/levels');
+ const tbody = document.getElementById('classsList');
+ if (!data.length) {
+ tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:32px;color:#5b5f80;">No classs yet.</td></tr>';
+ return;
+ }
+ tbody.innerHTML = data.map((l, i) => `
+ <tr>
+ <td>${i+1}</td>
+ <td><strong>Level ${l.name}</strong></td>
+ <td><span class="badge badge-info">${l.student_count || 0} students</span></td>
+ <td><button onclick="deleteClass('${l.id}')" class="btn btn-secondary btn-xs">Delete</button></td>
+ </tr>`).join('');
+}
+
+async function addClass() {
+ const name = document.getElementById('className').value.trim();
+ if (!name) { showAlert('Level name required.', 'danger'); return; }
+ const btn = document.querySelector('button[onclick="addClass()"]');
+ btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2m6-2a10 10 0 11-20 0 10 10 0 0120 0z"/></svg> Adding...'; btn.disabled = true;
+ const data = await apiPost('/api/admin/levels', { name });
+ btn.innerHTML = ' Add Level'; btn.disabled = false;
+ if (data.success) {
+ showAlert('Level added successfully!', 'success');
+ document.getElementById('className').value = '';
+ loadClasss();
+ } else showAlert(data.message, 'danger');
+}
+
+async function deleteClass(id) {
+ if (!confirmDelete('Delete this class?')) return;
+ const d = await apiDelete(`/api/admin/levels/${id}`);
+ if (d.success) { showAlert('Level deleted.', 'success'); loadClasss(); }
+ else showAlert(d.message, 'danger');
+}
+
+loadClasss();
+</script>
+<script src="js/ai-assistant.js" defer></script>
+<script src="/pwa.js"></script>
+</body>
+</html>

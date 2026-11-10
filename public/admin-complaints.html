@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="manifest" href="/manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MARGMOCOTH CBT">
+<meta name="theme-color" content="#2e3192">
+<link rel="apple-touch-icon" href="/icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student Complaints — MARGMOCOTH CBT Admin</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+/* ── Tabs ─────────────────────────────────────────────────── */
+.cmp-tabs {
+  display: flex; gap: 0; border-bottom: 2px solid #e6e8f3;
+  background: #fff; padding: 0 20px;
+}
+.cmp-tab-btn {
+  padding: 12px 18px; border: none; background: none; cursor: pointer;
+  font-size: 13px; font-weight: 700; color: #5b5f80;
+  border-bottom: 2px solid transparent; margin-bottom: -2px;
+  font-family: inherit; transition: all .15s;
+  display: flex; align-items: center; gap: 6px;
+}
+.cmp-tab-btn.active { color: #2e3192; border-bottom-color: #2e3192; }
+.cmp-tab-btn .tab-badge {
+  background: #ef4444; color: #fff; font-size: 9px; font-weight: 800;
+  border-radius: 999px; padding: 1px 6px;
+}
+
+/* ── Layout: same pattern as admin-messages ──────────────── */
+.cmp-layout {
+  display: flex; height: calc(100vh - 108px); overflow: hidden;
+  background: #f1f2fa;
+}
+
+/* ── Left list ───────────────────────────────────────────── */
+.cmp-sidebar {
+  width: 320px; flex-shrink: 0;
+  background: #fff; border-right: 1px solid #e6e8f3;
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.cmp-sidebar-head {
+  padding: 16px 18px 12px; border-bottom: 1px solid #e6e8f3;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.cmp-sidebar-head h2 { font-size: 15px; font-weight: 800; color: #0f1230; margin: 0; }
+.cmp-count-badge {
+  background: #ef4444; color: #fff; font-size: 10px; font-weight: 700;
+  border-radius: 999px; padding: 2px 7px; display: none;
+}
+.cmp-filters {
+  padding: 10px 14px; border-bottom: 1px solid #f1f2fa;
+  display: flex; gap: 6px; flex-wrap: wrap;
+}
+.cmp-filter-btn {
+  padding: 5px 11px; border-radius: 999px; border: 1.5px solid #e6e8f3;
+  font-size: 11px; font-weight: 700; cursor: pointer;
+  background: #fff; color: #4a4e73; transition: all .15s;
+}
+.cmp-filter-btn.active { border-color: #2e3192; background: #f0f1ff; color: #1f2170; }
+.cmp-search { padding: 8px 14px; border-bottom: 1px solid #f1f2fa; }
+.cmp-search-wrap { position: relative; }
+.cmp-search-wrap svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #8e92b3; }
+.cmp-search input {
+  width: 100%; border: 1.5px solid #e6e8f3; border-radius: 10px;
+  padding: 8px 12px 8px 32px; font-size: 13px; outline: none; box-sizing: border-box;
+  background: #f6f7fc;
+}
+.cmp-search input:focus { border-color: #2e3192; background: #fff; }
+.cmp-list { flex: 1; overflow-y: auto; }
+.cmp-item {
+  padding: 13px 16px; cursor: pointer; border-bottom: 1px solid #f1f2fa;
+  transition: background .12s; position: relative;
+}
+.cmp-item:hover { background: #f6f7fc; }
+.cmp-item.active { background: #f0f1ff; border-left: 3px solid #2e3192; }
+.cmp-item-name    { font-size: 14px; font-weight: 700; color: #0f1230; margin-bottom: 2px; }
+.cmp-item-matric  { font-size: 11px; color: #8e92b3; margin-bottom: 4px; }
+.cmp-item-subject {
+  font-size: 12px; color: #5b5f80;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 230px;
+}
+.cmp-item-time { font-size: 10px; color: #8e92b3; position: absolute; top: 13px; right: 12px; }
+.cmp-status-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  position: absolute; right: 12px; bottom: 13px;
+}
+.s-open        .cmp-status-dot { background: #ef4444; }
+.s-in_progress .cmp-status-dot { background: #f59e0b; }
+.s-resolved    .cmp-status-dot { background: #22c55e; }
+.s-pending     .cmp-status-dot { background: #ef4444; }
+.s-approved    .cmp-status-dot { background: #22c55e; }
+.s-rejected    .cmp-status-dot { background: #8e92b3; }
+.cmp-empty {
+  padding: 40px 20px; text-align: center; color: #8e92b3; font-size: 13px;
+}
+.cmp-empty-icon { font-size: 36px; margin-bottom: 8px; }
+
+/* ── Right detail ─────────────────────────────────────────── */
+.cmp-detail {
+  flex: 1; display: flex; flex-direction: column;
+  background: #f6f7fc; overflow: hidden;
+}
+.cmp-no-sel {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 10px;
+  color: #8e92b3; font-size: 13px;
+}
+.cmp-no-sel-icon { font-size: 48px; }
+
+.cmp-detail-head {
+  padding: 14px 20px; background: #fff; border-bottom: 1px solid #e6e8f3;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.cmp-detail-head-left { display: flex; align-items: center; gap: 12px; }
+.cmp-avatar {
+  width: 40px; height: 40px; border-radius: 12px;
+  background: linear-gradient(135deg,#dc2626,#4448b8);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 16px; font-weight: 800; flex-shrink: 0;
+}
+.cmp-detail-title { font-size: 15px; font-weight: 800; color: #0f1230; }
+.cmp-detail-sub   { font-size: 12px; color: #5b5f80; }
+.cmp-status-badge {
+  font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 999px;
+}
+.badge-open        { background: #fef2f2; color: #dc2626; }
+.badge-in_progress { background: #fffbeb; color: #d97706; }
+.badge-resolved    { background: #f0fdf4; color: #16a34a; }
+.badge-pending     { background: #fef2f2; color: #dc2626; }
+.badge-approved    { background: #f0fdf4; color: #16a34a; }
+.badge-rejected    { background: #f4f4f5; color: #71717a; }
+
+.cmp-detail-body { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+
+.cmp-complaint-box {
+  background: #fff; border-radius: 14px; border: 1.5px solid #e6e8f3; padding: 18px 20px;
+}
+.cmp-complaint-box h4 { font-size: 13px; font-weight: 800; color: #374151; margin: 0 0 10px; text-transform: uppercase; letter-spacing: .5px; }
+.cmp-complaint-subject { font-size: 16px; font-weight: 800; color: #0f1230; margin-bottom: 10px; }
+.cmp-complaint-body    { font-size: 14px; color: #374151; line-height: 1.6; white-space: pre-wrap; }
+.cmp-complaint-meta    { font-size: 11px; color: #8e92b3; margin-top: 12px; padding-top: 12px; border-top: 1px solid #f1f2fa; }
+
+/* ── Thread view ──────────────────────────────────────────── */
+.cmp-thread { display: flex; flex-direction: column; gap: 12px; }
+.thread-msg {
+  display: flex; flex-direction: column; max-width: 80%; gap: 3px;
+}
+.thread-msg.admin  { align-self: flex-end; align-items: flex-end; }
+.thread-msg.student { align-self: flex-start; align-items: flex-start; }
+.thread-bubble {
+  padding: 10px 14px; border-radius: 14px; font-size: 13px; line-height: 1.5; white-space: pre-wrap;
+}
+.thread-msg.admin  .thread-bubble { background: #1f2170; color: #fff; border-bottom-right-radius: 4px; }
+.thread-msg.student .thread-bubble { background: #f1f2fa; color: #1b1e45; border-bottom-left-radius: 4px; }
+.thread-meta { font-size: 10px; color: #8e92b3; }
+
+.cmp-reply-box {
+  background: #fff; border-radius: 14px; border: 1.5px solid #e6e8f3; padding: 18px 20px;
+}
+.cmp-reply-box h4 { font-size: 13px; font-weight: 800; color: #374151; margin: 0 0 10px; text-transform: uppercase; letter-spacing: .5px; }
+
+.cmp-detail-foot {
+  padding: 14px 20px; background: #fff; border-top: 1px solid #e6e8f3;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.cmp-reply-row { display: flex; gap: 8px; align-items: flex-end; }
+.cmp-reply-row textarea {
+  flex: 1; border: 1.5px solid #e6e8f3; border-radius: 14px;
+  padding: 10px 14px; font-size: 14px; resize: none; outline: none;
+  min-height: 44px; max-height: 130px; line-height: 1.4; font-family: inherit;
+  background: #f6f7fc;
+}
+.cmp-reply-row textarea:focus { border-color: #2e3192; background: #fff; }
+.cmp-reply-send {
+  width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0;
+  background: linear-gradient(135deg,#1f2170,#2e3192);
+  border: none; color: #fff; font-size: 17px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.cmp-reply-send:disabled { opacity: .5; cursor: not-allowed; }
+.cmp-status-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.cmp-status-row label { font-size: 12px; font-weight: 700; color: #374151; }
+.cmp-status-row select {
+  border: 1.5px solid #e6e8f3; border-radius: 10px; padding: 6px 10px;
+  font-size: 13px; outline: none; font-family: inherit; background: #f6f7fc;
+}
+.cmp-status-row select:focus { border-color: #2e3192; }
+
+/* ── Password Reset Panel ─────────────────────────────────── */
+.pr-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 18px; background: #fff; border-radius: 12px;
+  border: 1.5px solid #e6e8f3; margin-bottom: 10px; gap: 12px; flex-wrap: wrap;
+}
+.pr-info h4 { font-size: 14px; font-weight: 700; color: #0f1230; margin: 0 0 2px; }
+.pr-info p  { font-size: 12px; color: #5b5f80; margin: 0; }
+.pr-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; flex-shrink: 0; }
+.pr-input {
+  border: 1.5px solid #e6e8f3; border-radius: 8px; padding: 7px 10px;
+  font-size: 13px; outline: none; width: 160px; font-family: inherit;
+}
+.pr-input:focus { border-color: #2e3192; }
+.btn-approve { background: #dcfce7; color: #166534; border: 1.5px solid #86efac; border-radius: 8px; padding: 7px 14px; font-size: 12px; font-weight: 700; cursor: pointer; }
+.btn-reject  { background: #fef2f2; color: #dc2626; border: 1.5px solid #fecaca; border-radius: 8px; padding: 7px 14px; font-size: 12px; font-weight: 700; cursor: pointer; }
+.pr-badge-pending  { background: #fef2f2; color: #dc2626; border-radius: 999px; padding: 3px 10px; font-size: 11px; font-weight: 700; }
+.pr-badge-approved { background: #dcfce7; color: #166534; border-radius: 999px; padding: 3px 10px; font-size: 11px; font-weight: 700; }
+.pr-badge-rejected { background: #f4f4f5; color: #71717a; border-radius: 999px; padding: 3px 10px; font-size: 11px; font-weight: 700; }
+
+/* Responsive */
+@media (max-width: 680px) {
+  .cmp-layout  { flex-direction: column; height: calc(100vh - 108px); }
+  .cmp-sidebar { width: 100%; height: 100%; border-right: none; border-bottom: 1px solid #e6e8f3; flex-shrink: 0; }
+  .cmp-detail  { width: 100%; flex: 1; }
+  .cmp-sidebar.hidden-mobile { display: none !important; }
+  .cmp-detail.hidden-mobile  { display: none !important; }
+  .back-btn-mobile { display: flex !important; }
+}
+.back-btn-mobile {
+  display: none;
+  align-items: center; gap: 6px;
+  background: none; border: none;
+  color: #2e3192; font-size: 13px; font-weight: 700;
+  cursor: pointer; font-family: inherit; padding: 0;
+  margin-right: 4px;
+}
+</style>
+</head>
+<body>
+
+<div class="admin-layout">
+  <div id="sidebarContainer"></div>
+  <div class="admin-main" style="padding:0;overflow:hidden;display:flex;flex-direction:column;">
+    <div id="topbarContainer"></div>
+
+    <!-- ── Page Tabs ── -->
+    <div class="cmp-tabs">
+      <button class="cmp-tab-btn active" onclick="switchTab('complaints',this)"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg> Complaints <span class="tab-badge" id="openBadge" style="display:none;">0</span></button>
+      <button class="cmp-tab-btn" onclick="switchTab('resets',this)"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg> Password <span class="tab-badge" id="resetBadge" style="display:none;">0</span></button>
+    </div>
+
+    <!-- ── TAB: COMPLAINTS ── -->
+    <div id="tabComplaints" class="cmp-layout">
+
+      <!-- LEFT: Complaint list -->
+      <div class="cmp-sidebar" id="cmpSidebar">
+        <div class="cmp-sidebar-head">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:18px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></span>
+            <h2>Complaints</h2>
+          </div>
+          <button class="refresh-btn" onclick="loadComplaints()" title="Refresh">↻ Refresh</button>
+        </div>
+        <div class="cmp-filters">
+          <button class="cmp-filter-btn active" onclick="setFilter('all',this)">All</button>
+          <button class="cmp-filter-btn" onclick="setFilter('open',this)"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 10 10" style="display:inline-block;vertical-align:middle;"><circle cx="5" cy="5" r="5" fill="#ef4444"/></svg> Open</button>
+          <button class="cmp-filter-btn" onclick="setFilter('in_progress',this)"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 10 10" style="display:inline-block;vertical-align:middle;"><circle cx="5" cy="5" r="5" fill="#f59e0b"/></svg> In Progress</button>
+          <button class="cmp-filter-btn" onclick="setFilter('resolved',this)"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 10 10" style="display:inline-block;vertical-align:middle;"><circle cx="5" cy="5" r="5" fill="#22c55e"/></svg> Resolved</button>
+        </div>
+        <div class="cmp-search">
+          <div class="cmp-search-wrap">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z"/></svg>
+            <input type="text" id="cmpSearch" placeholder="Search by name, matric, or subject…" oninput="renderList()">
+          </div>
+        </div>
+        <div class="cmp-list" id="cmpList">
+          <div class="cmp-empty"><div class="cmp-empty-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2m6-2a10 10 0 11-20 0 10 10 0 0120 0z"/></svg></div>Loading complaints…</div>
+        </div>
+      </div>
+
+      <!-- RIGHT: Detail view -->
+      <div class="cmp-detail" id="cmpDetail">
+        <div class="cmp-no-sel" id="noSel">
+          <div class="cmp-no-sel-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></div>
+          <strong>Select a complaint</strong>
+          <div>Click a complaint on the left to view and reply</div>
+        </div>
+
+        <div id="detailPanel" style="display:none;flex:1;flex-direction:column;overflow:hidden;">
+          <!-- Head -->
+          <div class="cmp-detail-head">
+            <div class="cmp-detail-head-left">
+              <button class="back-btn-mobile" onclick="goBackToList()">← Back</button>
+              <div class="cmp-avatar" id="detAvatar">?</div>
+              <div>
+                <div class="cmp-detail-title" id="detName">—</div>
+                <div class="cmp-detail-sub"   id="detMatric">—</div>
+              </div>
+            </div>
+            <span class="cmp-status-badge" id="detStatusBadge">—</span>
+          </div>
+
+          <!-- Scrollable body -->
+          <div class="cmp-detail-body" id="detBody"></div>
+
+          <!-- Reply foot -->
+          <div class="cmp-detail-foot">
+            <div class="cmp-status-row">
+              <label>Status:</label>
+              <select id="detStatusSel">
+                <option value="open"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 10 10" style="display:inline-block;vertical-align:middle;"><circle cx="5" cy="5" r="5" fill="#ef4444"/></svg> Open</option>
+                <option value="in_progress"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 10 10" style="display:inline-block;vertical-align:middle;"><circle cx="5" cy="5" r="5" fill="#f59e0b"/></svg> In Progress</option>
+                <option value="resolved"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 10 10" style="display:inline-block;vertical-align:middle;"><circle cx="5" cy="5" r="5" fill="#22c55e"/></svg> Resolved</option>
+              </select>
+            </div>
+            <div class="cmp-reply-row">
+              <textarea id="replyInput" placeholder="Type your reply to the student…" rows="1"
+                oninput="autoResize(this)" onkeydown="replyKeyDown(event)"></textarea>
+              <button class="cmp-reply-send" onclick="sendReply()" id="replySendBtn"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg></button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end tabComplaints -->
+
+    <!-- ── TAB: PASSWORD RESETS ── -->
+    <div id="tabResets" style="display:none;flex:1;overflow-y:auto;padding:20px;background:#f1f2fa;">
+      <div style="max-width:800px;margin:0 auto;">
+
+        <!-- Section 1: Password Reset Log -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <h2 style="font-size:15px;font-weight:800;color:#0f1230;margin:0;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg> Password Reset Log</h2>
+          <button class="refresh-btn" onclick="loadResets()">↻ Refresh</button>
+        </div>
+        <div id="resetsList" style="margin-bottom:28px;">
+          <div class="cmp-empty"><div class="cmp-empty-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2m6-2a10 10 0 11-20 0 10 10 0 0120 0z"/></svg></div>Loading…</div>
+        </div>
+
+        <!-- Section 2: Password Requests (contact admin) -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <h2 style="font-size:15px;font-weight:800;color:#0f1230;margin:0;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg> Password Requests <span style="font-size:11px;font-weight:500;color:#6b7280;">(students contacting admin)</span></h2>
+          <button class="refresh-btn" onclick="loadPasswordRequests()">↻ Refresh</button>
+        </div>
+        <div id="pwRequestsList">
+          <div class="cmp-empty"><div class="cmp-empty-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2m6-2a10 10 0 11-20 0 10 10 0 0120 0z"/></svg></div>Loading…</div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="js/admin.js"></script>
+<script>
+const _adminToken = sessionStorage.getItem('adminToken');
+if (!_adminToken) window.location.href = 'admin-login.html';
+
+document.getElementById('sidebarContainer').innerHTML = getSidebarHTML('admin-complaints.html');
+document.getElementById('topbarContainer').innerHTML  = getTopbarHTML('Student Complaints');
+
+// ── Tabs ──────────────────────────────────────────────────
+function switchTab(tab, btn) {
+  document.querySelectorAll('.cmp-tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tabComplaints').style.display = tab === 'complaints' ? 'flex' : 'none';
+  document.getElementById('tabResets').style.display     = tab === 'resets'     ? 'flex' : 'none';
+  if (tab === 'resets') { loadResets(); loadPasswordRequests(); }
+}
+
+// ── State ─────────────────────────────────────────────────
+let complaints   = [];
+let activeFilter = 'all';
+let activeId     = null;
+let complaintThread = {}; // cache of thread per complaint id
+
+// ── Load ──────────────────────────────────────────────────
+async function loadComplaints() {
+  document.getElementById('cmpList').innerHTML =
+    '<div class="cmp-empty"><div class="cmp-empty-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2m6-2a10 10 0 11-20 0 10 10 0 0120 0z"/></svg></div>Loading…</div>';
+  try {
+    const r = await fetch('/api/admin/complaints', {
+      headers: { 'X-Admin-Token': _adminToken }
+    });
+    complaints = await r.json();
+    renderList();
+    updateBadge();
+  } catch(e) {
+    document.getElementById('cmpList').innerHTML =
+      '<div class="cmp-empty"><div class="cmp-empty-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;color:#d97706;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg></div>Failed to load. Retry.</div>';
+  }
+}
+
+function updateBadge() {
+  const open = complaints.filter(c => c.status === 'open').length;
+  const badge = document.getElementById('openBadge');
+  badge.textContent = open;
+  badge.style.display = open > 0 ? 'inline-block' : 'none';
+}
+
+// ── Filter ────────────────────────────────────────────────
+function setFilter(val, btn) {
+  activeFilter = val;
+  document.querySelectorAll('.cmp-filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderList();
+}
+
+// ── Render list ───────────────────────────────────────────
+function renderList() {
+  const q     = document.getElementById('cmpSearch').value.toLowerCase();
+  let filtered = complaints;
+
+  if (activeFilter !== 'all')
+    filtered = filtered.filter(c => c.status === activeFilter);
+
+  if (q) filtered = filtered.filter(c =>
+    (c.student?.name   || '').toLowerCase().includes(q) ||
+    (c.student?.matric || '').toLowerCase().includes(q) ||
+    (c.subject         || '').toLowerCase().includes(q)
+  );
+
+  const list = document.getElementById('cmpList');
+  if (!filtered.length) {
+    list.innerHTML = '<div class="cmp-empty"><div class="cmp-empty-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z"/></svg></div>No complaints found.</div>';
+    return;
+  }
+
+  list.innerHTML = filtered.map(c => {
+    const ago      = timeAgo(c.created_at);
+    const isActive = c.id === activeId ? ' active' : '';
+    return `<div class="cmp-item s-${c.status}${isActive}" onclick="openComplaint('${c.id}')">
+      <div class="cmp-item-name">${escHtml(c.student?.name || '—')}</div>
+      <div class="cmp-item-matric">${escHtml(c.student?.matric || '—')}</div>
+      <div class="cmp-item-subject">${escHtml(c.subject)}</div>
+      <div class="cmp-item-time">${ago}</div>
+      <div class="cmp-status-dot"></div>
+    </div>`;
+  }).join('');
+}
+
+// ── Open complaint ─────────────────────────────────────────
+function isMobile() { return window.innerWidth <= 680; }
+
+function goBackToList() {
+  document.getElementById('cmpSidebar').classList.remove('hidden-mobile');
+  document.getElementById('cmpDetail').classList.add('hidden-mobile');
+  activeId = null;
+  renderList();
+}
+
+async function openComplaint(id) {
+  const c = complaints.find(x => x.id === id);
+  if (!c) return;
+  activeId = id;
+  renderList();
+
+  if (isMobile()) {
+    document.getElementById('cmpSidebar').classList.add('hidden-mobile');
+    document.getElementById('cmpDetail').classList.remove('hidden-mobile');
+  }
+
+  // head
+  const initials = (c.student?.name || '?').split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+  document.getElementById('detAvatar').textContent = initials;
+  document.getElementById('detName').textContent   = c.student?.name   || '—';
+  document.getElementById('detMatric').textContent = c.student?.matric || '—';
+  setStatusBadge(document.getElementById('detStatusBadge'), c.status);
+  document.getElementById('detStatusSel').value = c.status;
+
+  // Fetch thread
+  let thread = [];
+  try {
+    const tr = await fetch(`/api/admin/complaints/${id}/thread`, { headers: { 'X-Admin-Token': _adminToken } });
+    const td = await tr.json();
+    if (td.success) thread = td.thread || [];
+  } catch(e) {}
+
+  // body: original complaint + thread
+  const body = document.getElementById('detBody');
+  const threadHTML = thread.length
+    ? `<div class="cmp-complaint-box">
+        <h4><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg> Conversation Thread</h4>
+        <div class="cmp-thread">
+          ${thread.map(msg => `
+            <div class="thread-msg ${msg.role}">
+              <div class="thread-bubble">${escHtml(msg.text)}</div>
+              <div class="thread-meta">${msg.role === 'admin' ? '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg> Admin' : '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path d="M12 14l9-5-9-5-9 5 9 5z"/><path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg> Student'} · ${timeAgo(msg.created_at)}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>`
+    : '';
+
+  body.innerHTML = `
+    <div class="cmp-complaint-box">
+      <h4><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg> Complaint Details</h4>
+      <div class="cmp-complaint-subject">${escHtml(c.subject)}</div>
+      <div class="cmp-complaint-body">${escHtml(c.body)}</div>
+      <div class="cmp-complaint-meta">
+        Submitted by <strong>${escHtml(c.student?.name || '—')}</strong>
+        (${escHtml(c.student?.matric || '—')}) · ${formatDate(c.created_at)}
+      </div>
+    </div>
+    ${threadHTML}
+  `;
+
+  document.getElementById('noSel').style.display   = 'none';
+  const panel = document.getElementById('detailPanel');
+  panel.style.display = 'flex';
+  document.getElementById('replyInput').value = '';
+  document.getElementById('detBody').scrollTop = document.getElementById('detBody').scrollHeight;
+}
+
+// ── Send reply ────────────────────────────────────────────
+async function sendReply() {
+  if (!activeId) return;
+  const reply  = document.getElementById('replyInput').value.trim();
+  const status = document.getElementById('detStatusSel').value;
+  const btn    = document.getElementById('replySendBtn');
+
+  if (!reply) return;
+
+  btn.disabled = true;
+  try {
+    const r = await fetch(`/api/admin/complaints/${activeId}/reply`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Admin-Token': _adminToken },
+      body: JSON.stringify({ reply, status })
+    });
+    const d = await r.json();
+    if (d.success) {
+      const c = complaints.find(x => x.id === activeId);
+      if (c) { c.admin_reply = reply; c.status = status; c.updated_at = new Date().toISOString(); }
+      setStatusBadge(document.getElementById('detStatusBadge'), status);
+      document.getElementById('detStatusSel').value = status;
+      document.getElementById('replyInput').value = '';
+      await openComplaint(activeId); // re-render with new thread
+      updateBadge();
+      renderList();
+    }
+  } catch(e) {}
+  btn.disabled = false;
+}
+
+function replyKeyDown(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReply(); }
+}
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 130) + 'px';
+}
+
+// ── Password Resets ───────────────────────────────────────
+let resetRequests = [];
+
+async function loadResets() {
+  document.getElementById('resetsList').innerHTML = '<div class="cmp-empty"><div class="cmp-empty-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2m6-2a10 10 0 11-20 0 10 10 0 0120 0z"/></svg></div>Loading…</div>';
+  try {
+    const r = await fetch('/api/admin/password-resets', { headers: { 'X-Admin-Token': _adminToken } });
+    resetRequests = await r.json();
+    renderResets();
+    // Update tab badge
+    const pending = resetRequests.filter(x => x.status === 'pending').length;
+    const rb = document.getElementById('resetBadge');
+    rb.textContent = pending;
+    rb.style.display = pending > 0 ? 'inline-block' : 'none';
+  } catch(e) {
+    document.getElementById('resetsList').innerHTML = '<div class="cmp-empty"><div class="cmp-empty-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;color:#d97706;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg></div>Failed to load.</div>';
+  }
+}
+
+function renderResets() {
+  const el = document.getElementById('resetsList');
+  // Only show self-service OTP resets (info log only)
+  const logs = resetRequests.filter(r => r.admin_note === 'Self-service via OTP');
+  if (!logs.length) {
+    el.innerHTML = '<div class="cmp-empty"><div class="cmp-empty-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg></div>No self-service resets yet.</div>';
+    return;
+  }
+  const chIcon = { email: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>', sms: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>', whatsapp: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>', manual: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>' };
+  el.innerHTML = logs.map(r => {
+    const ch = r.channel || 'email';
+    const chIcon2 = chIcon[ch] || '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>';
+    return `<div class="pr-item" style="border-left:3px solid #16a34a;">
+      <div class="pr-info">
+        <h4 style="font-size:14px;font-weight:700;color:#0f1230;margin:0 0 3px;">
+          ${escHtml(r.name || '—')}
+          <span style="color:#8e92b3;font-weight:500;font-size:12px;">(${escHtml(r.matric)})</span>
+        </h4>
+        <p style="margin:0;font-size:12px;color:#6b7280;">
+          Reset via ${chIcon2} ${ch.charAt(0).toUpperCase()+ch.slice(1)} · ${timeAgo(r.created_at)}
+        </p>
+      </div>
+      <div class="pr-actions">
+        <span style="color:#16a34a;font-size:12px;font-weight:700;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;color:#16a34a;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> Done</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function togglePw(inputId, btnId) {
+  const inp = document.getElementById(inputId);
+  const btn = document.getElementById(btnId);
+  if (!inp) return;
+  if (inp.type === 'password') { inp.type = 'text'; btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>'; }
+  else                         { inp.type = 'password'; btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>'; }
+}
+
+// ── Password Requests (students contacting admin) ──────────
+let pwRequests = [];
+async function loadPasswordRequests() {
+  document.getElementById('pwRequestsList').innerHTML = '<div class="cmp-empty"><div class="cmp-empty-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2m6-2a10 10 0 11-20 0 10 10 0 0120 0z"/></svg></div>Loading…</div>';
+  try {
+    const r = await fetch('/api/admin/password-contact-requests', { headers: { 'X-Admin-Token': _adminToken } });
+    pwRequests = await r.json();
+    renderPwRequests();
+    // Update badge count with pending requests
+    const pending = pwRequests.filter(x => !x.resolved).length;
+    const rb = document.getElementById('resetBadge');
+    rb.textContent = pending;
+    rb.style.display = pending > 0 ? 'inline-block' : 'none';
+  } catch(e) {
+    document.getElementById('pwRequestsList').innerHTML = '<div class="cmp-empty"><div class="cmp-empty-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;color:#d97706;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg></div>Failed to load.</div>';
+  }
+}
+
+function renderPwRequests() {
+  const el = document.getElementById('pwRequestsList');
+  if (!pwRequests.length) {
+    el.innerHTML = '<div class="cmp-empty"><div class="cmp-empty-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg></div>No password requests yet.</div>';
+    return;
+  }
+  el.innerHTML = pwRequests.map(r => {
+    const actionPanel = !r.resolved ? `
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <div style="position:relative;flex:1;min-width:160px;">
+          <input type="password" id="cpw-${r.id}" placeholder="Set new password…"
+            style="width:100%;padding:8px 36px 8px 10px;border:1.5px solid #e5e7eb;border-radius:8px;
+            font-size:13px;font-family:'Inter',sans-serif;outline:none;box-sizing:border-box;">
+          <button type="button" onclick="togglePw('cpw-${r.id}','ceye-${r.id}')" id="ceye-${r.id}"
+            style="position:absolute;right:8px;top:50%;transform:translateY(-50%);
+            background:none;border:none;cursor:pointer;font-size:15px;padding:0;line-height:1;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg></button>
+        </div>
+        <button onclick="approveContactRequest('${r.id}','${escHtml(r.matric)}')"
+          style="padding:8px 14px;background:#16a34a;color:#fff;border:none;border-radius:8px;
+          font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;color:#16a34a;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> Approve</button>
+        <button onclick="resolveRequest('${r.id}')"
+          style="padding:8px 14px;background:#dc2626;color:#fff;border:none;border-radius:8px;
+          font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg> Decline</button>
+      </div>` : `<p style="margin:4px 0 0;font-size:12px;color:#16a34a;font-weight:700;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;color:#16a34a;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> Resolved</p>`;
+
+    return `<div class="pr-item" style="border-left:3px solid ${r.resolved ? '#8e92b3' : '#f59e0b'};">
+      <div style="width:100%;">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+          <div>
+            <h4 style="font-size:14px;font-weight:700;color:#0f1230;margin:0 0 3px;">
+              ${escHtml(r.name || '—')}
+              <span style="color:#8e92b3;font-weight:500;font-size:12px;">(${escHtml(r.matric)})</span>
+            </h4>
+            <p style="margin:0;font-size:12px;color:#6b7280;">Requested ${timeAgo(r.created_at)}</p>
+          </div>
+          <a href="https://wa.me/2349134521198?text=${encodeURIComponent('Hello, I want to help ' + (r.name||r.matric) + ' (' + r.matric + ') reset their password.')}"
+             target="_blank"
+             style="flex-shrink:0;display:inline-flex;align-items:center;gap:4px;padding:6px 10px;
+             background:#25D366;color:#fff;border-radius:8px;font-size:11px;font-weight:700;text-decoration:none;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg> WhatsApp
+          </a>
+        </div>
+        ${actionPanel}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function approveContactRequest(id, matric) {
+  const pwInput = document.getElementById(`cpw-${id}`);
+  const new_password = pwInput ? pwInput.value.trim() : '';
+  if (!new_password) { alert('Please enter a new password first.'); return; }
+  if (new_password.length < 6) { alert('Password must be at least 6 characters.'); return; }
+  try {
+    const r = await fetch(`/api/admin/password-contact-requests/${id}/approve`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Admin-Token': _adminToken },
+      body: JSON.stringify({ matric, new_password })
+    });
+    const d = await r.json();
+    if (d.success) loadPasswordRequests();
+    else alert('Error: ' + d.message);
+  } catch(e) { alert('Network error.'); }
+}
+
+async function resolveRequest(id) {
+  try {
+    await fetch(`/api/admin/password-contact-requests/${id}/resolve`, {
+      method: 'POST', headers: { 'X-Admin-Token': _adminToken }
+    });
+    loadPasswordRequests();
+  } catch(e) { alert('Network error'); }
+}
+
+async function actReset(id, action) {
+  const pwInput = document.getElementById(`pw-${id}`);
+  const new_password = pwInput ? pwInput.value.trim() : '';
+  if (action === 'approved' && !new_password) { alert('Please enter a new password for the student first.'); return; }
+  if (action === 'approved' && new_password.length < 6) { alert('Password must be at least 6 characters.'); return; }
+  try {
+    const r = await fetch(`/api/admin/password-resets/${id}/action`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Admin-Token': _adminToken },
+      body: JSON.stringify({ action, new_password })
+    });
+    const d = await r.json();
+    if (d.success) loadResets();
+    else alert('Error: ' + d.message);
+  } catch(e) { alert('Network error.'); }
+}
+
+// ── Helpers ───────────────────────────────────────────────
+function setStatusBadge(el, status) {
+  const map = { open: '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 10 10" style="display:inline-block;vertical-align:middle;"><circle cx="5" cy="5" r="5" fill="#ef4444"/></svg> Open', in_progress: '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 10 10" style="display:inline-block;vertical-align:middle;"><circle cx="5" cy="5" r="5" fill="#f59e0b"/></svg> In Progress', resolved: '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 10 10" style="display:inline-block;vertical-align:middle;"><circle cx="5" cy="5" r="5" fill="#22c55e"/></svg> Resolved' };
+  const cls = { open: 'badge-open', in_progress: 'badge-in_progress', resolved: 'badge-resolved' };
+  el.innerHTML   = map[status] || status;
+  el.className   = 'cmp-status-badge ' + (cls[status] || '');
+}
+
+function timeAgo(ts) {
+  if (!ts) return '';
+  const s = Math.floor((Date.now() - new Date(ts)) / 1000);
+  if (s < 60)   return 'just now';
+  if (s < 3600) return Math.floor(s/60)  + 'm ago';
+  if (s < 86400)return Math.floor(s/3600) + 'h ago';
+  return Math.floor(s/86400) + 'd ago';
+}
+
+function formatDate(ts) {
+  if (!ts) return '';
+  return new Date(ts).toLocaleString('en-GB', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+}
+
+function escHtml(t) {
+  return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// Init
+loadComplaints();
+setInterval(loadComplaints, 30000);
+if (isMobile()) {
+  document.getElementById('cmpDetail').classList.add('hidden-mobile');
+}
+</script>
+<script src="/pwa.js"></script>
+</body>
+</html>

@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="manifest" href="/manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MARGMOCOTH CBT">
+<meta name="theme-color" content="#2e3192">
+<link rel="apple-touch-icon" href="/icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manage Departments – MARGMOCOTH CBT</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+/* ── ADD FORM CARD ─────────────────────────────────── */
+.add-dept-card {
+  background: var(--surface, #fff);
+  border-radius: 16px;
+  border: 1px solid var(--border, #e6e8f3);
+  overflow: hidden;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.05);
+}
+.add-dept-header {
+  background: linear-gradient(135deg, #1e3a5f 0%, #2e3192 100%);
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.add-dept-header-icon {
+  width: 38px; height: 38px;
+  border-radius: 10px;
+  background: rgba(255,255,255,.15);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.add-dept-header h2 {
+  font-size: 16px; font-weight: 700;
+  color: #fff; margin: 0; letter-spacing: -.2px;
+}
+.add-dept-header p {
+  font-size: 12px; color: rgba(255,255,255,.7); margin: 2px 0 0;
+}
+.add-dept-body { padding: 20px; }
+.add-dept-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+@media (max-width: 540px) {
+  .add-dept-row { grid-template-columns: 1fr; }
+}
+.add-dept-body .form-label {
+  font-size: 11.5px; font-weight: 700;
+  color: var(--text-2, #5b5f80);
+  text-transform: uppercase; letter-spacing: .5px;
+  margin-bottom: 5px; display: block;
+}
+.add-dept-body .form-control {
+  width: 100%; box-sizing: border-box;
+}
+.add-btn {
+  width: 100%; padding: 12px;
+  background: linear-gradient(135deg, #2e3192, #1f2170);
+  color: #fff; border: none; border-radius: 10px;
+  font-size: 14px; font-weight: 700;
+  cursor: pointer; transition: opacity .15s;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.add-btn:hover { opacity: .9; }
+.add-btn:disabled { opacity: .6; cursor: not-allowed; }
+.default-chips {
+  margin-top: 16px; padding: 14px 16px;
+  background: #f6f7fc; border-radius: 10px;
+  border: 1px solid #e6e8f3;
+}
+.default-chips-label {
+  font-size: 11px; font-weight: 700; color: #8e92b3;
+  text-transform: uppercase; letter-spacing: .6px; margin-bottom: 8px;
+}
+.default-chips-wrap { display: flex; flex-wrap: wrap; gap: 6px; }
+.default-chip {
+  padding: 4px 11px; background: #e0e2ff; color: #1f2170;
+  border-radius: 999px; font-size: 11.5px; font-weight: 700;
+  cursor: pointer; transition: background .15s;
+  border: none;
+}
+.default-chip:hover { background: #cfd1fa; }
+
+/* ── DEPT LIST CARD ────────────────────────────────── */
+.dept-list-card {
+  background: var(--surface, #fff);
+  border-radius: 16px;
+  border: 1px solid var(--border, #e6e8f3);
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,.05);
+}
+.dept-list-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border, #e6e8f3);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.dept-list-header-left { display: flex; align-items: center; gap: 10px; }
+.dept-list-header-icon {
+  width: 36px; height: 36px; border-radius: 9px;
+  background: #f0f1ff;
+  display: flex; align-items: center; justify-content: center;
+}
+.dept-list-title {
+  font-size: 15px; font-weight: 700;
+  color: var(--text-1, #0f1230); letter-spacing: -.2px;
+}
+.dept-count-badge {
+  background: #e0e2ff; color: #1f2170;
+  font-size: 12px; font-weight: 700;
+  padding: 2px 10px; border-radius: 999px;
+}
+.search-dept {
+  padding: 8px 14px 0;
+}
+.search-dept input {
+  width: 100%; box-sizing: border-box;
+  padding: 9px 14px 9px 36px;
+  border: 1.5px solid var(--border, #e6e8f3);
+  border-radius: 10px; font-size: 13px;
+  background: #f6f7fc url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='M21 21l-4.35-4.35'/%3E%3C/svg%3E") no-repeat 12px center;
+  outline: none; transition: border-color .15s;
+  color: var(--text-1, #0f1230);
+  font-family: 'Space Grotesk', sans-serif;
+}
+.search-dept input:focus { border-color: #4448b8; background-color: #fff; }
+
+/* ── DEPT ITEM ─────────────────────────────────────── */
+.dept-item {
+  border-bottom: 1px solid var(--border, #e6e8f3);
+  transition: background .12s;
+}
+.dept-item:last-child { border-bottom: none; }
+.dept-item-row {
+  display: flex; align-items: center;
+  padding: 14px 18px; gap: 12px; cursor: default;
+}
+.dept-item-num {
+  width: 26px; height: 26px; border-radius: 7px;
+  background: #f1f2fa; color: #5b5f80;
+  font-size: 11.5px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.dept-item-info { flex: 1; min-width: 0; }
+.dept-item-name {
+  font-size: 14px; font-weight: 700;
+  color: var(--text-1, #0f1230); letter-spacing: -.1px;
+}
+.dept-item-desc {
+  font-size: 11.5px; color: #8e92b3; margin-top: 1px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.dept-item-meta {
+  display: flex; align-items: center; gap: 6px; flex-shrink: 0;
+}
+.sub-badge {
+  padding: 3px 9px; border-radius: 999px;
+  font-size: 11px; font-weight: 700;
+  background: #ede9fe; color: #6d28d9;
+  white-space: nowrap;
+}
+.sub-badge.none { background: #f1f2fa; color: #8e92b3; }
+.dept-toggle-btn {
+  width: 30px; height: 30px; border-radius: 8px;
+  border: 1.5px solid var(--border, #e6e8f3);
+  background: var(--surface, #fff); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: #5b5f80; transition: background .12s, border-color .12s;
+  flex-shrink: 0;
+}
+.dept-toggle-btn:hover { background: #f0f1ff; border-color: #4448b8; color: #2e3192; }
+.dept-toggle-btn svg { transition: transform .2s; }
+.dept-toggle-btn.open svg { transform: rotate(180deg); }
+.dept-delete-btn {
+  width: 30px; height: 30px; border-radius: 8px;
+  border: 1.5px solid #fee2e2;
+  background: #fff5f5; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: #ef4444; transition: background .12s;
+  flex-shrink: 0;
+}
+.dept-delete-btn:hover { background: #fee2e2; }
+
+/* ── SUB-DEPT PANEL ────────────────────────────────── */
+.sub-panel {
+  display: none;
+  background: #f6f7fc;
+  border-top: 1px solid #e6e8f3;
+  padding: 16px 18px;
+}
+.sub-panel.open { display: block; }
+.sub-panel-title {
+  font-size: 10.5px; font-weight: 800;
+  color: #8e92b3; letter-spacing: 1px;
+  text-transform: uppercase; margin-bottom: 10px;
+}
+.sub-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.sub-tag {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: #ede9fe; color: #4c1d95;
+  font-size: 12px; font-weight: 700;
+  border-radius: 999px; padding: 5px 10px 5px 13px;
+  border: 1px solid #ddd6fe;
+}
+.sub-tag-del {
+  width: 16px; height: 16px; border-radius: 50%;
+  background: rgba(109,40,217,.15); border: none;
+  cursor: pointer; color: #7c3aed;
+  font-size: 12px; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .12s;
+}
+.sub-tag-del:hover { background: #dc2626; color: #fff; }
+.sub-add-row {
+  display: flex; gap: 8px;
+}
+.sub-add-row input {
+  flex: 1;
+  padding: 9px 12px;
+  border: 1.5px solid #ddd6fe;
+  border-radius: 9px; font-size: 13px;
+  background: #fff; outline: none;
+  font-family: 'Space Grotesk', sans-serif;
+  color: var(--text-1, #0f1230);
+  transition: border-color .15s;
+}
+.sub-add-row input:focus { border-color: #7c3aed; }
+.sub-add-btn {
+  padding: 9px 16px;
+  background: #7c3aed; color: #fff;
+  border: none; border-radius: 9px;
+  font-size: 13px; font-weight: 700;
+  cursor: pointer; white-space: nowrap;
+  transition: opacity .15s;
+}
+.sub-add-btn:hover { opacity: .88; }
+.no-sub-msg { font-size: 12.5px; color: #8e92b3; font-style: italic; }
+
+/* ── EMPTY / LOADING ───────────────────────────────── */
+.dept-empty {
+  padding: 48px 20px;
+  text-align: center; color: #8e92b3;
+}
+.dept-empty svg { margin-bottom: 12px; opacity: .4; }
+.dept-empty-title { font-size: 14px; font-weight: 700; color: #5b5f80; }
+.dept-empty-sub   { font-size: 12.5px; margin-top: 4px; }
+.dept-skeleton { padding: 14px 18px; border-bottom: 1px solid #f1f2fa; }
+.skel-line { height: 12px; border-radius: 6px; background: #f1f2fa; animation: shimmer 1.4s infinite; }
+@keyframes shimmer { 0%,100%{opacity:.6} 50%{opacity:1} }
+</style>
+</head>
+<body>
+<div class="admin-layout">
+ <div id="sidebarContainer"></div>
+ <div class="admin-main">
+  <div id="topbarContainer"></div>
+  <div class="content" style="max-width:680px;">
+   <div id="alertBox"></div>
+
+   <!-- ── ADD DEPARTMENT ─────────────────────────── -->
+   <div class="add-dept-card">
+    <div class="add-dept-header">
+     <div class="add-dept-header-icon">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+     </div>
+     <div>
+      <h2>Add Department</h2>
+      <p>Create a new arm for your institution</p>
+     </div>
+    </div>
+    <div class="add-dept-body">
+     <div class="add-dept-row">
+      <div>
+       <label class="form-label">Department Name *</label>
+       <input type="text" id="deptName" class="form-control" placeholder="e.g. CHEW, X-RAY, MLT" onkeydown="if(event.key==='Enter')addDept()">
+      </div>
+      <div>
+       <label class="form-label">Description (optional)</label>
+       <input type="text" id="deptDesc" class="form-control" placeholder="Short description">
+      </div>
+     </div>
+     <button onclick="addDept()" class="add-btn" id="addDeptBtn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      Add Department
+     </button>
+     <div class="default-chips">
+      <div class="default-chips-label">Quick-add defaults</div>
+      <div class="default-chips-wrap">
+       <button class="default-chip" onclick="quickAdd('CHEW')">CHEW</button>
+       <button class="default-chip" onclick="quickAdd('X-RAY')">X-RAY</button>
+       <button class="default-chip" onclick="quickAdd('MLT')">MLT</button>
+       <button class="default-chip" onclick="quickAdd('DENTAL')">DENTAL</button>
+       <button class="default-chip" onclick="quickAdd('DOPT')">DOPT</button>
+       <button class="default-chip" onclick="quickAdd('HIM')">HIM</button>
+       <button class="default-chip" onclick="quickAdd('BIO MED')">BIO MED</button>
+      </div>
+     </div>
+    </div>
+   </div>
+
+   <!-- ── ALL DEPARTMENTS ────────────────────────── -->
+   <div class="dept-list-card">
+    <div class="dept-list-header">
+     <div class="dept-list-header-left">
+      <div class="dept-list-header-icon">
+       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2e3192" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+      </div>
+      <span class="dept-list-title">All Departments</span>
+     </div>
+     <span class="dept-count-badge" id="deptCountBadge">—</span>
+    </div>
+    <div class="search-dept">
+     <input type="text" id="deptSearch" placeholder="Search arms…" oninput="filterDepts(this.value)">
+    </div>
+    <div id="deptsList">
+     <div class="dept-skeleton"><div class="skel-line" style="width:40%;margin-bottom:6px;"></div><div class="skel-line" style="width:60%;height:9px;"></div></div>
+     <div class="dept-skeleton"><div class="skel-line" style="width:30%;margin-bottom:6px;"></div><div class="skel-line" style="width:50%;height:9px;"></div></div>
+     <div class="dept-skeleton"><div class="skel-line" style="width:50%;margin-bottom:6px;"></div><div class="skel-line" style="width:40%;height:9px;"></div></div>
+    </div>
+   </div>
+
+  </div>
+ </div>
+</div>
+
+<script src="js/admin.js"></script>
+<script>
+document.getElementById('sidebarContainer').innerHTML = getSidebarHTML('manage-arms.html');
+document.getElementById('topbarContainer').innerHTML  = getTopbarHTML('Manage Departments');
+checkAdmin();
+requirePermission('manage_config');
+
+let allDepts = [];
+
+async function loadDepts() {
+  const data = await apiGet('/api/departments');
+  allDepts   = data;
+  document.getElementById('deptCountBadge').textContent = data.length + ' total';
+  renderDepts(data);
+}
+
+function renderDepts(data) {
+  const el = document.getElementById('deptsList');
+  if (!data.length) {
+    el.innerHTML = `
+      <div class="dept-empty">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+        <div class="dept-empty-title">No arms yet</div>
+        <div class="dept-empty-sub">Add one above to get started</div>
+      </div>`;
+    return;
+  }
+  el.innerHTML = data.map((d, i) => {
+    const hasSub = d.sub_arms && d.sub_arms.length > 0;
+    const subTags = (d.sub_arms || []).map(s =>
+      `<span class="sub-tag">${s}
+        <button class="sub-tag-del" onclick="deleteSubDept('${d.id}','${s}')" title="Remove ${s}">✕</button>
+       </span>`
+    ).join('');
+
+    return `
+    <div class="dept-item" id="item-${d.id}">
+      <div class="dept-item-row">
+        <div class="dept-item-num">${i+1}</div>
+        <div class="dept-item-info">
+          <div class="dept-item-name">${d.name}</div>
+          ${d.description ? `<div class="dept-item-desc">${d.description}</div>` : ''}
+        </div>
+        <div class="dept-item-meta">
+          <span class="sub-badge ${hasSub ? '' : 'none'}">${hasSub ? d.sub_arms.length + ' sub' : 'No sub'}</span>
+          <button class="dept-toggle-btn" id="toggle-${d.id}" onclick="toggleSubPanel('${d.id}')" title="Manage sub-arms">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <button class="dept-delete-btn" onclick="deleteDept('${d.id}')" title="Delete arm">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="sub-panel" id="subpanel-${d.id}">
+        <div class="sub-panel-title">Sub-arms for ${d.name}</div>
+        <div class="sub-tags" id="subtags-${d.id}">
+          ${subTags || '<span class="no-sub-msg">No sub-arms yet — add one below.</span>'}
+        </div>
+        <div class="sub-add-row">
+          <input type="text" id="subInput-${d.id}" placeholder="e.g. ${d.name} OWO" onkeydown="if(event.key==='Enter')addSubDept('${d.id}')">
+          <button class="sub-add-btn" onclick="addSubDept('${d.id}')">+ Add</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterDepts(q) {
+  const filtered = allDepts.filter(d =>
+    d.name.toLowerCase().includes(q.toLowerCase()) ||
+    (d.description || '').toLowerCase().includes(q.toLowerCase())
+  );
+  renderDepts(filtered);
+  document.getElementById('deptCountBadge').textContent =
+    q ? filtered.length + ' found' : allDepts.length + ' total';
+}
+
+function toggleSubPanel(id) {
+  const panel  = document.getElementById('subpanel-' + id);
+  const btn    = document.getElementById('toggle-' + id);
+  const isOpen = panel.classList.contains('open');
+  // Close all others
+  document.querySelectorAll('.sub-panel.open').forEach(p => p.classList.remove('open'));
+  document.querySelectorAll('.dept-toggle-btn.open').forEach(b => b.classList.remove('open'));
+  if (!isOpen) {
+    panel.classList.add('open');
+    btn.classList.add('open');
+    setTimeout(() => { document.getElementById('subInput-' + id)?.focus(); }, 50);
+  }
+}
+
+async function addSubDept(deptId) {
+  const input = document.getElementById('subInput-' + deptId);
+  const name  = input.value.trim();
+  if (!name) { showAlert('Enter a sub-arm name.', 'danger'); return; }
+  const btn = input.nextElementSibling;
+  btn.textContent = '…'; btn.disabled = true;
+  const data = await apiPost('/api/admin/departments/' + deptId + '/sub-departments', { name });
+  btn.textContent = '+ Add'; btn.disabled = false;
+  if (data.success) {
+    input.value = '';
+    showAlert('Sub-arm added!', 'success');
+    await loadDepts();
+    const panel = document.getElementById('subpanel-' + deptId);
+    const toggle = document.getElementById('toggle-' + deptId);
+    if (panel) { panel.classList.add('open'); toggle?.classList.add('open'); }
+  } else showAlert(data.message, 'danger');
+}
+
+async function deleteSubDept(deptId, name) {
+  if (!confirmDelete('Remove "' + name + '" from sub-arms?')) return;
+  const data = await apiDelete('/api/admin/departments/' + deptId + '/sub-departments/' + encodeURIComponent(name));
+  if (data.success) {
+    showAlert('Sub-arm removed.', 'success');
+    await loadDepts();
+    const panel  = document.getElementById('subpanel-' + deptId);
+    const toggle = document.getElementById('toggle-' + deptId);
+    if (panel) { panel.classList.add('open'); toggle?.classList.add('open'); }
+  } else showAlert(data.message, 'danger');
+}
+
+async function addDept() {
+  const name = document.getElementById('deptName').value.trim();
+  if (!name) { showAlert('Department name required.', 'danger'); return; }
+  const btn = document.getElementById('addDeptBtn');
+  btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2m6-2a10 10 0 11-20 0 10 10 0 0120 0z"/></svg> Adding…';
+  btn.disabled = true;
+  const data = await apiPost('/api/admin/departments', { name, description: document.getElementById('deptDesc').value.trim() });
+  btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg> Add Department';
+  btn.disabled = false;
+  if (data.success) {
+    showAlert('Department "' + name + '" added!', 'success');
+    document.getElementById('deptName').value = '';
+    document.getElementById('deptDesc').value = '';
+    loadDepts();
+  } else showAlert(data.message, 'danger');
+}
+
+async function quickAdd(name) {
+  document.getElementById('deptName').value = name;
+  await addDept();
+}
+
+async function deleteDept(id) {
+  if (!confirmDelete('Delete this arm? This cannot be undone.')) return;
+  const d = await apiDelete('/api/admin/departments/' + id);
+  if (d.success) { showAlert('Department deleted.', 'success'); loadDepts(); }
+  else showAlert(d.message, 'danger');
+}
+
+loadDepts();
+</script>
+<script src="js/ai-assistant.js" defer></script>
+<script src="/pwa.js"></script>
+</body>
+</html>

@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="manifest" href="/manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MARGMOCOTH CBT">
+<meta name="theme-color" content="#2e3192">
+<link rel="apple-touch-icon" href="/icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Notifications – MARGMOCOTH CBT</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: #eef2f7;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  padding-bottom: 40px;
+  background-image: radial-gradient(circle at 1px 1px, rgba(30,64,175,.06) 1px, transparent 0);
+  background-size: 24px 24px;
+}
+
+/* TOPBAR */
+.topbar {
+  background: linear-gradient(135deg, #14163f 0%, #1f2170 60%, #2e3192 100%);
+  padding: 12px 16px;
+  display: flex; align-items: center; gap: 10px;
+  position: sticky; top: 0; z-index: 100;
+  box-shadow: 0 4px 20px rgba(30,58,138,.35);
+}
+.topbar-back {
+  background: rgba(255,255,255,.16);
+  border: 1.5px solid rgba(255,255,255,.28);
+  color: #fff; border-radius: 10px;
+  width: 36px; height: 36px;
+  font-size: 18px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: background .2s;
+}
+.topbar-back:active { background: rgba(255,255,255,.28); }
+.topbar-title {
+  flex: 1;
+  font-size: 15px; font-weight: 800; color: #fff; line-height: 1.2;
+}
+.topbar-title span {
+  font-size: 10.5px; font-weight: 500; color: rgba(255,255,255,.65); display: block;
+}
+
+/* PAGE CONTENT */
+.page-wrap {
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 20px 14px;
+}
+
+/* ACTIONS ROW */
+.actions-row {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px;
+}
+.section-head { display: flex; align-items: center; gap: 10px; }
+.section-icon {
+  width: 40px; height: 40px; border-radius: 12px;
+  background: linear-gradient(135deg, #1f2170, #2e3192);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(30,64,175,.3);
+}
+.section-label { font-size: 17px; font-weight: 800; color: #1b1e45; }
+.section-sub   { font-size: 11.5px; color: #5b5f80; font-weight: 500; margin-top: 1px; }
+
+.btn-row { display: flex; gap: 8px; }
+.action-btn {
+  display: flex; align-items: center; gap: 5px;
+  background: none; border: 1.5px solid #e6e8f3;
+  border-radius: 10px; padding: 7px 12px;
+  font-size: 11.5px; font-weight: 700; color: #4a4e73;
+  cursor: pointer; font-family: 'Inter', sans-serif;
+  transition: border-color .2s, color .2s; white-space: nowrap;
+}
+.action-btn:active { border-color: #2e3192; color: #2e3192; }
+.action-btn.spinning svg { animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* NOTIF CARD */
+.notif-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 10px;
+  box-shadow: 0 2px 12px rgba(30,58,138,.07);
+  border: 1px solid rgba(30,64,175,.08);
+  transition: box-shadow .15s;
+}
+.notif-card.unread {
+  border-left: 3px solid #2e3192;
+}
+.notif-card.read {
+  opacity: .75;
+  border-left: 3px solid transparent;
+}
+.notif-top {
+  display: flex; gap: 12px; align-items: flex-start;
+}
+.notif-dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: #2e3192;
+  box-shadow: 0 0 0 3px rgba(46,49,146,.15);
+  flex-shrink: 0; margin-top: 4px;
+  transition: background .2s;
+}
+.notif-card.read .notif-dot {
+  background: #cdd0e6;
+  box-shadow: none;
+}
+.notif-body { flex: 1; min-width: 0; }
+.notif-title {
+  font-size: 14px; font-weight: 700; color: #1b1e45;
+  margin-bottom: 6px; line-height: 1.35;
+}
+.notif-card.read .notif-title { font-weight: 600; color: #4a4e73; }
+.notif-msg {
+  font-size: 13px; color: #4a4e73; line-height: 1.6;
+  margin-bottom: 10px;
+  word-break: break-word;
+}
+.notif-meta {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.notif-tag {
+  font-size: 10.5px; font-weight: 700;
+  background: #f0f1ff; color: #1f2170;
+  border-radius: 6px; padding: 2px 8px;
+}
+.notif-time {
+  font-size: 10.5px; color: #8e92b3; font-weight: 500;
+}
+
+/* MARK AS READ BUTTON */
+.notif-footer {
+  display: flex; justify-content: flex-end;
+}
+.mark-read-btn {
+  background: none; border: 1.5px solid #e6e8f3;
+  border-radius: 8px; padding: 5px 11px;
+  font-size: 11.5px; font-weight: 700; color: #5b5f80;
+  cursor: pointer; font-family: 'Inter', sans-serif;
+  transition: border-color .2s, color .2s, background .2s;
+}
+.mark-read-btn:hover { border-color: #2e3192; color: #2e3192; }
+.mark-read-btn.done {
+  background: #f0fdf4; border-color: #86efac; color: #16a34a;
+  cursor: default;
+}
+
+/* EMPTY STATE */
+.empty-state {
+  text-align: center;
+  padding: 56px 20px;
+}
+.empty-icon {
+  margin-bottom: 16px; opacity: .75; display:flex; justify-content:center;
+}
+.empty-title {
+  font-size: 16px; font-weight: 700; color: #334155; margin-bottom: 6px;
+}
+.empty-sub {
+  font-size: 13px; color: #8e92b3;
+}
+
+/* SKELETON */
+.skel {
+  background: linear-gradient(90deg, #e6e8f3 25%, #f1f2fa 50%, #e6e8f3 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+  border-radius: 8px;
+}
+@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+.skel-card {
+  background: #fff;
+  border-radius: 16px; padding: 16px;
+  margin-bottom: 10px;
+  box-shadow: 0 2px 12px rgba(30,58,138,.07);
+}
+.skel-title { height: 14px; width: 60%; margin-bottom: 10px; }
+.skel-line  { height: 12px; width: 100%; margin-bottom: 6px; }
+.skel-line.short { width: 70%; }
+.skel-meta  { height: 10px; width: 40%; margin-top: 8px; }
+
+/* NOTIFICATION MODAL */
+.notif-modal-overlay {
+  display: none; position: fixed; inset: 0; z-index: 200;
+  background: rgba(15,18,48,.55); backdrop-filter: blur(3px);
+  align-items: flex-end; justify-content: center;
+}
+.notif-modal-overlay.open { display: flex; }
+.notif-modal {
+  background: #fff; border-radius: 20px 20px 0 0;
+  width: 100%; max-width: 520px;
+  max-height: 80vh; overflow-y: auto;
+  padding: 0 0 32px;
+  animation: slideUp .22s ease;
+}
+@keyframes slideUp { from { transform: translateY(60px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.modal-handle {
+  width: 36px; height: 4px; border-radius: 2px;
+  background: #e6e8f3; margin: 12px auto 0;
+}
+.modal-inner { padding: 16px 20px 0; }
+.modal-tag-row {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
+}
+.modal-tag {
+  font-size: 10.5px; font-weight: 700;
+  background: #f0f1ff; color: #1f2170;
+  border-radius: 6px; padding: 2px 8px;
+}
+.modal-time { font-size: 10.5px; color: #8e92b3; font-weight: 500; }
+.modal-title {
+  font-size: 16px; font-weight: 800; color: #1b1e45;
+  margin-bottom: 12px; line-height: 1.35;
+}
+.modal-body {
+  font-size: 14px; color: #4a4e73; line-height: 1.7;
+  word-break: break-word; white-space: pre-wrap;
+}
+.modal-footer {
+  padding: 16px 20px 0;
+  display: flex; gap: 10px;
+}
+.modal-close-btn {
+  flex: 1; padding: 11px; border-radius: 12px;
+  border: 1.5px solid #e6e8f3; background: none;
+  font-size: 13px; font-weight: 700; color: #4a4e73;
+  cursor: pointer; font-family: 'Inter', sans-serif;
+}
+.modal-read-btn {
+  flex: 1; padding: 11px; border-radius: 12px;
+  border: none; background: #2e3192;
+  font-size: 13px; font-weight: 700; color: #fff;
+  cursor: pointer; font-family: 'Inter', sans-serif;
+}
+.modal-read-btn.done {
+  background: #f0fdf4; color: #16a34a; cursor: default;
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <button class="topbar-back" onclick="goBack()" title="Back">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="15 18 9 12 15 6"></polyline>
+    </svg>
+  </button>
+  <div class="topbar-title">
+    Notifications
+    <span>MARGMOCOTH CBT Broadcast Messages</span>
+  </div>
+</div>
+
+<!-- CONTENT -->
+<div class="page-wrap">
+
+  <div class="actions-row">
+    <div class="section-head">
+      <div class="section-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+          <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+        </svg>
+      </div>
+      <div>
+        <div class="section-label">Broadcast Messages</div>
+        <div class="section-sub">Announcements from the examination office</div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="action-btn" id="markAllBtn" onclick="markAllRead()">Mark all read</button>
+      <button class="action-btn" id="refreshBtn" onclick="loadNotifications(true)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="23 4 23 10 17 10"></polyline>
+          <polyline points="1 20 1 14 7 14"></polyline>
+          <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"></path>
+        </svg>
+        Refresh
+      </button>
+    </div>
+  </div>
+
+  <div id="notifList">
+    <div class="skel-card"><div class="skel skel-title"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div><div class="skel skel-meta"></div></div>
+    <div class="skel-card"><div class="skel skel-title" style="width:50%"></div><div class="skel skel-line"></div><div class="skel skel-line short"></div><div class="skel skel-meta"></div></div>
+    <div class="skel-card"><div class="skel skel-title" style="width:70%"></div><div class="skel skel-line"></div><div class="skel skel-meta"></div></div>
+  </div>
+
+</div>
+
+<script>
+/* Auth guard */
+let student = JSON.parse(sessionStorage.getItem('student') || 'null');
+if (!student || !student.id) {
+  const stored  = JSON.parse(localStorage.getItem('mcht_student') || 'null');
+  const loginAt = localStorage.getItem('mcht_login_at');
+  if (stored && stored.id && loginAt) {
+    const hrs = (Date.now() - Number(loginAt)) / 36e5;
+    if (hrs < 24) student = stored;
+  }
+}
+if (!student || !student.id) { window.location.href = 'login.html'; }
+
+const READ_KEY = `mcht_read_notifs_${student.id}`;
+
+function getReadSet() {
+  try { return new Set(JSON.parse(localStorage.getItem(READ_KEY) || '[]')); }
+  catch(e) { return new Set(); }
+}
+
+function saveReadSet(set) {
+  localStorage.setItem(READ_KEY, JSON.stringify([...set]));
+}
+
+function markAsRead(id) {
+  const set = getReadSet();
+  set.add(id);
+  saveReadSet(set);
+  const card = document.querySelector(`[data-id="${id}"]`);
+  if (card) {
+    card.classList.remove('unread');
+    card.classList.add('read');
+    const dot = card.querySelector('.notif-dot');
+    if (dot) dot.style.background = '#cdd0e6';
+    const btn = card.querySelector('.mark-read-btn');
+    if (btn) { btn.textContent = 'Read'; btn.classList.add('done'); btn.disabled = true; }
+  }
+  updateBellBadge();
+}
+
+function markAllRead() {
+  const cards = document.querySelectorAll('.notif-card.unread');
+  const set = getReadSet();
+  cards.forEach(card => {
+    const id = card.dataset.id;
+    if (id) {
+      set.add(id);
+      card.classList.remove('unread');
+      card.classList.add('read');
+      const btn = card.querySelector('.mark-read-btn');
+      if (btn) { btn.textContent = 'Read'; btn.classList.add('done'); btn.disabled = true; }
+    }
+  });
+  saveReadSet(set);
+  updateBellBadge();
+}
+
+function updateBellBadge() {
+  localStorage.setItem('mcht_notif_seen_at', Date.now().toString());
+}
+
+function timeAgo(dateStr) {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const s = Math.floor(diff / 1000);
+  if (s < 60)   return 'Just now';
+  const m = Math.floor(s / 60);
+  if (m < 60)   return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24)   return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  if (d < 7)    return `${d}d ago`;
+  return new Date(dateStr).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+}
+
+function goBack() {
+  if (document.referrer && document.referrer.includes(location.hostname)) {
+    history.back();
+  } else {
+    window.location.href = 'dashboard.html';
+  }
+}
+
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+async function loadNotifications(isRefresh = false) {
+  const list = document.getElementById('notifList');
+  const btn  = document.getElementById('refreshBtn');
+  if (isRefresh) btn.classList.add('spinning');
+
+  try {
+    const data = await fetch('/api/student/notifications').then(r => r.json());
+    const readSet = getReadSet();
+
+    if (!Array.isArray(data) || data.length === 0) {
+      list.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#8e92b3" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/><line x1="1" y1="1" x2="23" y2="23"/></svg></div>
+          <div class="empty-title">No notifications yet</div>
+          <div class="empty-sub">Broadcast messages from the examination office will appear here.</div>
+        </div>`;
+      return;
+    }
+
+    list.innerHTML = data.map((n, i) => {
+      const isRead = readSet.has(n.id);
+      const readClass = isRead ? 'read' : 'unread';
+      const btnHtml = isRead
+        ? `<button class="mark-read-btn done" disabled>Read</button>`
+        : `<button class="mark-read-btn" onclick="markAsRead('${escHtml(n.id)}')">Mark as read</button>`;
+      return `
+        <div class="notif-card ${readClass}" data-id="${escHtml(n.id)}" onclick="openModal('${escHtml(n.id)}', '${escHtml(n.title||'Notification')}', '${escHtml(n.body)}', '${escHtml(n.target||'All Students')}', '${timeAgo(n.created_at)}', ${readSet.has(n.id)})" style="cursor:pointer;">
+          <div class="notif-top">
+            <div class="notif-dot"></div>
+            <div class="notif-body">
+              <div class="notif-title">${escHtml(n.title || 'Notification')}</div>
+              <div class="notif-msg">${escHtml(n.body)}</div>
+              <div class="notif-meta">
+                <span class="notif-tag">${escHtml(n.target || 'All Students')}</span>
+                <span class="notif-time">${timeAgo(n.created_at)}</span>
+              </div>
+              <div class="notif-footer">${btnHtml}</div>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+
+  } catch (e) {
+    list.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+        <div class="empty-title">Could not load notifications</div>
+        <div class="empty-sub">Please check your connection and try again.</div>
+      </div>`;
+  } finally {
+    btn.classList.remove('spinning');
+  }
+}
+
+
+let currentModalId = null;
+
+function openModal(id, title, body, tag, time, isRead) {
+  currentModalId = id;
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalBody').textContent = body;
+  document.getElementById('modalTag').textContent = tag;
+  document.getElementById('modalTime').textContent = time;
+  const readBtn = document.getElementById('modalReadBtn');
+  if (isRead) {
+    readBtn.textContent = 'Read';
+    readBtn.classList.add('done');
+    readBtn.disabled = true;
+  } else {
+    readBtn.textContent = 'Mark as read';
+    readBtn.classList.remove('done');
+    readBtn.disabled = false;
+  }
+  document.getElementById('notifModalOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal(e) {
+  if (e.target === document.getElementById('notifModalOverlay')) closeModalDirect();
+}
+
+function closeModalDirect() {
+  document.getElementById('notifModalOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function modalMarkRead() {
+  if (!currentModalId) return;
+  markAsRead(currentModalId);
+  const readBtn = document.getElementById('modalReadBtn');
+  readBtn.textContent = 'Read';
+  readBtn.classList.add('done');
+  readBtn.disabled = true;
+}
+
+loadNotifications();
+localStorage.setItem('mcht_notif_seen_at', Date.now().toString());
+</script>
+
+<!-- NOTIFICATION MODAL -->
+<div class="notif-modal-overlay" id="notifModalOverlay" onclick="closeModal(event)">
+  <div class="notif-modal" id="notifModal">
+    <div class="modal-handle"></div>
+    <div class="modal-inner">
+      <div class="modal-tag-row">
+        <span class="modal-tag" id="modalTag"></span>
+        <span class="modal-time" id="modalTime"></span>
+      </div>
+      <div class="modal-title" id="modalTitle"></div>
+      <div class="modal-body" id="modalBody"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-close-btn" onclick="closeModalDirect()">Close</button>
+      <button class="modal-read-btn" id="modalReadBtn" onclick="modalMarkRead()">Mark as read</button>
+    </div>
+  </div>
+</div>
+<script src="pwa.js" defer></script>
+</body>
+</html>

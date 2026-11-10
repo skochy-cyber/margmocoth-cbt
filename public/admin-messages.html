@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="manifest" href="/manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MARGMOCOTH CBT">
+<meta name="theme-color" content="#2e3192">
+<link rel="apple-touch-icon" href="/icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Support Messages – MARGMOCOTH CBT</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+/* ── Layout ─────────────────────────────────────────────── */
+.msg-layout {
+  display: flex; height: calc(100vh - 60px); overflow: hidden;
+  background: #f1f2fa;
+}
+.msg-sidebar {
+  width: 320px; flex-shrink: 0;
+  background: #fff; border-right: 1px solid #e6e8f3;
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.msg-sidebar-head {
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid #e6e8f3;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.msg-sidebar-head h2 { font-size: 15px; font-weight: 800; color: #0f1230; margin: 0; }
+.msg-count-badge {
+  background: #ef4444; color: #fff; font-size: 10px; font-weight: 700;
+  border-radius: 999px; padding: 2px 7px; display: none;
+}
+.msg-search {
+  padding: 10px 14px; border-bottom: 1px solid #f1f2fa;
+}
+.msg-search input {
+  width: 100%; border: 1.5px solid #e6e8f3; border-radius: 10px;
+  padding: 8px 12px; font-size: 13px; outline: none; box-sizing: border-box;
+  background: #f6f7fc;
+}
+.msg-search input:focus { border-color: #2e3192; background: #fff; }
+.msg-list { flex: 1; overflow-y: auto; }
+.msg-item {
+  padding: 13px 16px; cursor: pointer; border-bottom: 1px solid #f1f2fa;
+  transition: background .12s; position: relative;
+}
+.msg-item:hover { background: #f6f7fc; }
+.msg-item.active { background: #f0f1ff; border-left: 3px solid #2e3192; }
+.msg-item-name { font-size: 14px; font-weight: 700; color: #0f1230; margin-bottom: 2px; }
+.msg-item-matric { font-size: 11px; color: #8e92b3; margin-bottom: 4px; }
+.msg-item-preview {
+  font-size: 12px; color: #5b5f80;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px;
+}
+.msg-item-time { font-size: 10px; color: #8e92b3; position: absolute; top: 13px; right: 14px; }
+.unread-dot {
+  width: 8px; height: 8px; background: #2e3192; border-radius: 50%;
+  position: absolute; right: 14px; bottom: 13px; display: none;
+}
+.msg-item[data-unread="true"] .unread-dot { display: block; }
+.msg-item[data-unread="true"] .msg-item-name { color: #1f2170; }
+
+/* ── Chat Panel ──────────────────────────────────────────── */
+.msg-chat {
+  flex: 1; display: flex; flex-direction: column;
+  background: #f6f7fc; overflow: hidden;
+}
+.msg-chat-head {
+  padding: 14px 20px; background: #fff;
+  border-bottom: 1px solid #e6e8f3;
+  display: flex; align-items: center; gap: 12px;
+}
+.msg-chat-avatar {
+  width: 40px; height: 40px; border-radius: 12px;
+  background: linear-gradient(135deg,#1f2170,#2e3192);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 16px; font-weight: 800; flex-shrink: 0;
+}
+.msg-chat-title { font-size: 15px; font-weight: 800; color: #0f1230; }
+.msg-chat-sub   { font-size: 12px; color: #5b5f80; }
+.msg-chat-body  {
+  flex: 1; overflow-y: auto; padding: 16px 20px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.msg-chat-foot {
+  padding: 12px 16px; background: #fff;
+  border-top: 1px solid #e6e8f3;
+  display: flex; gap: 8px; align-items: flex-end;
+}
+.msg-chat-foot textarea {
+  flex: 1; border: 1.5px solid #e6e8f3; border-radius: 14px;
+  padding: 10px 14px; font-size: 14px; resize: none; outline: none;
+  min-height: 42px; max-height: 120px; line-height: 1.4; font-family: inherit;
+  background: #f6f7fc;
+}
+.msg-chat-foot textarea:focus { border-color: #2e3192; background: #fff; }
+.msg-send-btn {
+  width: 42px; height: 42px; border-radius: 50%;
+  background: linear-gradient(135deg,#1f2170,#2e3192);
+  border: none; color: #fff; font-size: 17px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.msg-send-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+/* ── Bubbles ─────────────────────────────────────────────── */
+.bubble-wrap { display: flex; flex-direction: column; max-width: 76%; }
+.bubble-wrap.student { align-self: flex-end; align-items: flex-end; }
+.bubble-wrap.support,
+.bubble-wrap.admin   { align-self: flex-start; align-items: flex-start; }
+.bubble {
+  padding: 10px 14px; border-radius: 18px; font-size: 14px;
+  line-height: 1.5; word-break: break-word;
+}
+.bubble-wrap.student .bubble {
+  background: #e0e2ff; color: #14163f;
+  border-bottom-right-radius: 4px;
+}
+.bubble-wrap.support .bubble {
+  background: #fff; color: #1b1e45;
+  border: 1.5px solid #e6e8f3; border-bottom-left-radius: 4px;
+}
+.bubble-wrap.admin .bubble {
+  background: #f0fdf4; color: #14532d;
+  border: 1.5px solid #86efac; border-bottom-left-radius: 4px;
+}
+.bubble-sender { font-size: 11px; font-weight: 700; color: #5b5f80; margin-bottom: 3px; padding: 0 4px; }
+.bubble-wrap.admin .bubble-sender { color: #166534; }
+.bubble-meta   { font-size: 10px; color: #8e92b3; margin-top: 3px; padding: 0 4px; }
+
+/* ── Empty states ─────────────────────────────────────────── */
+.msg-empty {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  color: #8e92b3; font-size: 14px; gap: 10px; text-align: center;
+  padding: 24px;
+}
+.msg-empty-icon { font-size: 48px; }
+.msg-no-conv {
+  display: flex; align-items: center; justify-content: center;
+  flex: 1; flex-direction: column; gap: 8px;
+  color: #8e92b3; text-align: center; padding: 24px;
+}
+.msg-no-conv-icon { font-size: 52px; }
+
+/* ── Role badge ──────────────────────────────────────────── */
+.role-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 10px; font-weight: 700; border-radius: 999px;
+  padding: 2px 8px; margin-left: 6px;
+}
+.role-pill.ai   { background:#f0f1ff; color:#2e3192; }
+.role-pill.admin{ background:#f0fdf4; color:#15803d; }
+
+/* ── Refresh btn ─────────────────────────────────────────── */
+.refresh-btn {
+  background: none; border: none; cursor: pointer; padding: 4px 8px;
+  color: #2e3192; font-size: 13px; font-weight: 700; border-radius: 8px;
+  transition: background .12s;
+}
+.refresh-btn:hover { background: #f0f1ff; }
+
+/* ── Mobile responsive ───────────────────────────────────── */
+@media (max-width: 680px) {
+  .msg-layout { flex-direction: column; height: auto; }
+  .msg-sidebar { width: 100%; height: 260px; border-right: none; border-bottom: 1px solid #e6e8f3; }
+  .msg-chat { height: calc(100vh - 320px); min-height: 380px; }
+  .msg-chat.hidden-mobile { display: none; }
+  .msg-sidebar.hidden-mobile { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="admin-layout">
+  <div id="sidebarContainer"></div>
+  <div class="admin-main" style="padding:0;overflow:hidden;">
+    <div id="topbarContainer"></div>
+    <div class="msg-layout">
+
+      <!-- ── LEFT: Conversation List ── -->
+      <div class="msg-sidebar" id="msgSidebar">
+        <div class="msg-sidebar-head">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:18px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><rect x="3" y="8" width="18" height="12" rx="2" stroke-linecap="round" stroke-linejoin="round"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 8V4m-4 4V4m8 4V4M8 12h.01M16 12h.01M12 16h.01"/></svg></span>
+            <h2>Messages</h2>
+          </div>
+          <button class="refresh-btn" onclick="refreshActive()" title="Refresh">↻ Refresh</button>
+        </div>
+        <!-- Tabs -->
+        <div style="display:flex;border-bottom:1px solid #e6e8f3;margin-bottom:8px;">
+          <button id="tabSupport" onclick="switchTab('support')"
+            style="flex:1;padding:8px;border:none;background:none;font-weight:700;font-size:13px;cursor:pointer;border-bottom:3px solid #2e3192;color:#2e3192;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg> Support
+          </button>
+          <button id="tabLogin" onclick="switchTab('login')"
+            style="flex:1;padding:8px;border:none;background:none;font-weight:600;font-size:13px;cursor:pointer;border-bottom:3px solid transparent;color:#5b5f80;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg> Login Bot
+          </button>
+        </div>
+        <div class="msg-search">
+          <input type="text" id="searchInput" placeholder="🔍 Search…" oninput="filterConversations()">
+        </div>
+        <div class="msg-list" id="msgList">
+          <div class="msg-empty">
+            <div class="msg-empty-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2m6-2a10 10 0 11-20 0 10 10 0 0120 0z"/></svg></div>
+            Loading conversations…
+          </div>
+        </div>
+      </div>
+
+      <!-- ── RIGHT: Chat View ── -->
+      <div class="msg-chat" id="msgChat">
+        <div class="msg-no-conv" id="noChatSelected">
+          <div class="msg-no-conv-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg></div>
+          <strong>Select a conversation</strong>
+          <div style="font-size:13px;">Click a student on the left to view their chat with Support</div>
+        </div>
+        <div id="chatPanel" style="display:none;flex:1;flex-direction:column;overflow:hidden;">
+          <div class="msg-chat-head">
+            <div class="msg-chat-avatar" id="chatAvatar">?</div>
+            <div>
+              <div class="msg-chat-title" id="chatTitle">—</div>
+              <div class="msg-chat-sub"   id="chatSub">—</div>
+            </div>
+          </div>
+          <div class="msg-chat-body" id="chatBody"></div>
+          <div class="msg-chat-foot" id="chatFooter">
+            <textarea id="adminReplyInput" placeholder="Type your reply as Admin…" rows="1"
+              oninput="autoResizeAdmin(this)" onkeydown="adminKeyDown(event)"></textarea>
+            <button class="msg-send-btn" onclick="sendAdminReply()" id="adminSendBtn"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg></button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="js/admin.js"></script>
+<script>
+// ── Auth ────────────────────────────────────────────────────
+const _adminToken = sessionStorage.getItem('adminToken');
+const _adminUser  = JSON.parse(sessionStorage.getItem('admin') || '{}');
+if (!_adminToken) window.location.href = 'admin-login.html';
+
+document.getElementById('sidebarContainer').innerHTML = getSidebarHTML('admin-messages.html');
+document.getElementById('topbarContainer').innerHTML  = getTopbarHTML('Support Messages');
+
+// ── State ───────────────────────────────────────────────────
+let _allConvs     = [];
+let _allLoginConvs = [];
+let _activeStudId  = null;
+let _activeTab     = 'support'; // 'support' | 'login'
+
+// ── Tab switching ───────────────────────────────────────────
+function switchTab(tab) {
+  _activeTab = tab;
+  document.getElementById('tabSupport').style.borderBottomColor = tab === 'support' ? '#2e3192' : 'transparent';
+  document.getElementById('tabSupport').style.color = tab === 'support' ? '#2e3192' : '#5b5f80';
+  document.getElementById('tabSupport').style.fontWeight = tab === 'support' ? '700' : '600';
+  document.getElementById('tabLogin').style.borderBottomColor = tab === 'login' ? '#2e3192' : 'transparent';
+  document.getElementById('tabLogin').style.color = tab === 'login' ? '#2e3192' : '#5b5f80';
+  document.getElementById('tabLogin').style.fontWeight = tab === 'login' ? '700' : '600';
+  document.getElementById('searchInput').value = '';
+  if (tab === 'support') renderList(_allConvs);
+  else renderLoginList(_allLoginConvs);
+  // Clear chat panel
+  document.getElementById('noChatSelected').style.display = 'flex';
+  document.getElementById('chatPanel').style.display = 'none';
+  document.getElementById('chatFooter').style.display = '';  // restore footer
+  _activeStudId = null;
+}
+
+function refreshActive() {
+  if (_activeTab === 'support') loadConversations();
+  else loadLoginConversations();
+}
+
+// ── Load support conversations ──────────────────────────────
+async function loadConversations() {
+  const list = document.getElementById('msgList');
+  list.innerHTML = '<div class="msg-empty"><div class="msg-empty-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2m6-2a10 10 0 11-20 0 10 10 0 0120 0z"/></svg></div>Loading…</div>';
+  try {
+    _allConvs = await apiGet('/api/admin/support/conversations');
+    if (_activeTab === 'support') renderList(_allConvs);
+    const unread = _allConvs.filter(c => c.admin_unread).length;
+  } catch(e) {
+    if (_activeTab === 'support')
+      list.innerHTML = '<div class="msg-empty"><div class="msg-empty-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;color:#d97706;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg></div>Failed to load. Refresh to retry.</div>';
+  }
+}
+
+// ── Load login conversations ────────────────────────────────
+async function loadLoginConversations() {
+  const list = document.getElementById('msgList');
+  list.innerHTML = '<div class="msg-empty"><div class="msg-empty-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2m6-2a10 10 0 11-20 0 10 10 0 0120 0z"/></svg></div>Loading…</div>';
+  try {
+    _allLoginConvs = await apiGet('/api/admin/login-conversations');
+    if (_activeTab === 'login') renderLoginList(_allLoginConvs);
+  } catch(e) {
+    if (_activeTab === 'login')
+      list.innerHTML = '<div class="msg-empty"><div class="msg-empty-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;color:#d97706;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg></div>Failed to load.</div>';
+  }
+}
+
+function renderLoginList(convs) {
+  const list = document.getElementById('msgList');
+  if (!convs.length) {
+    list.innerHTML = '<div class="msg-empty"><div class="msg-empty-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg></div>No login bot conversations yet.</div>';
+    return;
+  }
+  list.innerHTML = '';
+  convs.forEach(c => {
+    const lastMsg = c.messages[c.messages.length - 1];
+    const preview = lastMsg ? lastMsg.content.slice(0, 55) + (lastMsg.content.length > 55 ? '…' : '') : '';
+    const label   = c.student_name || 'Guest';
+    const initials = label.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+    const time    = new Date(c.updated_at).toLocaleString();
+    const item    = document.createElement('div');
+    item.className = 'msg-item';
+    item.innerHTML = `
+      <div class="msg-avatar" style="background:#7c3aed;">${initials || '?'}</div>
+      <div class="msg-item-body">
+        <div class="msg-item-top">
+          <span class="msg-name">${label}</span>
+          <span class="msg-time">${time}</span>
+        </div>
+        <div class="msg-preview">${preview}</div>
+      </div>`;
+    item.onclick = () => openLoginConv(c.session_key, label, initials);
+    list.appendChild(item);
+  });
+}
+
+async function openLoginConv(sessionKey, label, initials) {
+  document.getElementById('noChatSelected').style.display = 'none';
+  const panel = document.getElementById('chatPanel');
+  panel.style.display = 'flex';
+  document.getElementById('chatTitle').textContent = label + ' (Login Bot)';
+  document.getElementById('chatSub').textContent   = 'Login page assistant · Guest session';
+  document.getElementById('chatAvatar').textContent = initials || '?';
+  document.getElementById('chatAvatar').style.background = '#7c3aed';
+  // Hide reply box — login convs are read-only
+  document.getElementById('chatFooter').style.display = 'none';
+
+  const body = document.getElementById('chatBody');
+  body.innerHTML = '<div style="padding:16px;color:#8e92b3;">Loading…</div>';
+  try {
+    const data = await apiGet(`/api/admin/login-conversations/${sessionKey}`);
+    body.innerHTML = '';
+    (data.messages || []).forEach(m => {
+      const wrap = document.createElement('div');
+      wrap.className = 'bubble-wrap ' + (m.role === 'user' ? 'user' : 'support');
+      const sender = m.role === 'user'
+        ? `<div class="bubble-sender">${label}</div>`
+        : `<div class="bubble-sender"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><rect x="3" y="8" width="18" height="12" rx="2" stroke-linecap="round" stroke-linejoin="round"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 8V4m-4 4V4m8 4V4M8 12h.01M16 12h.01M12 16h.01"/></svg> Login Assistant <span class="role-pill ai">AI</span></div>`;
+      const ts = new Date(m.created_at).toLocaleString();
+      wrap.innerHTML = `${sender}<div class="bubble">${m.content.replace(/\n/g,'<br>')}</div><div class="bubble-time">${ts}</div>`;
+      body.appendChild(wrap);
+    });
+    body.scrollTop = body.scrollHeight;
+  } catch(e) {
+    body.innerHTML = '<div style="padding:16px;color:#ef4444;">Failed to load conversation.</div>';
+  }
+}
+
+function renderList(convs) {
+  const list = document.getElementById('msgList');
+  if (!convs.length) {
+    list.innerHTML = '<div class="msg-empty"><div class="msg-empty-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg></div>No conversations yet.<br>Students will appear here after they chat with Support.</div>';
+    return;
+  }
+  list.innerHTML = convs.map(c => {
+    const time  = c.updated_at ? fmtMsgTime(c.updated_at) : '';
+    const preview = escHtml(c.last_message || '');
+    const roleIcon = c.last_role === 'student' ? '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>' : c.last_role === 'admin' ? '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>‍<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>' : '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><rect x="3" y="8" width="18" height="12" rx="2" stroke-linecap="round" stroke-linejoin="round"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 8V4m-4 4V4m8 4V4M8 12h.01M16 12h.01M12 16h.01"/></svg>';
+    const initials = (c.student_name || '?').split(' ').map(w=>w[0]||'').slice(0,2).join('').toUpperCase();
+    return `
+    <div class="msg-item" data-id="${c.student_id}" data-unread="${c.admin_unread}"
+         onclick="openConversation('${c.student_id}','${escAttr(c.student_name)}','${escAttr(c.student_matric)}','${escAttr(initials)}')">
+      <div class="msg-item-time">${time}</div>
+      <div class="msg-item-name">${escHtml(c.student_name)} <span style="font-size:10px;color:#8e92b3;font-weight:400;">(${c.message_count} msgs)</span></div>
+      <div class="msg-item-matric">${escHtml(c.student_matric)}</div>
+      <div class="msg-item-preview">${roleIcon} ${preview}</div>
+      <div class="unread-dot"></div>
+    </div>`;
+  }).join('');
+}
+
+function filterConversations() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  if (_activeTab === 'support') {
+    const filtered = _allConvs.filter(c =>
+      c.student_name.toLowerCase().includes(q) ||
+      c.student_matric.toLowerCase().includes(q)
+    );
+    renderList(filtered);
+  } else {
+    const filtered = _allLoginConvs.filter(c =>
+      (c.student_name || 'guest').toLowerCase().includes(q) ||
+      c.session_key.toLowerCase().includes(q)
+    );
+    renderLoginList(filtered);
+  }
+}
+
+// ── Open a student's conversation ───────────────────────────
+async function openConversation(studentId, name, matric, initials) {
+  _activeStudId = studentId;
+
+  // Highlight active item
+  document.querySelectorAll('.msg-item').forEach(el => el.classList.remove('active'));
+  const el = document.querySelector(`.msg-item[data-id="${studentId}"]`);
+  if (el) { el.classList.add('active'); el.dataset.unread = 'false'; }
+
+  // Show chat panel
+  document.getElementById('noChatSelected').style.display = 'none';
+  const panel = document.getElementById('chatPanel');
+  panel.style.display = 'flex';
+  panel.style.flexDirection = 'column';
+  panel.style.flex = '1';
+  panel.style.overflow = 'hidden';
+
+  document.getElementById('chatAvatar').textContent = initials;
+  document.getElementById('chatTitle').textContent  = name;
+  document.getElementById('chatSub').textContent    = `Matric: ${matric}`;
+
+  const body = document.getElementById('chatBody');
+  body.innerHTML = '<div class="msg-empty"><div class="msg-empty-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2m6-2a10 10 0 11-20 0 10 10 0 0120 0z"/></svg></div>Loading chat…</div>';
+
+  try {
+    const data = await apiGet(`/api/admin/support/conversation/${studentId}`);
+    renderChat(data.messages || []);
+    // Decrement unread badge (if element exists)
+    const badge = document.getElementById('unreadBadge');
+    if (badge) {
+      const cur = parseInt(badge.textContent) || 0;
+      if (cur > 0) { badge.textContent = cur - 1; if (cur - 1 === 0) badge.style.display = 'none'; }
+    }
+  } catch(e) {
+    body.innerHTML = '<div class="msg-empty"><div class="msg-empty-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;color:#d97706;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg></div>Failed to load chat.</div>';
+  }
+}
+
+function renderChat(messages) {
+  const body = document.getElementById('chatBody');
+  if (!messages.length) {
+    body.innerHTML = '<div class="msg-empty"><div class="msg-empty-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg></div>No messages yet.</div>';
+    return;
+  }
+  body.innerHTML = '';
+  messages.forEach(m => appendBubble(m.role, m.content, m.is_ai, m.created_at, false));
+  body.scrollTop = body.scrollHeight;
+}
+
+function appendBubble(role, content, isAi, createdAt, scroll = true) {
+  const body = document.getElementById('chatBody');
+
+  // Remove empty state
+  body.querySelector('.msg-empty')?.remove();
+
+  const wrap = document.createElement('div');
+  wrap.className = `bubble-wrap ${role}`;
+
+  let sender = '';
+  if (role === 'student') sender = `<div class="bubble-sender"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg> Student</div>`;
+  if (role === 'support') sender = `<div class="bubble-sender">Support${isAi ? '<span class="role-pill ai">AI</span>':''}</div>`;
+  if (role === 'admin')   sender = `<div class="bubble-sender" style="color:#166534;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>‍<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg> Admin<span class="role-pill admin">You</span></div>`;
+
+  const time = createdAt ? new Date(createdAt).toLocaleString('en-NG',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',hour12:true}) : '';
+  wrap.innerHTML = `${sender}
+    <div class="bubble">${escHtml(content).replace(/\n/g,'<br>')}</div>
+    <div class="bubble-meta">${time}</div>`;
+
+  body.appendChild(wrap);
+  if (scroll) body.scrollTop = body.scrollHeight;
+}
+
+// ── Admin reply ─────────────────────────────────────────────
+async function sendAdminReply() {
+  if (!_activeStudId) return;
+  const inp = document.getElementById('adminReplyInput');
+  const msg = inp.value.trim();
+  if (!msg) return;
+  const btn = document.getElementById('adminSendBtn');
+  btn.disabled = true;
+  inp.value = ''; inp.style.height = 'auto';
+
+  try {
+    const data = await apiPost('/api/admin/support/reply', { student_id: _activeStudId, message: msg });
+    if (data.success) {
+      appendBubble('admin', msg, false, new Date());
+    } else {
+      alert('Failed to send reply. Please try again.');
+    }
+  } catch(e) { alert('Network error. Please try again.'); }
+  btn.disabled = false;
+}
+
+function adminKeyDown(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendAdminReply(); }
+}
+function autoResizeAdmin(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+// ── Helpers ─────────────────────────────────────────────────
+function fmtMsgTime(d) {
+  const now  = new Date(); const dt = new Date(d);
+  const diff = now - dt;
+  if (diff < 60000)     return 'Just now';
+  if (diff < 3600000)   return Math.floor(diff/60000) + 'm ago';
+  if (diff < 86400000)  return Math.floor(diff/3600000) + 'h ago';
+  return dt.toLocaleDateString('en-NG',{day:'2-digit',month:'short'});
+}
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escAttr(s) {
+  return String(s||'').replace(/'/g,'&#39;').replace(/"/g,'&quot;');
+}
+
+// ── Init ─────────────────────────────────────────────────────
+loadConversations();
+loadLoginConversations();
+// Auto-refresh every 60 seconds
+setInterval(() => { loadConversations(); loadLoginConversations(); }, 60000);
+</script>
+<script src="/pwa.js"></script>
+</body>
+</html>

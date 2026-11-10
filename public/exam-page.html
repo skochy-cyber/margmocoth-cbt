@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="manifest" href="/manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MARGMOCOTH CBT">
+<meta name="theme-color" content="#2e3192">
+<!-- <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 24 24" style="display:inline-block;vertical-align:middle;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> AI Proctoring scripts — preloaded in <head> so they're ready before initFaceAntiCheat().
+     On slow Nigerian networks, dynamic injection at runtime was failing silently.
+     Primary CDN: jsDelivr. If it fails, the inline fallback script tries unpkg. -->
+<script>
+  // Preload TF.js first, then BlazeFace. Both use async so they don't block page render.
+  // exam.js checks window.tf / window.blazeface before injecting its own tags, so no duplication.
+  (function() {
+    function loadScript(src, onload, onerror) {
+      var s = document.createElement('script');
+      s.src = src; s.async = true;
+      s.onload = onload; s.onerror = onerror;
+      document.head.appendChild(s);
+    }
+    var TF_PRIMARY   = 'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js';
+    var TF_FALLBACK  = 'https://unpkg.com/@tensorflow/tfjs@4.10.0/dist/tf.min.js';
+    var BF_PRIMARY   = 'https://cdn.jsdelivr.net/npm/@tensorflow-models/blazeface@0.0.7/dist/blazeface.min.js';
+    var BF_FALLBACK  = 'https://unpkg.com/@tensorflow-models/blazeface@0.0.7/dist/blazeface.min.js';
+
+    function loadBlazeFace() {
+      if (window.blazeface) return;
+      loadScript(BF_PRIMARY, function() {
+        console.log('[ICBT-HEAD] BlazeFace loaded (primary CDN)');
+      }, function() {
+        console.warn('[ICBT-HEAD] BlazeFace primary CDN failed — trying fallback');
+        loadScript(BF_FALLBACK, function() {
+          console.log('[ICBT-HEAD] BlazeFace loaded (fallback CDN)');
+        }, function() {
+          console.error('[ICBT-HEAD] BlazeFace failed to load from ALL CDNs — AI proctoring will be unavailable');
+        });
+      });
+    }
+
+    if (window.tf) {
+      loadBlazeFace();
+    } else {
+      loadScript(TF_PRIMARY, function() {
+        console.log('[ICBT-HEAD] TF.js loaded (primary CDN)');
+        loadBlazeFace();
+      }, function() {
+        console.warn('[ICBT-HEAD] TF.js primary CDN failed — trying fallback');
+        loadScript(TF_FALLBACK, function() {
+          console.log('[ICBT-HEAD] TF.js loaded (fallback CDN)');
+          loadBlazeFace();
+        }, function() {
+          console.error('[ICBT-HEAD] TF.js failed to load from ALL CDNs — AI proctoring will be unavailable');
+        });
+      });
+    }
+  })();
+</script>
+<link rel="apple-touch-icon" href="/icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Exam in Progress — MARGMOCOTH CBT</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+</head>
+<body>
+
+<div id="violationToast" class="violation-toast"></div>
+
+<!-- OFFLINE SUBMIT BANNER — shown when exam was submitted while offline -->
+<div id="offlineSubmitBanner" style="display:none;
+  position:fixed;top:0;left:0;right:0;z-index:99999;
+  background:linear-gradient(135deg,#7c2d12,#9a3412);
+  color:#fff;padding:14px 18px;font-family:'DM Sans',system-ui,sans-serif;
+  box-shadow:0 4px 20px rgba(0,0,0,.3);">
+  <div style="max-width:700px;margin:0 auto;">
+    <div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+      <span style="font-size:22px;flex-shrink:0;"></span>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:14px;font-weight:800;margin-bottom:3px;">Exam submitted offline</div>
+        <div style="font-size:12px;opacity:.9;line-height:1.5;">
+          Your answers are saved on this device. Please connect to the internet so they can be synced and officially recorded.
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-shrink:0;flex-wrap:wrap;">
+        <div id="syncStatusText" style="font-size:11px;font-weight:700;opacity:.85;"></div>
+        <button onclick="checkSyncStatus()" id="checkSyncBtn"
+          style="background:rgba(255,255,255,.2);color:#fff;border:1.5px solid rgba(255,255,255,.4);
+          border-radius:8px;padding:7px 14px;font-size:12px;font-weight:800;cursor:pointer;
+          font-family:'DM Sans',sans-serif;transition:background .15s;white-space:nowrap;">
+          Check Sync Status
+        </button>
+      </div>
+    </div>
+    <!-- Sync progress bar -->
+    <div id="syncProgressWrap" style="display:none;margin-top:10px;">
+      <div style="height:3px;background:rgba(255,255,255,.2);border-radius:999px;overflow:hidden;">
+        <div id="syncProgressBar" style="height:100%;background:#fbbf24;border-radius:999px;width:0%;transition:width .4s;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- EXAM HEADER -->
+<div class="exam-topbar" id="examTopbar">
+  <div>
+    <div class="exam-label">MARGMOCOTH CBT</div>
+    <div class="exam-title-text" id="examTitle">Loading exam...</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+
+    <!-- Network Status Pill — always visible in topbar -->
+    <div id="netPillTopbar" style="
+      display:inline-flex;align-items:center;gap:6px;
+      padding:5px 12px;border-radius:999px;font-size:11px;font-weight:800;
+      letter-spacing:.3px;transition:all .3s;white-space:nowrap;
+      background:#14532d;color:#bbf7d0;">
+      <span id="netPillDot" style="width:7px;height:7px;border-radius:50%;background:#4ade80;flex-shrink:0;"></span>
+      <span id="netPillLabel">Online</span>
+    </div>
+
+    <!-- Violation Counter Pill -->
+    <div id="violPill" style="
+      display:inline-flex;align-items:center;gap:5px;
+      padding:5px 11px;border-radius:999px;font-size:11px;font-weight:800;
+      letter-spacing:.3px;white-space:nowrap;transition:all .4s;
+      background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.7);
+      border:1px solid rgba(255,255,255,0.15);">
+      <span style="font-size:12px;"></span>
+      <span id="violPillCount">0</span>
+      <span style="font-size:9px;letter-spacing:.5px;">VIOLATIONS</span>
+    </div>
+
+    <div class="webcam-box" style="width:80px;height:60px;">
+      <video id="webcamPreview" autoplay muted style="width:100%;height:100%;object-fit:cover;display:block;"></video>
+      <div class="webcam-dot">REC</div>
+    </div>
+    <div class="timer-widget" id="timerWidget">
+      <div class="exam-label">TIME LEFT</div>
+      <div class="timer-display" id="timerDisplay">00:00</div>
+    </div>
+  </div>
+</div>
+
+<!-- PROGRESS -->
+<div class="exam-progress">
+  <span id="progressLabel" style="white-space:nowrap;">Question 1 of 50</span>
+  <div class="progress-track">
+    <div class="progress-fill" id="progressBar" style="width:0%"></div>
+  </div>
+  <span id="answeredLabel" style="white-space:nowrap;">0 answered</span>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="exam-body" style="display:flex;gap:22px;padding:20px;max-width:1400px;margin:0 auto;">
+
+  <div class="exam-main" style="flex:1;min-width:0;">
+    <div class="question-panel" id="questionCard">
+      <div class="question-header">
+        <span class="question-num" id="questionNum">QUESTION 1</span>
+      </div>
+      <div class="question-body">
+        <div class="question-text" id="questionText">Loading question...</div>
+        <div class="options-list" id="optionsList"></div>
+      </div>
+      <div class="question-nav">
+        <button onclick="prevQuestion()" class="btn btn-ghost" id="prevBtn" disabled>← Previous</button>
+        <div style="display:flex;gap:8px;">
+          <button onclick="flagQuestion()" class="btn btn-accent btn-sm" id="flagBtn">Flag</button>
+          <button onclick="nextQuestion()" class="btn btn-primary" id="nextBtn">Next →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MOBILE SUBMIT -->
+    <div class="mobile-submit" style="display:none;text-align:center;margin-top:18px;">
+      <button onclick="confirmSubmit()" class="btn btn-dark btn-lg btn-full">Submit Exam</button>
+    </div>
+
+    <!-- MOBILE QUESTION NAV -->
+    <div class="mobile-navigator" style="display:none;background:#fff;border-radius:14px;padding:18px;box-shadow:0 2px 8px rgba(0,0,0,.08);margin-top:18px;">
+      <div style="font-size:13px;font-weight:700;margin-bottom:12px;color:#0f6b30;">Question Navigator</div>
+      <div class="q-grid" id="mobileQGrid"></div>
+      <div id="mobileAnsweredCount" style="font-size:13px;color:#5b5f80;text-align:center;margin-top:10px;"></div>
+      <div id="mobileFlaggedCount" style="font-size:12px;color:#92400e;text-align:center;margin-top:4px;display:none;"><span id="mobileFlaggedNum">0</span> flagged for review</div>
+    </div>
+  </div>
+
+  <!-- DESKTOP SIDEBAR -->
+  <div class="exam-sidebar" style="width:268px;flex-shrink:0;">
+    <div class="webcam-box" style="margin-bottom:18px;">
+      <video id="webcamSide" autoplay muted style="width:100%;display:block;"></video>
+      <div class="webcam-dot">REC</div>
+    </div>
+    <div style="font-size:12px;font-weight:700;color:#0f6b30;letter-spacing:1px;margin-bottom:10px;">QUESTIONS</div>
+    <div class="q-grid" id="sideQGrid"></div>
+    <div style="margin-top:12px;font-size:12px;color:#71717a;line-height:2;">
+      <span style="display:inline-flex;width:18px;height:18px;border-radius:4px;background:#0f6b30;vertical-align:middle;margin-right:6px;"></span>Answered<br>
+      <span style="display:inline-flex;width:18px;height:18px;border-radius:4px;background:#fff;border:2px solid #d4d4d8;vertical-align:middle;margin-right:6px;"></span>Not Answered<br>
+      <span style="display:inline-flex;width:18px;height:18px;border-radius:4px;background:#fef08a;border:2px solid #ca8a04;vertical-align:middle;margin-right:6px;">F</span>Flagged
+    </div>
+    <button onclick="confirmSubmit()" class="btn btn-dark btn-full" style="margin-top:16px;">Submit Exam</button>
+  </div>
+
+</div>
+
+<!-- SUBMIT MODAL -->
+<div class="modal-overlay" id="submitModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span>Submit Exam?</span>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:15px;font-weight:600;color:#1b1e45;margin-bottom:14px;">Are you sure you want to submit your exam?</p>
+      <div id="submitStats" style="background:#f4f4f5;border-radius:10px;padding:16px;font-size:14px;border:1px solid #e4e4e7;"></div>
+      <!-- Offline warning inside modal -->
+      <div id="submitOfflineWarn" style="display:none;margin-top:12px;background:#fff7ed;border:1.5px solid #fed7aa;border-radius:10px;padding:12px 14px;font-size:13px;color:#9a3412;font-weight:600;">
+         You are currently <strong>offline</strong>. Your answers will be saved locally and auto-synced when you reconnect.
+      </div>
+      <p style="font-size:13px;color:#71717a;margin-top:14px;"> Once submitted, you cannot change your answers.</p>
+      <div style="display:flex;gap:10px;margin-top:18px;">
+        <button onclick="closeModal('submitModal')" class="btn btn-ghost" style="flex:1;">Cancel</button>
+        <button onclick="submitExam()" class="btn btn-primary" style="flex:1;">Yes, Submit</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/exam.js"></script>
+
+<style>
+@media (max-width: 1024px) {
+  .exam-sidebar { display: none !important; }
+  .mobile-submit, .mobile-navigator { display: block !important; }
+}
+@media (max-width: 640px) {
+  .exam-body { padding: 12px !important; }
+  .q-grid { grid-template-columns: repeat(6,1fr); }
+}
+/* Flagged question grid button */
+.q-btn.flagged { background:#fef08a !important; border-color:#ca8a04 !important; color:#78350f !important; }
+.q-btn.flagged.answered { background:#fde68a !important; }
+/* Pulse animation for offline dot */
+@keyframes netDotPulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+/* ── Screenshot & selection lockdown ──────────────────────────────────────── */
+/* Prevent text selection (blocks selection-clipboard screenshot helpers) */
+body, .question-text, .options-list, .exam-body {
+  -webkit-user-select: none !important;
+  -moz-user-select:    none !important;
+  -ms-user-select:     none !important;
+  user-select:         none !important;
+}
+/* Prevent drag of any element */
+* { -webkit-user-drag: none; user-drag: none; }
+/* Chrome/Edge screenshot API hint — discourage compositing capture */
+body { -webkit-touch-callout: none; }
+</style>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false}
+    ],
+    throwOnError: false
+  });"></script>
+<!-- ── CALCULATOR ─────────────────────────────────────────────── -->
+<style>
+#calcToggleBtn{display:none;position:fixed;top:14px;left:14px;z-index:9998;background:#0f6b30;color:#fff;border:none;border-radius:10px;width:40px;height:40px;cursor:pointer;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(15,107,48,.4);}
+.cbtn{padding:0;height:44px;border:1.5px solid #e6e8f3;border-radius:8px;font-size:15px;font-weight:600;background:#f6f7fc;color:#1b1e45;cursor:pointer;}
+.cbtn:active{background:#e6e8f3;}
+.cbtn-fn{background:#f1f2fa;color:#4a4e73;font-size:13px;}
+.cbtn-op{background:#f0f1ff;color:#2e3192;border-color:#fed7aa;}
+.cbtn-op:active{background:#fed7aa;}
+.cbtn-eq{background:#0f6b30;color:#fff;border-color:#0f6b30;}
+</style>
+
+<button id="calcToggleBtn" onclick="toggleCalc()" title="Calculator">
+  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+    <rect x="4" y="2" width="16" height="20" rx="2"/>
+    <line x1="8" y1="6" x2="16" y2="6"/>
+    <line x1="8" y1="10" x2="10" y2="10"/><line x1="14" y1="10" x2="16" y2="10"/>
+    <line x1="8" y1="14" x2="10" y2="14"/><line x1="14" y1="14" x2="16" y2="14"/>
+    <line x1="8" y1="18" x2="10" y2="18"/><line x1="14" y1="18" x2="16" y2="18"/>
+  </svg>
+</button>
+
+<div id="calcWidget" style="display:none;position:fixed;top:60px;left:14px;z-index:9999;background:#fff;border:1.5px solid #e6e8f3;border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.18);width:240px;">
+  <div style="padding:8px 12px 4px;">
+    <div id="calcExpr" style="min-height:16px;font-size:11px;color:#8e92b3;text-align:right;font-family:monospace;white-space:nowrap;">&nbsp;</div>
+    <div id="calcDisplay" style="font-size:26px;font-weight:700;color:#1b1e45;text-align:right;font-family:monospace;padding:2px 0 4px;white-space:nowrap;">0</div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;padding:0 8px 10px;">
+    <button onclick="calcInput('C')" class="cbtn cbtn-fn" style="grid-column:span 2;">C</button>
+    <button onclick="calcInput('%')" class="cbtn cbtn-fn">%</button>
+    <button onclick="calcInput('/')" class="cbtn cbtn-op">&divide;</button>
+    <button onclick="calcInput('7')" class="cbtn">7</button><button onclick="calcInput('8')" class="cbtn">8</button><button onclick="calcInput('9')" class="cbtn">9</button>
+    <button onclick="calcInput('*')" class="cbtn cbtn-op">&times;</button>
+    <button onclick="calcInput('4')" class="cbtn">4</button><button onclick="calcInput('5')" class="cbtn">5</button><button onclick="calcInput('6')" class="cbtn">6</button>
+    <button onclick="calcInput('-')" class="cbtn cbtn-op">&minus;</button>
+    <button onclick="calcInput('1')" class="cbtn">1</button><button onclick="calcInput('2')" class="cbtn">2</button><button onclick="calcInput('3')" class="cbtn">3</button>
+    <button onclick="calcInput('+')" class="cbtn cbtn-op">+</button>
+    <button onclick="calcInput('+/-')" class="cbtn">+/&minus;</button><button onclick="calcInput('0')" class="cbtn">0</button><button onclick="calcInput('.')" class="cbtn">.</button>
+    <button onclick="calcInput('=')" class="cbtn cbtn-eq">=</button>
+  </div>
+</div>
+
+<script>
+let _co=false,_cv='0',_ce='',_cop=null,_cp=null,_cn=true;
+function toggleCalc(){_co=!_co;document.getElementById('calcWidget').style.display=_co?'block':'none';}
+function calcInput(b){
+  const d=document.getElementById('calcDisplay'),e=document.getElementById('calcExpr');
+  if(b==='C'){_cv='0';_ce='';_cop=null;_cp=null;_cn=true;}
+  else if(b==='+/-'){_cv=String(-parseFloat(_cv)||0);}
+  else if(b==='%'){_cv=String(parseFloat(_cv)/100);_cn=true;}
+  else if(['+','-','*','/'].includes(b)){
+    if(_cop&&!_cn)_cv=String(_ca(_cp,parseFloat(_cv),_cop));
+    _cp=parseFloat(_cv);_cop=b;_cn=true;
+    _ce=_cv+' '+{'+':'+','-':'−','*':'×','/':'÷'}[b];
+  }else if(b==='='){
+    if(_cop!==null&&_cp!==null){_ce=_ce+' '+_cv+' =';_cv=String(_ca(_cp,parseFloat(_cv),_cop));_cop=null;_cp=null;_cn=true;}
+  }else if(b==='.'){
+    if(_cn){_cv='0.';_cn=false;}else if(!_cv.includes('.'))_cv+='.';
+  }else{
+    if(_cn||_cv==='0'){_cv=b;_cn=false;}else if(_cv.length<14)_cv+=b;
+  }
+  d.textContent=_cv.length>10?parseFloat(_cv).toExponential(4):_cv;
+  e.textContent=_ce||'\u00a0';
+}
+function _ca(a,b,op){
+  if(op==='+')return parseFloat((a+b).toPrecision(12));
+  if(op==='-')return parseFloat((a-b).toPrecision(12));
+  if(op==='*')return parseFloat((a*b).toPrecision(12));
+  if(op==='/')return b!==0?parseFloat((a/b).toPrecision(12)):'Error';
+  return b;
+}
+function initCalcFromSettings(s){
+  if(s&&s.calculator_enabled){
+    const btn=document.getElementById('calcToggleBtn');
+    btn.style.display='flex';
+  }
+}
+</script>
+
+<!-- pwa.js intentionally excluded from exam page -->
+<!-- Install prompts would trigger visibilitychange → anti-cheat violation -->
+<!-- SW still active (registered on other pages) for offline support -->
+</body>
+</html>

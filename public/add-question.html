@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="manifest" href="/manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MARGMOCOTH CBT">
+<meta name="theme-color" content="#2e3192">
+<link rel="apple-touch-icon" href="/icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Add Questions – MARGMOCOTH CBT</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<style>
+/* ── LAYOUT ─────────────────────────────────────────────────── */
+.aq-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; align-items: start; }
+@media (max-width: 860px) { .aq-wrap { grid-template-columns: 1fr; } }
+
+/* ── EXAM HEADER BAR ────────────────────────────────────────── */
+.exam-bar {
+ display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+ background: var(--surface); border: 1px solid var(--border);
+ border-radius: var(--r-lg); padding: 14px 18px; margin-bottom: 22px;
+}
+.exam-bar select { flex: 1; min-width: 220px; }
+.exam-meta {
+ display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+}
+.meta-pill {
+ display: inline-flex; align-items: center; gap: 6px;
+ padding: 6px 14px; border-radius: 999px; font-size: 13px; font-weight: 600;
+}
+.meta-pill.green { background: #edfff4; color: #0f6b30; border: 1px solid #34c462; }
+.meta-pill.blue  { background: #f0f1ff; color: #2e3192; border: 1px solid #b9bcf5; }
+
+/* ── ADD FORM ───────────────────────────────────────────────── */
+.q-form { position: sticky; top: 16px; }
+
+.q-num-badge {
+ display: inline-flex; align-items: center; justify-content: center;
+ width: 32px; height: 32px; border-radius: 50%;
+ background: var(--brand-500); color: #fff;
+ font-size: 13px; font-weight: 700; margin-right: 6px;
+ flex-shrink: 0;
+}
+
+/* Option rows — click to mark correct */
+.options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 14px 0; }
+
+.opt-row {
+ display: flex; align-items: center; gap: 0;
+ border: 2px solid var(--border); border-radius: var(--r-md);
+ overflow: hidden; transition: border-color .15s, box-shadow .15s;
+ cursor: pointer;
+}
+.opt-row:hover { border-color: var(--brand-400); }
+.opt-row.correct {
+ border-color: var(--brand-500);
+ box-shadow: 0 0 0 3px rgba(34,162,78,.15);
+}
+
+.opt-letter {
+ width: 38px; height: 44px; flex-shrink: 0;
+ display: flex; align-items: center; justify-content: center;
+ font-size: 13px; font-weight: 800;
+ background: var(--n-100); color: var(--text-2);
+ border-right: 2px solid var(--border);
+ transition: all .15s; user-select: none;
+}
+.opt-row.correct .opt-letter {
+ background: var(--brand-500); color: #fff; border-color: var(--brand-500);
+}
+
+.opt-input {
+ flex: 1; padding: 10px 12px;
+ border: none; outline: none; background: transparent;
+ font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text);
+}
+.opt-input::placeholder { color: var(--text-3); }
+
+.answer-hint {
+ font-size: 13px; font-weight: 500;
+ padding: 9px 13px; border-radius: 9px; margin-bottom: 14px;
+ background: #fef3c7; border: 1.5px solid #fbbf24; color: #92400e;
+ display: flex; align-items: center; gap: 6px;
+}
+.answer-hint.selected { background: #f0fdf4; border-color: #34c462; color: #0f6b30; font-weight: 600; }
+@keyframes shake {
+ 0%,100% { transform: translateX(0); }
+ 20%  { transform: translateX(-6px); }
+ 40%  { transform: translateX(6px); }
+ 60%  { transform: translateX(-4px); }
+ 80%  { transform: translateX(4px); }
+}
+
+/* Keyboard shortcut badge */
+.kbd { 
+ display: inline-flex; align-items: center; padding: 2px 7px;
+ background: var(--n-100); border: 1px solid var(--n-300);
+ border-radius: 4px; font-size: 11px; font-weight: 600;
+ color: var(--text-2); font-family: monospace;
+}
+
+/* ── QUESTION LIST ───────────────────────────────────────────── */
+.q-list { display: flex; flex-direction: column; gap: 10px; }
+
+.q-card {
+ background: var(--surface); border: 1px solid var(--border);
+ border-radius: var(--r-md); padding: 14px 16px;
+ transition: box-shadow .15s;
+}
+.q-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,.07); }
+.q-card.editing { border-color: var(--brand-500); box-shadow: 0 0 0 3px rgba(34,162,78,.12); }
+
+.q-card-top {
+ display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px;
+}
+.q-num {
+ width: 26px; height: 26px; border-radius: 50%;
+ background: var(--n-100); color: var(--text-2);
+ font-size: 12px; font-weight: 700; flex-shrink: 0;
+ display: flex; align-items: center; justify-content: center;
+}
+.q-text { font-size: 14px; font-weight: 500; color: var(--text); line-height: 1.5; flex: 1; }
+
+.q-opts {
+ display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 10px;
+}
+.q-opt {
+ font-size: 12px; color: var(--text-2); padding: 5px 9px;
+ background: var(--surface-2); border-radius: var(--r-sm);
+ border: 1px solid transparent;
+ display: flex; align-items: center; gap: 6px;
+}
+.q-opt .ol { font-weight: 800; }
+.q-opt.ans { background: #edfff4; border-color: #86efac; color: var(--brand-700); }
+.q-opt.ans .ol { color: var(--brand-500); }
+
+.q-actions { display: flex; gap: 8px; }
+
+/* Edit mode inside card */
+.edit-panel { display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+.edit-panel.open { display: block; }
+
+/* Empty state */
+.empty-state {
+ text-align: center; padding: 48px 24px; color: var(--text-2);
+}
+.empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+.empty-state p { font-size: 14px; }
+
+/* Loading skeleton */
+.skeleton {
+ background: linear-gradient(90deg, var(--n-100) 25%, var(--n-200) 50%, var(--n-100) 75%);
+ background-size: 200% 100%; animation: shimmer 1.2s infinite;
+ border-radius: var(--r-sm); height: 16px;
+}
+@keyframes shimmer { from{background-position:200% 0} to{background-position:-200% 0} }
+
+/* Upload link */
+.upload-alt {
+ display: flex; align-items: center; gap: 10px; padding: 12px 16px;
+ background: #fffbeb; border: 1px solid #fcd34d; border-radius: var(--r-md);
+ font-size: 13px; color: #92400e; margin-top: 16px; text-decoration: none;
+}
+.upload-alt:hover { background: #fef3c7; }
+</style>
+</head>
+<body>
+<div class="admin-layout">
+ <div id="sidebarContainer"></div>
+ <div class="admin-main">
+ <div id="topbarContainer"></div>
+ <div class="content">
+ <div id="alertBox"></div>
+
+ <!-- ── EXAM SELECTOR BAR ───────────────────────────── -->
+ <div class="exam-bar">
+ <select id="examSelect" class="form-control form-select" onchange="onExamChange()">
+ <option value="">— Select Exam —</option>
+ </select>
+ <div class="exam-meta">
+ <span class="meta-pill green" id="qCountPill" style="display:none;">
+ <span id="qCountNum">0</span> questions
+ </span>
+ <span class="meta-pill blue" id="examDurPill" style="display:none;">
+ <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> <span id="examDurNum">—</span> min
+ </span>
+ </div>
+ </div>
+
+ <div class="aq-wrap">
+
+ <!-- ── LEFT: ADD FORM ──────────────────────────────── -->
+ <div class="q-form">
+ <div class="card">
+ <div class="card-header" style="display:flex;align-items:center;gap:8px;">
+ <span class="q-num-badge" id="nextNumBadge">1</span>
+ <span>New Question</span>
+ <span style="margin-left:auto;font-size:12px;color:var(--text-2);font-weight:400;">
+ <span class="kbd">Ctrl</span>+<span class="kbd">Enter</span> to save
+ </span>
+ </div>
+ <div class="card-body">
+
+ <div class="form-group">
+ <label class="form-label">Question Text *</label>
+ <textarea id="question" class="form-control" rows="3"
+ placeholder="Type the question here…"
+ oninput="autoResize(this)"></textarea>
+ </div>
+
+ <!-- Question type selector -->
+ <div style="margin-bottom:12px;">
+ <label class="form-label">Question Type</label>
+ <div style="display:flex;gap:10px;">
+ <button type="button" id="typeMultiple" onclick="setQuestionType('multiple_choice')"
+ style="flex:1;padding:8px 12px;border-radius:8px;border:2px solid #1e7e34;background:#1e7e34;color:#fff;font-weight:700;cursor:pointer;font-size:13px;">
+ Multiple Choice
+ </button>
+ <button type="button" id="typeTrueFalse" onclick="setQuestionType('true_false')"
+ style="flex:1;padding:8px 12px;border-radius:8px;border:2px solid #ccc;background:#fff;color:#444;font-weight:700;cursor:pointer;font-size:13px;">
+ True / False
+ </button>
+ </div>
+ </div>
+ <input type="hidden" id="questionType" value="multiple_choice">
+
+ <!-- Options with click-to-select-answer -->
+ <div class="answer-hint" id="answerHint">
+ Click an option label <strong>A/B/C/D</strong> to mark it as the correct answer
+ </div>
+
+ <div class="options-grid">
+ <div class="opt-row" id="rowA" onclick="selectAnswer('A')">
+ <div class="opt-letter" id="lblA">A</div>
+ <input class="opt-input" id="optionA" placeholder="Option A" tabindex="2"
+ onclick="event.stopPropagation()">
+ </div>
+ <div class="opt-row" id="rowB" onclick="selectAnswer('B')">
+ <div class="opt-letter" id="lblB">B</div>
+ <input class="opt-input" id="optionB" placeholder="Option B" tabindex="3"
+ onclick="event.stopPropagation()">
+ </div>
+ <div class="opt-row" id="rowC" onclick="selectAnswer('C')">
+ <div class="opt-letter" id="lblC">C</div>
+ <input class="opt-input" id="optionC" placeholder="Option C" tabindex="4"
+ onclick="event.stopPropagation()">
+ </div>
+ <div class="opt-row" id="rowD" onclick="selectAnswer('D')">
+ <div class="opt-letter" id="lblD">D</div>
+ <input class="opt-input" id="optionD" placeholder="Option D" tabindex="5"
+ onclick="event.stopPropagation()">
+ </div>
+ </div>
+
+ <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+ <button onclick="addQuestion()" class="btn btn-primary" id="addBtn" tabindex="6">
+ Add Question
+ </button>
+ <button onclick="clearForm()" class="btn btn-ghost" tabindex="7">Clear</button>
+ </div>
+
+ <a href="upload-questions.html" class="upload-alt">
+ <span>Have many questions? <strong>Upload a CSV file instead</strong> — faster for 10+ questions.</span>
+ </a>
+
+ </div>
+ </div>
+ </div>
+
+ <!-- ── RIGHT: QUESTIONS LIST ───────────────────────── -->
+ <div>
+ <div class="card">
+ <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
+ <span>Questions in this Exam</span>
+ <span id="listCount" style="font-size:12px;color:var(--text-2);font-weight:400;"></span>
+ </div>
+ <div class="card-body" id="qListBody">
+ <div class="empty-state">
+ <div class="icon"></div>
+ <p>Select an exam above to view and add questions.</p>
+ </div>
+ </div>
+ </div>
+ </div>
+
+ </div><!-- /aq-wrap -->
+ </div>
+ </div>
+</div>
+
+<script src="js/admin.js"></script>
+<script>
+document.getElementById('sidebarContainer').innerHTML = getSidebarHTML('add-question.html');
+document.getElementById('topbarContainer').innerHTML  = getTopbarHTML('Add Questions');
+checkAdmin();
+requirePermission('manage_questions');
+
+// ── State ─────────────────────────────────────────────────────
+const params  = new URLSearchParams(window.location.search);
+const preselectedId  = params.get('exam_id');
+let  currentAnswer  = null;  // tracks selected correct answer — null until admin explicitly clicks
+let  answerSelected = false; // true only when admin deliberately clicks a letter
+let  editingId  = null;  // id of question being edited
+let  allQuestions  = [];
+
+// ── Exam load ─────────────────────────────────────────────────
+async function loadExams() {
+ const admin = JSON.parse(sessionStorage.getItem('admin') || '{}');
+ const url  = admin.role === 'lecturer'
+ ? `/api/admin/exams?lecturer_id=${admin.id}`
+ : '/api/admin/exams';
+ const data  = await apiGet(url);
+ const sel  = document.getElementById('examSelect');
+ data.forEach(e => {
+ const o = document.createElement('option');
+ o.value = e.id;
+ o.textContent = `${e.title}${e.course_name ? ' — ' + e.course_name : ''}`;
+ if (preselectedId && e.id === preselectedId) o.selected = true;
+ sel.appendChild(o);
+
+ // Stash duration
+ o.dataset.dur = e.duration || '';
+ });
+ if (preselectedId) onExamChange();
+}
+
+function onExamChange() {
+ const sel = document.getElementById('examSelect');
+ const opt = sel.options[sel.selectedIndex];
+ const dur = opt?.dataset?.dur;
+ if (dur) {
+ document.getElementById('examDurNum').textContent = dur;
+ document.getElementById('examDurPill').style.display = 'inline-flex';
+ } else {
+ document.getElementById('examDurPill').style.display = 'none';
+ }
+ loadExamQuestions();
+}
+
+// ── Load questions ────────────────────────────────────────────
+async function loadExamQuestions() {
+ const examId = document.getElementById('examSelect').value;
+ if (!examId) return;
+
+ // Show skeleton
+ document.getElementById('qListBody').innerHTML = `
+ <div style="padding:16px;display:flex;flex-direction:column;gap:10px;">
+ ${[1,2,3].map(() => `
+ <div style="display:flex;flex-direction:column;gap:6px;">
+ <div class="skeleton" style="width:80%;"></div>
+ <div class="skeleton" style="width:50%;height:12px;"></div>
+ </div>`).join('')}
+ </div>`;
+
+ allQuestions = await apiGet(`/api/admin/questions?exam_id=${examId}`);
+ renderList();
+ updateCounter();
+}
+
+// ── Math-aware renderer ───────────────────────────────────────
+function renderMath(text) {
+  if (!text) return '';
+  // Escape HTML first, then let KaTeX handle $...$ inline
+  const escaped = String(text)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  // We pass the raw text to KaTeX via a temp span after insertion
+  return `<span class="math-render">${escaped}</span>`;
+}
+
+function applyMathToList() {
+  if (!window.renderMathInElement) return;
+  document.querySelectorAll('.math-render').forEach(el => {
+    // Unescape HTML entities back so KaTeX sees raw LaTeX
+    el.innerHTML = el.innerHTML
+      .replace(/&amp;/g,'&').replace(/&lt;/g,'<')
+      .replace(/&gt;/g,'>').replace(/&quot;/g,'"');
+    renderMathInElement(el, {
+      delimiters: [
+        { left: '$$', right: '$$', display: true },
+        { left: '$',  right: '$',  display: false }
+      ],
+      throwOnError: false
+    });
+    el.classList.remove('math-render');
+  });
+}
+
+function renderList() {
+ const body = document.getElementById('qListBody');
+
+ if (!allQuestions.length) {
+ body.innerHTML = `<div class="empty-state"><div class="icon"></div><p>No questions yet. Add your first question on the left!</p></div>`;
+ document.getElementById('listCount').textContent = '';
+ return;
+ }
+
+ document.getElementById('listCount').textContent = `${allQuestions.length} question${allQuestions.length !== 1 ? 's' : ''}`;
+
+ body.innerHTML = `<div class="q-list">${allQuestions.map((q, i) => `
+ <div class="q-card" id="qcard-${q.id}">
+ <div class="q-card-top">
+ <div class="q-num">${i + 1}</div>
+ <div class="q-text">${renderMath(q.question)}</div>
+ </div>
+ <div class="q-opts">
+ ${['A','B','C','D'].map(l => `
+ <div class="q-opt${q.answer === l ? ' ans' : ''}">
+ <span class="ol">${l}.</span>
+ <span>${renderMath(q['option' + l] || '')}</span>
+ </div>`).join('')}
+ </div>
+ <div class="q-actions">
+ <button onclick="startEdit('${q.id}')" class="btn btn-ghost btn-xs">Edit</button>
+ <button onclick="deleteQuestion('${q.id}')" class="btn btn-secondary btn-xs">Delete</button>
+ </div>
+
+ <!-- Inline edit panel -->
+ <div class="edit-panel" id="ep-${q.id}">
+ <div class="form-group">
+ <label class="form-label" style="font-size:11px;">Question Text</label>
+ <textarea class="form-control" id="eq-${q.id}" rows="2">${escHtml(q.question)}</textarea>
+ </div>
+ <div class="options-grid">
+ ${['A','B','C','D'].map(l => `
+ <div class="opt-row${q.answer === l ? ' correct' : ''}" id="erow${l}-${q.id}" onclick="selectEditAnswer('${l}','${q.id}')">
+ <div class="opt-letter" id="elbl${l}-${q.id}">${l}</div>
+ <input class="opt-input" id="eopt${l}-${q.id}" value="${escHtml(q['option' + l] || '')}"
+ placeholder="Option ${l}" onclick="event.stopPropagation()">
+ </div>`).join('')}
+ </div>
+ <input type="hidden" id="eans-${q.id}" value="${q.answer}">
+ <div style="display:flex;gap:8px;margin-top:4px;">
+ <button onclick="saveEdit('${q.id}')" class="btn btn-primary btn-sm">Save</button>
+ <button onclick="cancelEdit('${q.id}')" class="btn btn-ghost btn-sm">Cancel</button>
+ </div>
+ </div>
+ </div>`).join('')}</div>`;
+  // Render math symbols in the list
+  setTimeout(applyMathToList, 0);
+}
+
+function updateCounter() {
+ const n = allQuestions.length;
+ document.getElementById('qCountNum').textContent  = n;
+ document.getElementById('nextNumBadge').textContent = n + 1;
+ const pill = document.getElementById('qCountPill');
+ pill.style.display = document.getElementById('examSelect').value ? 'inline-flex' : 'none';
+}
+
+// ── Answer selection (add form) ───────────────────────────────
+function selectAnswer(letter) {
+ currentAnswer  = letter;
+ answerSelected = true;
+ ['A','B','C','D'].forEach(l => {
+ document.getElementById(`row${l}`).classList.toggle('correct', l === letter);
+ });
+ const hint = document.getElementById('answerHint');
+ hint.innerHTML = ` <strong>Option ${letter}</strong> is marked as correct — you can still change it`;
+ hint.classList.add('selected');
+}
+
+// ── Question type toggle ─────────────────────────────────────
+function setQuestionType(type) {
+ document.getElementById('questionType').value = type;
+ const isTF = type === 'true_false';
+
+ // Toggle button styles
+ document.getElementById('typeMultiple').style.background  = isTF ? '#fff'  : '#1e7e34';
+ document.getElementById('typeMultiple').style.color  = isTF ? '#444'  : '#fff';
+ document.getElementById('typeMultiple').style.borderColor = isTF ? '#ccc'  : '#1e7e34';
+ document.getElementById('typeTrueFalse').style.background  = isTF ? '#1e7e34' : '#fff';
+ document.getElementById('typeTrueFalse').style.color  = isTF ? '#fff'  : '#444';
+ document.getElementById('typeTrueFalse').style.borderColor = isTF ? '#1e7e34' : '#ccc';
+
+ // Show/hide C and D rows
+ document.getElementById('rowC').style.display = isTF ? 'none' : '';
+ document.getElementById('rowD').style.display = isTF ? 'none' : '';
+
+ // Update hint text
+ document.getElementById('answerHint').innerHTML = isTF
+ ? ' Click <strong>A</strong> for True or <strong>B</strong> for False to mark the correct answer'
+ : ' Click an option label <strong>A/B/C/D</strong> to mark it as the correct answer';
+
+ if (isTF) {
+ // Auto-fill True/False options
+ document.getElementById('optionA').value = 'True';
+ document.getElementById('optionB').value = 'False';
+ document.getElementById('optionC').value = '';
+ document.getElementById('optionD').value = '';
+ } else {
+ // Clear if they were auto-filled
+ if (document.getElementById('optionA').value === 'True')  document.getElementById('optionA').value = '';
+ if (document.getElementById('optionB').value === 'False') document.getElementById('optionB').value = '';
+ }
+
+ // Reset answer selection
+ answerSelected = false;
+ currentAnswer  = null;
+ ['A','B','C','D'].forEach(l => {
+ const lbl = document.getElementById('lbl' + l);
+ if (lbl) lbl.classList.remove('selected-answer');
+ const row = document.getElementById('row' + l);
+ if (row) row.classList.remove('correct');
+ });
+}
+
+// ── Answer selection (edit panel) ────────────────────────────
+function selectEditAnswer(letter, id) {
+ document.getElementById(`eans-${id}`).value = letter;
+ ['A','B','C','D'].forEach(l => {
+ document.getElementById(`erow${l}-${id}`).classList.toggle('correct', l === letter);
+ });
+}
+
+// ── Add question ──────────────────────────────────────────────
+async function addQuestion() {
+ const examId = document.getElementById('examSelect').value;
+ if (!examId) { showAlert('Please select an exam first.', 'danger'); return; }
+
+ const q  = document.getElementById('question').value.trim();
+ const qt  = document.getElementById('questionType').value;
+ const isTF  = qt === 'true_false';
+ const oA = document.getElementById('optionA').value.trim();
+ const oB = document.getElementById('optionB').value.trim();
+ const oC = isTF ? '' : document.getElementById('optionC').value.trim();
+ const oD = isTF ? '' : document.getElementById('optionD').value.trim();
+
+ if (!q || !oA || !oB || (!isTF && (!oC || !oD))) {
+ showAlert(isTF ? 'Please fill in the question.' : 'Please fill in the question and all four options.', 'danger'); return;
+ }
+
+ //  CRITICAL: Require admin to explicitly click the correct answer letter
+ if (!answerSelected || !currentAnswer) {
+ const validAnswers = isTF ? 'A (True) or B (False)' : 'A, B, C, or D';
+ showAlert(` Please click the correct answer (${validAnswers}) before saving.`, 'danger');
+ document.getElementById('answerHint').style.animation = 'none';
+ document.getElementById('answerHint').offsetHeight; // reflow
+ document.getElementById('answerHint').style.animation = 'shake 0.4s ease';
+ return;
+ }
+
+ if (isTF && !['A','B'].includes(currentAnswer)) {
+ showAlert(' For True/False questions, answer must be A (True) or B (False).', 'danger'); return;
+ }
+
+ const btn = document.getElementById('addBtn');
+ btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2m6-2a10 10 0 11-20 0 10 10 0 0120 0z"/></svg> Saving…'; btn.disabled = true;
+
+ const data = await apiPost('/api/admin/add-question', {
+ exam_id: examId, question: q, question_type: qt,
+ optionA: oA, optionB: oB, optionC: oC, optionD: oD,
+ answer: currentAnswer
+ });
+
+ btn.innerHTML = ' Add Question'; btn.disabled = false;
+
+ if (data.success) {
+ clearForm();
+ allQuestions.unshift(data.question); // add to top
+ // Re-sort by created_at asc (oldest first)
+ allQuestions.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+ renderList();
+ updateCounter();
+ // Brief flash on counter
+ const pill = document.getElementById('qCountPill');
+ pill.style.background = '#bbf7d0';
+ setTimeout(() => pill.style.background = '', 600);
+ } else {
+ showAlert(data.message, 'danger');
+ }
+}
+
+// ── Edit ──────────────────────────────────────────────────────
+function startEdit(id) {
+ // Close any other open edit panel
+ if (editingId && editingId !== id) cancelEdit(editingId);
+ editingId = id;
+ document.getElementById(`ep-${id}`).classList.add('open');
+ document.getElementById(`qcard-${id}`).classList.add('editing');
+ document.getElementById(`eq-${id}`).focus();
+}
+
+function cancelEdit(id) {
+ document.getElementById(`ep-${id}`).classList.remove('open');
+ document.getElementById(`qcard-${id}`).classList.remove('editing');
+ if (editingId === id) editingId = null;
+}
+
+async function saveEdit(id) {
+ const q  = document.getElementById(`eq-${id}`).value.trim();
+ const oA = document.getElementById(`eoptA-${id}`).value.trim();
+ const oB = document.getElementById(`eoptB-${id}`).value.trim();
+ const oC = document.getElementById(`eoptC-${id}`).value.trim();
+ const oD = document.getElementById(`eoptD-${id}`).value.trim();
+ const ans = document.getElementById(`eans-${id}`).value;
+ if (!q || !oA || !oB || !oC || !oD) {
+ showAlert('All fields required.', 'danger'); return;
+ }
+ const data = await apiPut(`/api/admin/questions/${id}`, {
+ question: q, optionA: oA, optionB: oB, optionC: oC, optionD: oD, answer: ans
+ });
+ if (data.success) {
+ // Update local
+ const idx = allQuestions.findIndex(x => x.id === id || x._id === id);
+ if (idx > -1) allQuestions[idx] = { ...allQuestions[idx], question: q, optionA: oA, optionB: oB, optionC: oC, optionD: oD, answer: ans };
+ renderList();
+ showAlert('Question updated.', 'success');
+ editingId = null;
+ } else {
+ showAlert(data.message, 'danger');
+ }
+}
+
+// ── Delete ────────────────────────────────────────────────────
+async function deleteQuestion(id) {
+ if (!confirmDelete('Delete this question?')) return;
+ const data = await apiDelete(`/api/admin/questions/${id}`);
+ if (data.success) {
+ allQuestions = allQuestions.filter(q => q.id !== id && q._id?.toString() !== id);
+ renderList();
+ updateCounter();
+ showAlert('Question deleted.', 'success');
+ }
+}
+
+// ── Clear form ────────────────────────────────────────────────
+function clearForm() {
+ document.getElementById('question').value = '';
+ ['A','B','C','D'].forEach(l => {
+ document.getElementById(`option${l}`).value = '';
+ document.getElementById(`row${l}`).classList.remove('correct'); // un-highlight all
+ });
+ currentAnswer  = null;
+ answerSelected = false;
+ document.getElementById('answerHint').innerHTML =
+ ' <strong>You must click a letter (A/B/C/D) to mark the correct answer before saving</strong>';
+ document.getElementById('answerHint').classList.remove('selected');
+ document.getElementById('question').focus();
+}
+
+// ── Helpers ───────────────────────────────────────────────────
+function autoResize(el) {
+ el.style.height = 'auto';
+ el.style.height = el.scrollHeight + 'px';
+}
+
+function escHtml(s) {
+ return String(s)
+ .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+ .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// apiPut helper (if not in admin.js)
+async function apiPut(url, body) {
+ try {
+ const admin = JSON.parse(sessionStorage.getItem('admin') || '{}');
+ const res = await fetch(url, {
+ method: 'PUT',
+ headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${admin.token || ''}` },
+ body: JSON.stringify(body)
+ });
+ return await res.json();
+ } catch(e) { return { success: false, message: e.message }; }
+}
+
+// ── Keyboard shortcuts ────────────────────────────────────────
+document.addEventListener('keydown', e => {
+ // Ctrl+Enter anywhere on the page = save question
+ if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+ e.preventDefault();
+ addQuestion();
+ }
+ // 1/2/3/4 keys while question textarea is focused = pick answer
+ if (document.activeElement?.id === 'question') return;
+ if (['1','2','3','4'].includes(e.key) && !e.ctrlKey && !e.metaKey) {
+ const map = { '1':'A','2':'B','3':'C','4':'D' };
+ selectAnswer(map[e.key]);
+ }
+});
+
+// ── Init ──────────────────────────────────────────────────────
+loadExams();
+// Do NOT pre-select any answer — admin must explicitly click the correct option
+document.getElementById('answerHint').innerHTML =
+ ' <strong>You must click a letter (A/B/C/D) to mark the correct answer before saving</strong>';
+</script>
+<script src="js/ai-assistant.js" defer></script>
+<script src="/pwa.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+</body>
+</html>

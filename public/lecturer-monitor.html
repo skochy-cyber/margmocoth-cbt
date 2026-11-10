@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="manifest" href="/manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MARGMOCOTH CBT">
+<meta name="theme-color" content="#2e3192">
+<link rel="apple-touch-icon" href="/icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monitoring Hub – MARGMOCOTH CBT</title>
+<link rel="stylesheet" href="css/style.css">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+
+/* ── BASE ── */
+body { background:#f1f2fa; font-family:'DM Sans',system-ui,sans-serif; }
+
+/* ── TOP STAT BAR ── */
+.stat-strip {
+ display:grid;
+ grid-template-columns:repeat(2,1fr);
+ gap:12px;
+ padding:16px;
+ background:#fff;
+ border-bottom:1px solid #e6e8f3;
+}
+@media(min-width:640px){ .stat-strip{grid-template-columns:repeat(4,1fr);padding:16px 24px;} }
+@media(min-width:900px){ .stat-strip{grid-template-columns:repeat(6,1fr);} }
+.stat-pill {
+ background:#f6f7fc;
+ border:1px solid #e6e8f3;
+ border-radius:12px;
+ padding:12px 14px;
+ display:flex;flex-direction:column;gap:2px;
+}
+.stat-pill .num {
+ font-size:22px;font-weight:800;line-height:1;
+ color:#0f6b30;
+}
+.stat-pill.red .num { color:#dc2626; }
+.stat-pill.amber .num { color:#d97706; }
+.stat-pill.blue .num { color:#2e3192; }
+.stat-pill.purple .num { color:#7c3aed; }
+.stat-pill .lbl { font-size:10px;font-weight:600;color:#8e92b3;text-transform:uppercase;letter-spacing:.4px; }
+
+/* ── TABS ── */
+.tab-nav {
+ display:flex;
+ border-bottom:2px solid #e6e8f3;
+ background:#fff;
+ overflow-x:auto;
+ -webkit-overflow-scrolling:touch;
+ gap:0;
+ position:sticky;top:60px;z-index:50;
+}
+.tab-btn {
+ flex-shrink:0;
+ padding:14px 20px;
+ font-size:13px;font-weight:700;
+ color:#5b5f80;background:none;border:none;cursor:pointer;
+ border-bottom:2.5px solid transparent;
+ margin-bottom:-2px;
+ transition:all .15s;
+ display:flex;align-items:center;gap:6px;
+ white-space:nowrap;
+}
+.tab-btn:hover{ color:#0f6b30; }
+.tab-btn.active{ color:#0f6b30;border-bottom-color:#0f6b30; }
+.tab-badge{
+ background:#fee2e2;color:#dc2626;
+ font-size:10px;font-weight:800;
+ padding:1px 6px;border-radius:99px;
+}
+.tab-badge.green{background:#dcfce7;color:#166534;}
+.tab-badge.blue{background:#f0f1ff;color:#2e3192;}
+
+/* ── PANEL ── */
+.tab-panel{ display:none; }
+.tab-panel.active{ display:block; }
+.panel-wrap{ max-width:1300px;margin:0 auto;padding:18px 14px 80px; }
+@media(min-width:640px){ .panel-wrap{padding:20px 20px 80px;} }
+
+/* ── CONTROLS BAR ── */
+.ctrl-bar{
+ display:flex;flex-wrap:wrap;align-items:center;
+ gap:10px;margin-bottom:16px;
+}
+.ctrl-bar input,.ctrl-bar select{
+ padding:9px 12px;border-radius:9px;border:1px solid #e6e8f3;
+ font-size:13px;background:#fff;color:#1b1e45;outline:none;
+ font-family:'DM Sans',sans-serif;
+}
+.ctrl-bar input:focus,.ctrl-bar select:focus{ border-color:#0f6b30; }
+.ctrl-bar .spacer{ flex:1; }
+.btn-sm{
+ padding:8px 14px;border-radius:9px;font-size:12px;font-weight:700;
+ border:none;cursor:pointer;transition:all .15s;
+}
+.btn-green{ background:#0f6b30;color:#fff; }
+.btn-green:hover{ background:#0d5926; }
+.btn-ghost{ background:#f1f2fa;color:#4a4e73;border:1px solid #e6e8f3; }
+.btn-ghost:hover{ background:#e6e8f3; }
+.btn-red{ background:#fee2e2;color:#dc2626; }
+.btn-red:hover{ background:#fecaca; }
+
+/* ── LIVE TABLE ── */
+.table-wrap{
+ background:#fff;border-radius:14px;
+ overflow:hidden;border:1px solid #e6e8f3;
+ overflow-x:auto;
+}
+table{ width:100%;border-collapse:collapse;min-width:700px; }
+thead th{
+ background:#f6f7fc;padding:11px 14px;
+ text-align:left;font-size:10px;font-weight:800;
+ color:#5b5f80;text-transform:uppercase;letter-spacing:.4px;
+ border-bottom:1px solid #e6e8f3;white-space:nowrap;
+}
+tbody tr{ border-bottom:1px solid #f1f2fa;transition:background .1s; }
+tbody tr:last-child{ border-bottom:none; }
+tbody tr:hover{ background:#f6f7fc; }
+tbody tr.row-critical{ background:#fff5f5; }
+tbody tr.row-critical:hover{ background:#fee2e2; }
+tbody td{ padding:12px 14px;font-size:13px;color:#1b1e45;vertical-align:middle; }
+
+.badge{
+ display:inline-flex;align-items:center;
+ padding:3px 9px;border-radius:99px;
+ font-size:11px;font-weight:800;white-space:nowrap;
+}
+.badge-green  { background:#dcfce7;color:#166534; }
+.badge-amber  { background:#fff7ed;color:#9a3412; }
+.badge-red  { background:#fee2e2;color:#991b1b; }
+.badge-blue  { background:#f0f1ff;color:#2e3192; }
+.badge-purple { background:#f5f3ff;color:#5b21b6; }
+.badge-grey  { background:#f1f2fa;color:#4a4e73; }
+
+/* violation sub pills */
+.sub-pill{
+ display:inline-flex;align-items:center;gap:3px;
+ padding:2px 7px;border-radius:6px;
+ font-size:10px;font-weight:700;white-space:nowrap;margin:1px;
+}
+.sub-tab_switch  { background:#fef3c7;color:#92400e;border:1px solid #fcd34d; }
+.sub-focus_loss  { background:#ede9fe;color:#5b21b6;border:1px solid #c4b5fd; }
+.sub-duplicate_ip  { background:#fee2e2;color:#991b1b;border:1px solid #fca5a5; }
+.sub-fullscreen_exit{ background:#f0fdf4;color:#166534;border:1px solid #86efac; }
+.sub-face  { background:#fff7ed;color:#9a3412;border:1px solid #fdba74; }
+.sub-voice  { background:#fdf4ff;color:#7e22ce;border:1px solid #e9d5ff; }
+.sub-other  { background:#f1f2fa;color:#4a4e73;border:1px solid #cdd0e6; }
+
+/* time progress bar */
+.tbar{ height:5px;background:#e6e8f3;border-radius:99px;overflow:hidden;margin-top:4px; }
+.tbar-fill{ height:100%;border-radius:99px;transition:width .5s; }
+
+/* ── VIOLATIONS TABLE ── */
+.viol-expand{
+ background:#f6f7fc;border-left:3px solid #e6e8f3;
+ padding:12px 14px;font-size:12px;color:#4a4e73;
+ display:none;
+}
+.viol-expand.show{ display:block; }
+.snapshot-thumb{
+ width:56px;height:56px;border-radius:8px;
+ object-fit:cover;border:2px solid #e6e8f3;
+ cursor:pointer;transition:transform .15s;
+ vertical-align:middle;
+}
+.snapshot-thumb:hover{ transform:scale(1.06); }
+.no-snap{ font-size:20px; }
+
+/* ── FACE CAPTURES ── */
+.captures-grid{
+ display:grid;
+ grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
+ gap:14px;
+}
+@media(min-width:640px){ .captures-grid{grid-template-columns:repeat(auto-fill,minmax(200px,1fr));} }
+.capture-card{
+ background:#fff;border-radius:14px;
+ border:1px solid #e6e8f3;overflow:hidden;
+ transition:box-shadow .15s,transform .15s;
+}
+.capture-card:hover{ box-shadow:0 8px 24px rgba(0,0,0,.1);transform:translateY(-2px); }
+.capture-img-wrap{
+ position:relative;height:180px;background:#f1f2fa;
+ cursor:pointer;overflow:hidden;
+}
+.capture-img-wrap img{
+ width:100%;height:100%;object-fit:cover;
+ transition:transform .2s;
+}
+.capture-card:hover .capture-img-wrap img{ transform:scale(1.04); }
+.capture-overlay{
+ position:absolute;inset:0;
+ background:rgba(0,0,0,0);
+ display:flex;align-items:center;justify-content:center;
+ transition:background .2s;
+}
+.capture-card:hover .capture-overlay{ background:rgba(0,0,0,.25); }
+.capture-overlay span{ color:#fff;font-size:28px;opacity:0;transition:opacity .2s; }
+.capture-card:hover .capture-overlay span{ opacity:1; }
+.capture-info{ padding:12px 14px; }
+.capture-name{ font-weight:700;font-size:13px;color:#1b1e45;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+.capture-matric{ font-size:11px;color:#5b5f80;font-family:'DM Mono',monospace; }
+.capture-exam{ font-size:11px;color:#8e92b3;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+.capture-time{ font-size:10px;color:#cdd0e6;margin-top:2px; }
+.capture-actions{ display:flex;gap:8px;margin-top:10px; }
+.btn-view-cap{
+ flex:1;padding:6px;border-radius:7px;
+ background:#f0fdf4;color:#0f6b30;
+ border:1px solid #86efac;font-size:11px;font-weight:700;
+ cursor:pointer;transition:all .15s;text-align:center;
+}
+.btn-view-cap:hover{ background:#dcfce7; }
+.btn-del-cap{
+ padding:6px 10px;border-radius:7px;
+ background:#fff5f5;color:#dc2626;
+ border:1px solid #fca5a5;font-size:12px;
+ cursor:pointer;transition:all .15s;
+}
+.btn-del-cap:hover{ background:#fee2e2; }
+
+/* ── LIGHTBOX ── */
+#lightbox{
+ position:fixed;inset:0;z-index:9999;
+ background:rgba(0,0,0,.9);backdrop-filter:blur(8px);
+ display:none;flex-direction:column;
+ align-items:center;justify-content:center;
+ padding:20px;gap:16px;
+}
+#lightbox.show{ display:flex; }
+#lbImg{
+ max-width:min(600px,90vw);
+ max-height:70vh;
+ border-radius:16px;
+ object-fit:contain;
+ border:2px solid rgba(255,255,255,.2);
+}
+.lb-info{ text-align:center;color:#fff; }
+.lb-name{ font-size:18px;font-weight:800; }
+.lb-meta{ font-size:13px;color:#8e92b3;margin-top:4px; }
+.lb-close{
+ position:absolute;top:20px;right:20px;
+ background:rgba(255,255,255,.1);border:none;
+ color:#fff;font-size:20px;width:40px;height:40px;
+ border-radius:50%;cursor:pointer;
+}
+.lb-close:hover{ background:rgba(255,255,255,.25); }
+
+/* ── EMPTY / LOADING ── */
+.empty-state{
+ text-align:center;padding:56px 16px;color:#8e92b3;
+}
+.empty-state .ei{ font-size:44px;margin-bottom:12px; }
+.empty-state p{ font-size:14px; }
+.loading-shimmer{
+ background:linear-gradient(90deg,#f1f2fa 25%,#e6e8f3 50%,#f1f2fa 75%);
+ background-size:200% 100%;animation:shimmer 1.4s infinite;
+ border-radius:8px;height:14px;
+}
+@keyframes shimmer{ from{background-position:200% 0} to{background-position:-200% 0} }
+
+/* ── PULSE DOT ── */
+.pulse-dot{
+ display:inline-block;width:8px;height:8px;border-radius:50%;
+ background:#22c55e;animation:pdot 1.5s infinite;margin-right:5px;
+}
+@keyframes pdot{ 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(1.4)} }
+
+/* ── AUTO REFRESH COUNTDOWN ── */
+.refresh-label{
+ font-size:11px;color:#8e92b3;font-weight:500;
+}
+
+/* ── VIOLATION ROW ── */
+.vr-name{ font-weight:700; }
+.vr-matric{ font-size:11px;color:#5b5f80;font-family:'DM Mono',monospace; }
+.snap-list{ display:flex;gap:6px;flex-wrap:wrap;margin-top:6px; }
+
+/* mobile-friendly viol table cells */
+@media(max-width:639px){
+ table{ min-width:560px; }
+ .hide-mobile{ display:none; }
+}
+</style>
+</head>
+<body>
+
+<div id="sidebarContainer"></div>
+<div id="topbarContainer"></div>
+<div id="alertBox" style="padding:0 16px;"></div>
+
+<!-- STAT STRIP -->
+<div class="stat-strip">
+ <div class="stat-pill"><span class="num" id="sActive">—</span><span class="lbl">Active Now</span></div>
+ <div class="stat-pill red"><span class="num" id="sCritical">—</span><span class="lbl">Critical (≥3 viols)</span></div>
+ <div class="stat-pill amber"><span class="num" id="sViolToday">—</span><span class="lbl">Violations Today</span></div>
+ <div class="stat-pill"><span class="num" id="sExams">—</span><span class="lbl">Exams Running</span></div>
+ <div class="stat-pill blue"><span class="num" id="sCaptures">—</span><span class="lbl">Face Captures</span></div>
+ <div class="stat-pill purple"><span class="num" id="sStudents">—</span><span class="lbl">Students Monitored</span></div>
+</div>
+
+<!-- TABS -->
+<div class="tab-nav">
+ <button class="tab-btn active" onclick="switchTab('live',this)">
+ <span class="pulse-dot"></span>Live Exam
+ <span class="tab-badge green" id="tbActive">0</span>
+ </button>
+ <button class="tab-btn" onclick="switchTab('violations',this)">
+ Violations
+ <span class="tab-badge" id="tbViol">0</span>
+ </button>
+ <button class="tab-btn" onclick="switchTab('captures',this)">
+ Face Captures
+ <span class="tab-badge blue" id="tbCap">0</span>
+ </button>
+</div>
+
+<!-- ═══════════════ LIVE EXAM PANEL ═══════════════ -->
+<div class="tab-panel active" id="panel-live">
+ <div class="panel-wrap">
+
+ <div class="ctrl-bar">
+ <span class="pulse-dot"></span>
+ <span style="font-size:13px;font-weight:700;color:#1b1e45;">Live Sessions</span>
+ <div class="spacer"></div>
+ <span class="refresh-label" id="autoLabel"></span>
+ <select id="autoInterval" onchange="setupAutoRefresh()" class="btn-sm" style="font-weight:600;">
+ <option value="0">Auto-refresh: Off</option>
+ <option value="10000">Every 10s</option>
+ <option value="15000" selected>Every 15s</option>
+ <option value="30000">Every 30s</option>
+ </select>
+ <button class="btn-sm btn-green" onclick="loadAll()">Refresh</button>
+ </div>
+
+ <div class="table-wrap">
+ <table>
+ <thead>
+ <tr>
+ <th>Student</th>
+ <th>Exam</th>
+ <th>Time Left</th>
+ <th>Progress</th>
+ <th>Violations</th>
+ <th class="hide-mobile">Last Violation</th>
+ </tr>
+ </thead>
+ <tbody id="liveTbody">
+ <tr><td colspan="6"><div class="empty-state"><div class="ei"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2m6-2a10 10 0 11-20 0 10 10 0 0120 0z"/></svg></div><p>Loading sessions…</p></div></td></tr>
+ </tbody>
+ </table>
+ </div>
+
+ <!-- Concurrent logins -->
+ <div style="margin-top:24px;">
+ <div style="font-size:13px;font-weight:800;color:#1b1e45;margin-bottom:12px;">Suspicious Concurrent Logins</div>
+ <div id="concurrentList">
+ <div style="color:#8e92b3;font-size:13px;">Loading…</div>
+ </div>
+ </div>
+
+ </div>
+</div>
+
+<!-- ═══════════════ VIOLATIONS PANEL ═══════════════ -->
+<div class="tab-panel" id="panel-violations">
+ <div class="panel-wrap">
+
+ <div class="ctrl-bar">
+ <input type="text" id="vSearch" placeholder=" Search name / matric…" oninput="filterViolations()" style="width:200px;">
+ <select id="vSubType" onchange="filterViolations()">
+ <option value="all">All Types</option>
+ <option value="tab_switch">Tab Switch</option>
+ <option value="focus_loss">Focus Loss</option>
+ <option value="fullscreen_exit">Fullscreen Exit</option>
+ <option value="face">No Face / Multi-face</option>
+ <option value="voice">Voice Detected</option>
+ <option value="duplicate_ip">Duplicate IP</option>
+ </select>
+ <select id="vExam" onchange="filterViolations()">
+ <option value="all">All Exams</option>
+ </select>
+ <div class="spacer"></div>
+ <button class="btn-sm btn-green" onclick="loadViolations()">Refresh</button>
+ </div>
+
+ <div class="table-wrap">
+ <table>
+ <thead>
+ <tr>
+ <th>Student</th>
+ <th>Exam</th>
+ <th>Type</th>
+ <th>Snapshot</th>
+ <th class="hide-mobile">Time</th>
+ <th>Reason</th>
+ </tr>
+ </thead>
+ <tbody id="violTbody">
+ <tr><td colspan="6"><div class="empty-state"><div class="ei"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2m6-2a10 10 0 11-20 0 10 10 0 0120 0z"/></svg></div><p>Loading violations…</p></div></td></tr>
+ </tbody>
+ </table>
+ </div>
+
+ </div>
+</div>
+
+<!-- ═══════════════ FACE CAPTURES PANEL ═══════════════ -->
+<div class="tab-panel" id="panel-captures">
+ <div class="panel-wrap">
+
+ <div class="ctrl-bar">
+ <input type="text" id="capSearch" placeholder=" Search name / matric…" oninput="filterCaptures()" style="width:200px;">
+ <div class="spacer"></div>
+ <button class="btn-sm btn-ghost" onclick="cleanDuplicates()">Clean Duplicates</button>
+ <button class="btn-sm btn-green" onclick="loadCaptures()">Refresh</button>
+ </div>
+
+ <div id="capturesContainer">
+ <div class="empty-state"><div class="ei"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2m6-2a10 10 0 11-20 0 10 10 0 0120 0z"/></svg></div><p>Loading captures…</p></div>
+ </div>
+
+ </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div id="lightbox" onclick="closeLightbox(event)">
+ <button class="lb-close" onclick="hideLightbox()"></button>
+ <img id="lbImg" src="" alt="Face capture">
+ <div class="lb-info">
+ <div class="lb-name" id="lbName"></div>
+ <div class="lb-meta" id="lbDetails"></div>
+ </div>
+</div>
+
+<script src="js/admin.js"></script>
+<script>
+document.getElementById('sidebarContainer').innerHTML = getSidebarHTML('lecturer-monitor.html');
+document.getElementById('topbarContainer').innerHTML  = getTopbarHTML('Monitoring Hub');
+checkAdmin();
+// Lecturers always have access to their own monitoring hub; others need view_violations
+(function() {
+ const a = JSON.parse(sessionStorage.getItem('admin') || '{}');
+ if (a.role !== 'lecturer' && !hasPermission('view_violations')) {
+ window.location.href = 'admin-dashboard.html';
+ }
+})();
+
+const admin = JSON.parse(sessionStorage.getItem('admin') || '{}');
+const isLecturer = admin.role === 'lecturer';
+const lecturerId = admin.id;
+
+let allViolations = [];
+let filteredViol  = [];
+let allCaptures  = [];
+let refreshTimer  = null;
+
+const SUB_LABELS = {
+ tab_switch:  ' Tab Switch',
+ focus_loss:  ' Focus Loss',
+ duplicate_ip:  ' Dup. IP',
+ fullscreen_exit:  ' Fullscreen',
+ face:  ' Face',
+ voice:  ' Voice',
+ other:  ' Other'
+};
+
+// ── TABS ──────────────────────────────────────────────
+function switchTab(name, btn) {
+ document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+ document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+ btn.classList.add('active');
+ document.getElementById('panel-' + name).classList.add('active');
+}
+
+// ── LOAD ALL ──────────────────────────────────────────
+async function loadAll() {
+ await Promise.all([loadLive(), loadConcurrent(), loadViolations(), loadCaptures()]);
+}
+
+// ── LIVE SESSIONS ─────────────────────────────────────
+async function loadLive() {
+ const tbody = document.getElementById('liveTbody');
+ try {
+ const url  = isLecturer
+ ? `/api/admin/live-exams?lecturer_id=${lecturerId}`
+ : '/api/admin/live-exams';
+ const data = await apiGet(url);
+
+ const sessions = data.sessions || [];
+ document.getElementById('sActive').textContent  = sessions.length;
+ document.getElementById('sExams').textContent  = new Set(sessions.map(s => s.exam_title)).size;
+ document.getElementById('sCritical').textContent = sessions.filter(s => (s.violations||0) >= 3).length;
+ document.getElementById('tbActive').textContent  = sessions.length;
+
+ if (!sessions.length) {
+ tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="ei"></div><p>No active exam sessions right now.</p></div></td></tr>`;
+ return;
+ }
+
+ tbody.innerHTML = sessions.map(s => {
+ const elapsed = s.elapsed_min || 0;
+ const remain  = s.remaining_min || 0;
+ const total  = elapsed + remain || 1;
+ const pct  = Math.round((remain / total) * 100);
+ const fillClr = pct > 50 ? '#22c55e' : pct > 20 ? '#f59e0b' : '#ef4444';
+ const vCls  = s.violations === 0 ? 'badge-green' : s.violations < 3 ? 'badge-amber' : 'badge-red';
+ const critical= s.violations >= 3;
+ const lv  = s.last_violation;
+ const lvCell  = lv
+ ? `<span class="sub-pill sub-${lv.sub_type||'other'}">${SUB_LABELS[lv.sub_type||'other']||' Other'}</span>
+ <span style="font-size:10px;color:#8e92b3;margin-left:4px;">${timeAgo(lv.timestamp)}</span>`
+ : `<span style="color:#8e92b3;">—</span>`;
+
+ const recent = s.recent_violations || [];
+ const typeCounts = {};
+ recent.forEach(v => { typeCounts[v.sub_type] = (typeCounts[v.sub_type]||0)+1; });
+ const pills = Object.entries(typeCounts)
+ .map(([k,n]) => `<span class="sub-pill sub-${k}">${SUB_LABELS[k]||k} ×${n}</span>`)
+ .join('');
+
+ return `<tr class="${critical?'row-critical':''}">
+ <td>
+ <div class="vr-name">${esc(s.student_name)}${critical?' ':''}</div>
+ <div class="vr-matric">${esc(s.matric)}</div>
+ </td>
+ <td style="font-size:12px;max-width:140px;">${esc(s.exam_title)}</td>
+ <td style="font-weight:700;color:${pct<20?'#ef4444':'#1b1e45'};">
+ ${remain}m
+ <div class="tbar"><div class="tbar-fill" style="width:${pct}%;background:${fillClr};"></div></div>
+ </td>
+ <td style="font-size:12px;">${s.answered} answered</td>
+ <td>
+ <span class="badge ${vCls}">${s.violations} viol${s.violations!==1?'s':''}</span>
+ ${pills?`<div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:2px;">${pills}</div>`:''}
+ </td>
+ <td class="hide-mobile">${lvCell}</td>
+ </tr>`;
+ }).join('');
+ } catch(e) {
+ tbody.innerHTML = `<tr><td colspan="6" style="padding:20px;color:#dc2626;">Error: ${e.message}</td></tr>`;
+ }
+}
+
+async function loadConcurrent() {
+ const el = document.getElementById('concurrentList');
+ try {
+ const data = await apiGet('/api/admin/concurrent-logins');
+ if (!data.success || !(data.suspicious||[]).length) {
+ el.innerHTML = `<div style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:14px 18px;font-size:13px;color:#166534;font-weight:600;">No suspicious concurrent logins in the last hour.</div>`;
+ return;
+ }
+ el.innerHTML = data.suspicious.map(s => `
+ <div style="background:#fff;border:1.5px solid #fca5a5;border-radius:12px;padding:14px 18px;margin-bottom:10px;display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap;">
+ <div style="font-size:28px;"></div>
+ <div style="flex:1;min-width:0;">
+ <div style="font-weight:700;font-size:13px;">${esc(s.name)} <span style="font-weight:400;color:#5b5f80;">(${esc(s.matric)})</span></div>
+ <div style="font-size:12px;color:#5b5f80;margin-top:3px;">Logged in from <strong>${s.ip_count} different IP addresses</strong> in the last hour</div>
+ </div>
+ <span class="badge badge-red"> ${s.ip_count} IPs</span>
+ </div>
+ `).join('');
+ } catch(e) {
+ el.innerHTML = `<div style="color:#dc2626;font-size:13px;">Error: ${e.message}</div>`;
+ }
+}
+
+function setupAutoRefresh() {
+ clearInterval(refreshTimer);
+ const ms = parseInt(document.getElementById('autoInterval').value);
+ if (ms > 0) {
+ refreshTimer = setInterval(() => loadLive(), ms);
+ document.getElementById('autoLabel').textContent = 'Auto-refreshing…';
+ } else {
+ document.getElementById('autoLabel').textContent = '';
+ }
+}
+
+// ── VIOLATIONS ────────────────────────────────────────
+async function loadViolations() {
+ const tbody = document.getElementById('violTbody');
+ tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="ei"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2m6-2a10 10 0 11-20 0 10 10 0 0120 0z"/></svg></div><p>Loading…</p></div></td></tr>`;
+ try {
+ const url  = isLecturer
+ ? `/api/admin/violations?lecturer_id=${lecturerId}`
+ : '/api/admin/violations';
+ allViolations = await apiGet(url);
+ if (!Array.isArray(allViolations)) allViolations = allViolations.violations || [];
+
+ // Populate exam filter
+ const examSel = document.getElementById('vExam');
+ const exams  = [...new Set(allViolations.map(v => v.exam_title||'Unknown').filter(Boolean))];
+ examSel.innerHTML = '<option value="all">All Exams</option>' +
+ exams.map(e => `<option value="${esc(e)}">${esc(e)}</option>`).join('');
+
+ // Count today's violations
+ const today = new Date().toDateString();
+ const todayCount = allViolations.filter(v => new Date(v.created_at||v.timestamp).toDateString()===today).length;
+ document.getElementById('sViolToday').textContent = todayCount;
+ document.getElementById('tbViol').textContent = allViolations.length;
+
+ filterViolations();
+ } catch(e) {
+ tbody.innerHTML = `<tr><td colspan="6" style="padding:20px;color:#dc2626;">Error: ${e.message}</td></tr>`;
+ }
+}
+
+function filterViolations() {
+ const q  = document.getElementById('vSearch').value.toLowerCase().trim();
+ const sub  = document.getElementById('vSubType').value;
+ const examId = document.getElementById('vExam').value;
+
+ filteredViol = allViolations.filter(v => {
+ if (q && !(v.student_name||'').toLowerCase().includes(q) && !(v.matric||'').toLowerCase().includes(q)) return false;
+ if (sub !== 'all' && (v.sub_type||v.violation_type) !== sub) return false;
+ if (examId !== 'all' && (v.exam_title||'') !== examId) return false;
+ return true;
+ });
+
+ renderViolations(filteredViol);
+}
+
+function renderViolations(list) {
+ const tbody = document.getElementById('violTbody');
+ if (!list.length) {
+ tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="ei"></div><p>No violations match your filters.</p></div></td></tr>`;
+ return;
+ }
+
+ tbody.innerHTML = list.map((v, i) => {
+ const sub  = v.sub_type || v.violation_type || 'other';
+ const subLabel = SUB_LABELS[sub] || (' ' + sub);
+ const subCls  = 'sub-pill sub-' + sub;
+ const snap  = v.snapshot_url
+ ? `<img class="snapshot-thumb" src="${esc(v.snapshot_url)}" alt="snap"
+ onclick="openLightbox('${esc(v.snapshot_url)}','${esc(v.student_name)}','${esc(v.matric)}','${esc(v.exam_title)}','${esc(formatDT(v.created_at||v.timestamp))}');">`
+ : `<span class="no-snap" title="No snapshot"></span>`;
+ const ts = formatDT(v.created_at || v.timestamp);
+
+ return `<tr>
+ <td>
+ <div class="vr-name">${esc(v.student_name||'Unknown')}</div>
+ <div class="vr-matric">${esc(v.matric||'—')}</div>
+ </td>
+ <td style="font-size:12px;max-width:130px;">${esc(v.exam_title||'—')}</td>
+ <td><span class="${subCls}">${subLabel}</span></td>
+ <td>${snap}</td>
+ <td class="hide-mobile" style="font-size:11px;color:#8e92b3;white-space:nowrap;">${ts}</td>
+ <td style="font-size:12px;color:#4a4e73;max-width:180px;">${esc(v.reason||'—')}</td>
+ </tr>`;
+ }).join('');
+}
+
+// ── FACE CAPTURES ─────────────────────────────────────
+async function loadCaptures() {
+ document.getElementById('capturesContainer').innerHTML = `<div class="empty-state"><div class="ei"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2m6-2a10 10 0 11-20 0 10 10 0 0120 0z"/></svg></div><p>Loading…</p></div>`;
+ try {
+ const url  = isLecturer
+ ? `/api/admin/face-captures?lecturer_id=${lecturerId}`
+ : '/api/admin/face-captures';
+ allCaptures = await apiGet(url);
+ if (!Array.isArray(allCaptures)) allCaptures = allCaptures.captures || [];
+
+ document.getElementById('sCaptures').textContent  = allCaptures.length;
+ document.getElementById('sStudents').textContent  = new Set(allCaptures.map(c => c.matric)).size;
+ document.getElementById('tbCap').textContent  = allCaptures.length;
+
+ filterCaptures();
+ } catch(e) {
+ document.getElementById('capturesContainer').innerHTML = `<div class="empty-state"><div class="ei"></div><p>Failed to load captures.</p></div>`;
+ }
+}
+
+function filterCaptures() {
+ const q = document.getElementById('capSearch').value.toLowerCase().trim();
+ const filtered = q
+ ? allCaptures.filter(c =>
+ (c.student_name||'').toLowerCase().includes(q) ||
+ (c.matric||'').toLowerCase().includes(q))
+ : allCaptures;
+ renderCaptures(filtered);
+}
+
+function renderCaptures(list) {
+ const container = document.getElementById('capturesContainer');
+ if (!list.length) {
+ container.innerHTML = `<div class="empty-state"><div class="ei"></div><p>No face captures found.</p></div>`;
+ return;
+ }
+ container.innerHTML = `<div class="captures-grid">` + list.map(c => `
+ <div class="capture-card" id="capcard-${c.id}">
+ <div class="capture-img-wrap"
+ onclick="openLightbox('${esc(c.cloudinary_url)}','${esc(c.student_name)}','${esc(c.matric)}','${esc(c.exam_title)}','${esc(formatDT(c.captured_at))}')">
+ <img src="${c.cloudinary_url||''}" alt="${esc(c.student_name)}"
+ onerror="this.src='data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\'><rect width=\'100%\' height=\'100%\' fill=\'%23f1f5f9\'/><text x=\'50%\' y=\'50%\' dominant-baseline=\'middle\' text-anchor=\'middle\' font-size=\'48\'></text></svg>'">
+ <div class="capture-overlay"><span></span></div>
+ </div>
+ <div class="capture-info">
+ <div class="capture-name">${esc(c.student_name||'Unknown')}</div>
+ <div class="capture-matric">${esc(c.matric||'—')}</div>
+ <div class="capture-exam">${esc(c.exam_title||'')}</div>
+ <div class="capture-time">${formatDT(c.captured_at)}</div>
+ <div class="capture-actions">
+ <button class="btn-view-cap"
+ onclick="openLightbox('${esc(c.cloudinary_url)}','${esc(c.student_name)}','${esc(c.matric)}','${esc(c.exam_title)}','${esc(formatDT(c.captured_at))}')">
+ View
+ </button>
+ <button class="btn-del-cap" onclick="deleteCapture('${c.id}',event)"></button>
+ </div>
+ </div>
+ </div>
+ `).join('') + `</div>`;
+}
+
+async function deleteCapture(id, e) {
+ e.stopPropagation();
+ if (!confirmDelete('Delete this face capture?')) return;
+ try {
+ const r = await apiDelete(`/api/admin/face-captures/${id}`);
+ if (r.success) {
+ allCaptures = allCaptures.filter(c => c.id !== id);
+ const card = document.getElementById(`capcard-${id}`);
+ if (card) card.remove();
+ document.getElementById('sCaptures').textContent = allCaptures.length;
+ showAlert('Face capture deleted.', 'success');
+ } else { showAlert(r.message || 'Delete failed.', 'danger'); }
+ } catch(e) { showAlert('Server error.', 'danger'); }
+}
+
+async function cleanDuplicates() {
+ if (!confirmDelete('Remove duplicate face captures? Keeps one per student per exam.')) return;
+ try {
+ const r = await apiDelete('/api/admin/face-captures/duplicates');
+ if (r.success) {
+ showAlert(` Cleaned ${r.deleted} duplicate(s). Reloading…`, 'success');
+ setTimeout(loadCaptures, 1500);
+ } else { showAlert(r.message || 'Clean failed.', 'danger'); }
+ } catch(e) { showAlert('Server error.', 'danger'); }
+}
+
+// ── LIGHTBOX ──────────────────────────────────────────
+function openLightbox(url, name, matric, exam, time) {
+ document.getElementById('lbImg').src  = url;
+ document.getElementById('lbName').textContent = name;
+ document.getElementById('lbDetails').textContent = `${matric} · ${exam} · ${time}`;
+ document.getElementById('lightbox').classList.add('show');
+}
+function closeLightbox(e) {
+ if (e.target === document.getElementById('lightbox')) hideLightbox();
+}
+function hideLightbox() {
+ document.getElementById('lightbox').classList.remove('show');
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') hideLightbox(); });
+
+// ── UTILS ─────────────────────────────────────────────
+function timeAgo(ts) {
+ if (!ts) return '';
+ const s = Math.round((Date.now() - new Date(ts)) / 1000);
+ if (s < 60)  return s + 's ago';
+ if (s < 3600) return Math.round(s/60) + 'm ago';
+ return Math.round(s/3600) + 'h ago';
+}
+function formatDT(d) {
+ if (!d) return '—';
+ return new Date(d).toLocaleString('en-NG',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+function esc(s) {
+ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;').replace(/"/g,'&quot;');
+}
+
+// ── INIT ──────────────────────────────────────────────
+loadAll();
+setupAutoRefresh();
+</script>
+<script src="js/ai-assistant.js" defer></script>
+<script src="/pwa.js"></script>
+</body>
+</html>

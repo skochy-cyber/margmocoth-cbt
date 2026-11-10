@@ -1,0 +1,1632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="manifest" href="/manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MARGMOCOTH CBT">
+<meta name="theme-color" content="#2e3192">
+<link rel="apple-touch-icon" href="/icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Dashboard — MARGMOCOTH CBT</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:        #14163f;
+  --navy-2:      #1a1c52;
+  --navy-3:      #24277a;
+  --blue:        #2e3192;
+  --blue-2:      #9ea2f0;
+  --blue-light:  #f0f1ff;
+  --blue-mid:    #e0e2ff;
+  --surface:     #ffffff;
+  --bg:          #f6f7fc;
+  --border:      #e6e8f3;
+  --border-2:    #cdd0e6;
+  --text-1:      #0f1230;
+  --text-2:      #4a4e73;
+  --text-3:      #8e92b3;
+  --green:       #059669;
+  --green-light: #ecfdf5;
+  --amber:       #d97706;
+  --amber-light: #fffbeb;
+  --red:         #dc2626;
+  --red-light:   #fef2f2;
+  --r-xl: 18px;
+  --r-lg: 14px;
+  --r-md: 10px;
+  --r-sm: 7px;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04);
+  --shadow-md: 0 4px 14px rgba(0,0,0,.1), 0 2px 4px rgba(0,0,0,.06);
+  --shadow-blue: 0 6px 20px rgba(46,49,146,.35);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  padding-bottom: 60px;
+  color: var(--text-1);
+}
+
+/* ── TOPBAR ─────────────────────────────────────── */
+.topbar {
+  background: var(--navy);
+  padding: 0 16px;
+  height: 54px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 100;
+  border-bottom: 3px solid #d8232a;
+}
+.topbar-logo { display: flex; align-items: center; gap: 9px; }
+.topbar-logo img { width: 30px; height: 30px; border-radius: 8px; object-fit: cover; border: 1px solid rgba(255,255,255,.1); }
+.topbar-wordmark { line-height: 1; }
+.topbar-name {
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 17px; letter-spacing: 1.5px;
+  color: #fff; line-height: 1;
+}
+.topbar-sub {
+  font-family: 'Inter', sans-serif;
+  font-size: 9.5px; font-weight: 500;
+  color: rgba(255,255,255,.35);
+  letter-spacing: .8px; text-transform: uppercase; margin-top: 1px;
+}
+.topbar-actions { display: flex; align-items: center; gap: 7px; }
+.t-btn {
+  position: relative;
+  background: rgba(255,255,255,.07);
+  border: 1px solid rgba(255,255,255,.1);
+  color: rgba(255,255,255,.7); border-radius: 50%;
+  width: 34px; height: 34px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden; padding: 0; text-decoration: none;
+  font-family: 'Inter', sans-serif;
+  font-size: 11px; font-weight: 700;
+  transition: border-color .2s, background .2s;
+}
+.t-btn img { width: 34px; height: 34px; object-fit: cover; border-radius: 50%; display: block; }
+.t-btn:hover { border-color: var(--blue-2); background: rgba(68,72,184,.15); }
+.bell-badge {
+  position: absolute; top: -2px; right: -2px;
+  background: var(--blue-2); color: #fff;
+  font-size: 8px; font-weight: 700;
+  min-width: 14px; height: 14px;
+  border-radius: 999px; padding: 0 3px;
+  display: none; align-items: center; justify-content: center;
+  border: 2px solid var(--navy);
+  font-family: 'Inter', sans-serif;
+}
+.t-logout {
+  background: rgba(46,49,146,.18);
+  border: 1px solid rgba(68,72,184,.3);
+  color: var(--blue-2); border-radius: var(--r-sm);
+  padding: 6px 12px; font-size: 11.5px; font-weight: 700;
+  cursor: pointer; font-family: 'Inter', sans-serif;
+  letter-spacing: .3px; transition: all .2s;
+}
+.t-logout:hover { background: rgba(46,49,146,.32); }
+
+/* ── HAMBURGER ──────────────────────────────────── */
+.hamburger-btn {
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 10px;
+  width: 34px; height: 34px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 4.5px;
+  cursor: pointer; padding: 0; flex-shrink: 0;
+}
+.hamburger-btn span {
+  display: block; width: 16px; height: 1.8px;
+  background: rgba(255,255,255,.8); border-radius: 2px;
+  transition: transform .25s, opacity .25s, width .25s;
+}
+.hamburger-btn.open span:nth-child(1) { transform: translateY(6.3px) rotate(45deg); }
+.hamburger-btn.open span:nth-child(2) { opacity: 0; width: 0; }
+.hamburger-btn.open span:nth-child(3) { transform: translateY(-6.3px) rotate(-45deg); }
+
+/* ── NAV DRAWER ─────────────────────────────────── */
+.nav-overlay {
+  display: none; position: fixed; inset: 0; z-index: 300;
+  background: rgba(20,22,63,.65); backdrop-filter: blur(6px);
+}
+.nav-overlay.open { display: block; animation: navFadeIn .2s ease; }
+@keyframes navFadeIn { from { opacity: 0 } to { opacity: 1 } }
+
+.nav-drawer {
+  position: fixed; top: 0; left: 0; bottom: 0;
+  width: 270px; background: var(--navy);
+  z-index: 301; display: flex; flex-direction: column;
+  transform: translateX(-100%);
+  transition: transform .28s cubic-bezier(.22,1,.36,1);
+  border-right: 1px solid rgba(255,255,255,.07);
+}
+.nav-overlay.open .nav-drawer { transform: translateX(0); }
+
+.nav-head {
+  padding: 56px 20px 20px;
+  border-bottom: 1px solid rgba(255,255,255,.07);
+  background: linear-gradient(160deg, var(--navy-3) 0%, var(--navy) 100%);
+}
+.nav-avatar {
+  width: 58px; height: 58px; border-radius: 50%;
+  background: var(--blue);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 22px; letter-spacing: 1px; color: #fff;
+  margin-bottom: 12px; overflow: hidden;
+  border: 2px solid rgba(255,255,255,.15);
+  box-shadow: 0 4px 14px rgba(46,49,146,.4);
+}
+.nav-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.nav-student-name {
+  font-size: 14.5px; font-weight: 700; color: #fff;
+  letter-spacing: -.2px; margin-bottom: 3px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.nav-student-matric {
+  font-size: 11px; color: rgba(255,255,255,.4);
+  font-family: 'DM Mono', monospace;
+}
+.nav-student-badge {
+  display: inline-block; margin-top: 8px;
+  background: rgba(46,49,146,.3); border: 1px solid rgba(68,72,184,.4);
+  color: var(--blue-2); border-radius: 999px;
+  font-size: 10px; font-weight: 700;
+  padding: 3px 9px; letter-spacing: .3px;
+}
+.nav-body { flex: 1; overflow-y: auto; padding: 10px 0; }
+.nav-section-label {
+  font-size: 9px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1.4px; color: rgba(255,255,255,.25);
+  padding: 14px 20px 6px;
+}
+.nav-item {
+  display: flex; align-items: center; gap: 13px;
+  padding: 12px 20px; cursor: pointer;
+  text-decoration: none; color: rgba(255,255,255,.7);
+  font-size: 13.5px; font-weight: 600;
+  transition: background .15s, color .15s;
+  border-left: 3px solid transparent;
+}
+.nav-item:hover { background: rgba(255,255,255,.05); color: #fff; }
+.nav-item.active {
+  background: rgba(46,49,146,.18);
+  color: var(--blue-2);
+  border-left-color: var(--blue-2);
+}
+.nav-item-icon {
+  width: 32px; height: 32px; border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; background: rgba(255,255,255,.07);
+}
+.nav-item.active .nav-item-icon { background: rgba(46,49,146,.3); }
+.nav-item-badge {
+  margin-left: auto; background: var(--red);
+  color: #fff; border-radius: 999px;
+  font-size: 9px; font-weight: 700;
+  padding: 2px 7px; min-width: 18px; text-align: center;
+}
+.nav-foot {
+  padding: 16px 20px;
+  border-top: 1px solid rgba(255,255,255,.07);
+}
+.nav-logout {
+  width: 100%; padding: 11px;
+  background: rgba(220,38,38,.15); border: 1px solid rgba(220,38,38,.25);
+  color: #fca5a5; border-radius: var(--r-md);
+  font-family: 'Inter', sans-serif;
+  font-size: 13px; font-weight: 700;
+  cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: background .15s;
+}
+.nav-logout:hover { background: rgba(220,38,38,.25); }
+
+/* ── PAGE ───────────────────────────────────────── */
+.page { max-width: 680px; margin: 0 auto; padding: 14px 12px; }
+
+/* ── HERO ───────────────────────────────────────── */
+.hero {
+  background: var(--navy);
+  border-radius: var(--r-xl);
+  padding: 0;
+  margin-bottom: 14px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: var(--shadow-md);
+}
+/* grid texture overlay */
+.hero::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+  background-size: 32px 32px;
+  pointer-events: none; z-index: 0;
+}
+.hero-top {
+  padding: 20px 18px 16px;
+  position: relative; z-index: 1;
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+}
+.hero-label {
+  font-size: 10px; font-weight: 600;
+  color: rgba(255,255,255,.35);
+  letter-spacing: 1.2px; text-transform: uppercase; margin-bottom: 4px;
+}
+.hero-name {
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 34px; letter-spacing: 1px;
+  color: #fff; line-height: 1; margin-bottom: 12px;
+}
+.hero-avatar {
+  width: 50px; height: 50px; border-radius: 12px; flex-shrink: 0;
+  background: var(--blue);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 20px; letter-spacing: 1px; color: #fff;
+  box-shadow: var(--shadow-blue); overflow: hidden;
+  border: 2px solid rgba(255,255,255,.1);
+}
+.hero-chips {
+  display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 14px;
+  position: relative; z-index: 1;
+}
+.hero-chip {
+  display: inline-flex; align-items: center;
+  background: rgba(46,49,146,.25);
+  border: 1px solid rgba(68,72,184,.35);
+  border-radius: 999px; padding: 3px 10px;
+  font-size: 10.5px; font-weight: 600; color: var(--blue-2);
+  letter-spacing: .2px;
+}
+/* Blue accent bar at bottom of hero */
+.hero-bar {
+  background: linear-gradient(90deg, var(--blue) 0%, var(--blue-2) 60%, rgba(68,72,184,.4) 100%);
+  height: 3px; position: relative; z-index: 1;
+}
+.hero-meta {
+  padding: 12px 18px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: relative; z-index: 1;
+  border-top: 1px solid rgba(255,255,255,.05);
+}
+.hero-matric {
+  display: flex; align-items: center; gap: 8px;
+}
+.hero-matric-label {
+  font-size: 9px; font-weight: 600;
+  color: rgba(255,255,255,.3);
+  text-transform: uppercase; letter-spacing: 1px;
+}
+.hero-matric-val {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px; font-weight: 500;
+  color: rgba(255,255,255,.7);
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 5px; padding: 2px 8px;
+}
+.hero-last-login {
+  font-size: 10px; color: rgba(255,255,255,.25);
+  display: none; align-items: center; gap: 4px;
+}
+.hero-last-login strong { color: rgba(255,255,255,.45); }
+
+/* ── SECTION LABEL ──────────────────────────────── */
+.sec {
+  display: flex; align-items: center; gap: 8px;
+  margin: 20px 0 9px;
+  font-size: 10px; font-weight: 700;
+  color: var(--text-3); text-transform: uppercase; letter-spacing: 1.2px;
+}
+.sec::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── NOTICE CARDS ───────────────────────────────── */
+.notice-card {
+  border-radius: var(--r-lg); padding: 12px 14px;
+  margin-bottom: 8px; display: flex; gap: 11px; align-items: flex-start;
+  animation: riseIn .35s ease both;
+}
+.notice-card.info    { background: var(--blue-light); border: 1px solid var(--blue-mid); border-left: 3px solid var(--blue); }
+.notice-card.warning { background: var(--amber-light); border: 1px solid #fde68a; border-left: 3px solid var(--amber); }
+.notice-card.success { background: var(--green-light); border: 1px solid #a7f3d0; border-left: 3px solid var(--green); }
+.notice-icon { flex-shrink: 0; margin-top: 1px; }
+.notice-title { font-size: 13px; font-weight: 700; color: var(--text-1); margin-bottom: 2px; }
+.notice-text  { font-size: 12px; color: var(--text-2); line-height: 1.55; }
+.notice-time  { font-size: 10.5px; color: var(--text-3); margin-top: 4px; }
+
+/* ── EXAM CARDS ─────────────────────────────────── */
+.exam-card {
+  background: var(--surface);
+  border-radius: var(--r-xl);
+  padding: 15px 15px 13px;
+  margin-bottom: 10px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  animation: riseIn .35s ease both;
+  position: relative; overflow: hidden;
+}
+/* top accent line */
+.exam-card::before {
+  content: ''; position: absolute;
+  top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, var(--blue) 0%, var(--blue-2) 100%);
+}
+.exam-top { display: flex; align-items: flex-start; gap: 11px; margin-bottom: 10px; }
+.exam-icon {
+  width: 40px; height: 40px; border-radius: var(--r-md); flex-shrink: 0;
+  background: var(--blue-light);
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--blue-mid);
+}
+.exam-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 14.5px; font-weight: 700; color: var(--text-1);
+  margin-bottom: 2px; line-height: 1.3; letter-spacing: -.2px;
+}
+.exam-course { font-size: 11.5px; color: var(--text-2); font-weight: 500; }
+.exam-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
+.exam-tag {
+  display: inline-flex; align-items: center; gap: 3px;
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: var(--r-sm); padding: 3px 8px;
+  font-size: 10.5px; color: var(--text-2); font-weight: 600;
+}
+.exam-tag.retake { background: var(--amber-light); color: var(--amber); border-color: #fde68a; }
+.exam-instructions {
+  font-size: 12px; color: var(--text-2); background: var(--bg);
+  border-left: 2px solid var(--blue-mid);
+  padding: 8px 11px; border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  margin-bottom: 10px; line-height: 1.6;
+}
+
+/* Pay banner */
+
+.take-btn {
+  width: 100%; padding: 13px 16px; border: none;
+  border-radius: var(--r-md); cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  font-size: 13.5px; font-weight: 700; letter-spacing: .3px;
+  background: var(--blue); color: #fff;
+  box-shadow: var(--shadow-blue); transition: all .15s;
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+}
+.take-btn:active { transform: scale(.98); box-shadow: none; }
+.take-btn.retake-btn {
+  background: var(--navy-3);
+  box-shadow: 0 6px 20px rgba(26,37,64,.35);
+}
+.take-btn:disabled {
+  background: var(--border-2); color: var(--text-3);
+  box-shadow: none; cursor: not-allowed;
+}
+
+/* ── UPCOMING ────────────────────────────────────── */
+.upcoming-card {
+  background: var(--surface); border-radius: var(--r-lg);
+  padding: 12px 13px; margin-bottom: 8px;
+  border: 1px solid var(--border); box-shadow: var(--shadow-sm);
+  display: flex; align-items: center; gap: 12px;
+  animation: riseIn .35s ease both;
+}
+.cd-box {
+  flex-shrink: 0; text-align: center;
+  background: var(--blue-light);
+  border: 1px solid var(--blue-mid); border-radius: var(--r-md);
+  padding: 9px 12px; min-width: 60px;
+}
+.cd-val  {
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 22px; letter-spacing: 1px; color: var(--blue); line-height: 1;
+}
+.cd-unit { font-size: 9px; font-weight: 700; color: var(--blue); text-transform: uppercase; letter-spacing: .8px; margin-top: 2px; }
+.upcoming-info { flex: 1; min-width: 0; }
+.upcoming-title { font-size: 13.5px; font-weight: 700; color: var(--text-1); margin-bottom: 2px; }
+.upcoming-sub   { font-size: 11.5px; color: var(--text-2); }
+.upcoming-opens { font-size: 11px; color: var(--blue); font-weight: 700; margin-top: 3px; }
+.upcoming-card--live { border-color: #fde68a; background: linear-gradient(135deg,#fffbeb,#fff); animation: livePulse 1.2s ease-in-out infinite alternate; }
+.cd-box--live { background: #fef3c7; border-color: #f59e0b; }
+.cd-box--live .cd-val { color: #b45309; }
+.cd-box--live .cd-unit { color: #d97706; }
+@keyframes livePulse { from { box-shadow: 0 2px 8px rgba(245,158,11,.1); } to { box-shadow: 0 6px 20px rgba(245,158,11,.3); } }
+
+/* ── SUPPORT CARD ────────────────────────────────── */
+.support-card {
+  background: var(--navy);
+  border-radius: var(--r-xl); padding: 14px 16px;
+  display: flex; align-items: center; justify-content: space-between;
+  cursor: pointer; transition: opacity .15s;
+  box-shadow: var(--shadow-md); margin-bottom: 4px;
+  position: relative; overflow: hidden;
+}
+.support-card::before {
+  content: '';
+  position: absolute; top: 0; right: 0;
+  width: 120px; height: 120px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(46,49,146,.3) 0%, transparent 70%);
+  pointer-events: none;
+}
+.support-card:active { opacity: .85; }
+.support-left { display: flex; align-items: center; gap: 12px; z-index: 1; }
+.support-icon {
+  width: 38px; height: 38px; border-radius: var(--r-md);
+  background: rgba(68,72,184,.2);
+  border: 1px solid rgba(68,72,184,.3);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--blue-2); flex-shrink: 0;
+}
+.support-title { font-family: 'Inter', sans-serif; font-size: 13.5px; font-weight: 700; color: #fff; margin-bottom: 1px; }
+.support-sub   { font-size: 11px; color: rgba(255,255,255,.4); }
+.support-arrow { color: rgba(255,255,255,.25); z-index: 1; }
+
+/* ── CONTACT BTNS ────────────────────────────────── */
+.contact-btns { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.contact-btn {
+  flex: 1; min-width: 110px; padding: 10px 14px;
+  border-radius: var(--r-sm); font-family: 'Inter', sans-serif;
+  font-size: 12.5px; font-weight: 700; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  gap: 6px; text-decoration: none; border: none; transition: opacity .15s;
+}
+.contact-btn.email { background: var(--blue-light); color: var(--blue); border: 1.5px solid var(--blue-mid); }
+.contact-btn.phone { background: var(--green-light); color: var(--green); border: 1.5px solid #a7f3d0; }
+.contact-btn:active { opacity: .8; }
+
+/* ── ACTION CARDS ────────────────────────────────── */
+.action-card {
+  background: var(--surface); border-radius: var(--r-lg);
+  padding: 15px; border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm); margin-bottom: 10px;
+}
+.action-card p { font-size: 12.5px; color: var(--text-2); margin: 0 0 12px; line-height: 1.6; }
+.action-btn {
+  display: block; width: 100%; padding: 11px 18px;
+  border: none; border-radius: var(--r-md);
+  font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 700;
+  cursor: pointer; text-align: center; text-decoration: none;
+  transition: opacity .15s; letter-spacing: .2px;
+}
+.action-btn.brand  { background: var(--blue); color: #fff; box-shadow: var(--shadow-blue); }
+.action-btn.purple { background: var(--navy); color: #fff; box-shadow: var(--shadow-md); }
+.action-btn:active { opacity: .85; }
+
+
+/* ── EMPTY / SKELETON ────────────────────────────── */
+.empty-box {
+  text-align: center; padding: 34px 20px;
+  background: var(--surface); border-radius: var(--r-lg);
+  border: 1.5px dashed var(--border-2);
+}
+.empty-box svg { opacity: .25; margin-bottom: 10px; }
+.empty-box p { font-size: 13px; color: var(--text-3); line-height: 1.6; }
+.skel-card {
+  background: var(--surface); border-radius: var(--r-xl);
+  padding: 15px; margin-bottom: 10px;
+  border: 1px solid var(--border); overflow: hidden;
+}
+.skel-line {
+  height: 11px; border-radius: 5px; margin-bottom: 8px;
+  background: linear-gradient(90deg, #edf2f7 25%, #e6e8f3 50%, #edf2f7 75%);
+  background-size: 200% 100%; animation: shimmer 1.4s infinite;
+}
+@keyframes shimmer { from { background-position: 200% 0 } to { background-position: -200% 0 } }
+@keyframes riseIn  { from { opacity: 0; transform: translateY(10px) } to { opacity: 1; transform: none } }
+
+/* ── PULL-TO-REFRESH ─────────────────────────────── */
+.ptr-indicator {
+  position: fixed; top: 54px; left: 0; right: 0; z-index: 90;
+  display: flex; align-items: center; justify-content: center;
+  padding: 9px 16px;
+  background: linear-gradient(180deg, var(--bg), transparent);
+  transform: translateY(-100%); opacity: 0; pointer-events: none;
+}
+.ptr-indicator.pulling  { opacity: 1; }
+.ptr-indicator.spinning { opacity: 1; transform: translateY(0) !important; }
+.ptr-spinner {
+  width: 17px; height: 17px; border-radius: 50%;
+  border: 2px solid var(--border-2); border-top-color: var(--blue);
+  margin-right: 8px; flex-shrink: 0;
+}
+.ptr-indicator.spinning .ptr-spinner { animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.ptr-label { font-size: 11.5px; font-weight: 700; color: var(--blue); }
+
+/* ── FOOTER MARQUEE ──────────────────────────────── */
+.footer-marquee {
+  background: var(--navy-2); padding: 8px 0;
+  position: fixed; bottom: 0; left: 0; width: 100%;
+  z-index: 200; overflow: hidden;
+  border-top: 1px solid rgba(68,72,184,.2);
+}
+.marquee-track { display: inline-flex; white-space: nowrap; animation: ticker 30s linear infinite; }
+.marquee-track span {
+  font-family: 'Inter', sans-serif; font-size: 10.5px; font-weight: 600;
+  color: rgba(68,72,184,.6); letter-spacing: .4px; padding-right: 80px;
+}
+@keyframes ticker { from { transform: translateX(100vw) } to { transform: translateX(-100%) } }
+
+/* ── PROFILE SHEET ───────────────────────────────── */
+.sheet-overlay {
+  display: none; position: fixed; inset: 0; z-index: 1000;
+  background: rgba(20,22,63,.7); backdrop-filter: blur(8px);
+}
+.sheet-overlay.open { display: flex; align-items: flex-end; animation: fadeIn .2s ease; }
+@keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+.profile-sheet {
+  width: 100%; max-height: 92vh; overflow-y: auto;
+  background: var(--surface); border-radius: 22px 22px 0 0;
+  padding-bottom: max(env(safe-area-inset-bottom), 20px);
+  animation: slideUp .3s cubic-bezier(.22,1,.36,1);
+}
+@keyframes slideUp { from { transform: translateY(100%) } to { transform: none } }
+.sheet-handle { width: 30px; height: 3px; background: var(--border-2); border-radius: 2px; margin: 11px auto 0; }
+.sheet-head {
+  padding: 13px 18px 11px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+}
+.sheet-head h2 { font-size: 15px; font-weight: 700; color: var(--text-1); letter-spacing: -.2px; }
+.sheet-close {
+  background: var(--bg); border: 1px solid var(--border); border-radius: 50%;
+  width: 30px; height: 30px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; color: var(--text-2);
+}
+.profile-avatar-wrap {
+  text-align: center; padding: 22px 20px 16px;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(180deg, var(--bg) 0%, var(--surface) 100%);
+}
+.profile-avatar {
+  width: 76px; height: 76px; border-radius: 50%;
+  background: var(--blue);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 26px; letter-spacing: 1px; color: #fff;
+  margin: 0 auto 10px; box-shadow: var(--shadow-blue); overflow: hidden;
+}
+.profile-name   { font-size: 16px; font-weight: 700; color: var(--text-1); letter-spacing: -.2px; }
+.profile-matric { font-size: 12px; color: var(--text-2); font-family: 'DM Mono', monospace; margin-top: 3px; }
+.profile-info-section { padding: 13px 18px; border-bottom: 1px solid var(--border); }
+.profile-section-label {
+  font-size: 9px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1.3px; color: var(--text-3); margin-bottom: 9px;
+}
+.profile-info-row {
+  display: flex; align-items: center; gap: 11px;
+  padding: 8px 0; border-bottom: 1px solid var(--bg);
+}
+.profile-info-row:last-child { border-bottom: none; }
+.profile-info-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.pii-blue   { background: var(--blue-light); }
+.pii-purple { background: #f5f3ff; }
+.pii-green  { background: var(--green-light); }
+.pii-amber  { background: var(--amber-light); }
+.profile-info-label { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--text-3); }
+.profile-info-value { font-size: 13.5px; font-weight: 600; color: var(--text-1); margin-top: 1px; word-break: break-all; }
+.profile-info-value.empty { color: var(--border-2); font-weight: 400; font-style: italic; }
+
+/* Password */
+.pw-section { padding: 13px 18px 22px; }
+.pw-toggle-btn {
+  width: 100%; padding: 11px 13px;
+  background: var(--bg); border: 1.5px solid var(--border); border-radius: var(--r-md);
+  font-family: 'Inter', sans-serif; font-size: 13.5px; font-weight: 700; color: var(--text-1);
+  cursor: pointer; text-align: left;
+  display: flex; align-items: center; justify-content: space-between; transition: all .2s;
+}
+.pw-toggle-btn:hover { border-color: var(--blue); color: var(--blue); }
+.pw-form { margin-top: 12px; flex-direction: column; gap: 10px; display: none; }
+.pw-form.open { display: flex; }
+.pw-field-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .7px; color: var(--text-2); display: block; margin-bottom: 4px; }
+.pw-input-wrap { position: relative; }
+.pw-input {
+  width: 100%; padding: 10px 40px 10px 12px;
+  border: 1.5px solid var(--border); border-radius: var(--r-md);
+  font-family: 'Inter', sans-serif; font-size: 13.5px; color: var(--text-1);
+  background: var(--bg); transition: border-color .2s;
+}
+.pw-input:focus { outline: none; border-color: var(--blue); background: #fff; box-shadow: 0 0 0 3px rgba(46,49,146,.08); }
+.pw-eye { position: absolute; right: 9px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-3); padding: 4px; display: flex; align-items: center; }
+.pw-eye svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.pw-submit-btn {
+  width: 100%; padding: 11px; border: none; border-radius: var(--r-md);
+  background: var(--blue); color: #fff;
+  font-family: 'Inter', sans-serif; font-size: 13.5px; font-weight: 700;
+  cursor: pointer; transition: opacity .15s;
+}
+.pw-submit-btn:disabled { opacity: .55; cursor: not-allowed; }
+.pw-alert { padding: 9px 11px; border-radius: var(--r-sm); font-size: 12.5px; font-weight: 500; margin-bottom: 6px; }
+.pw-alert.ok  { background: var(--green-light); color: var(--green); border-left: 3px solid var(--green); }
+.pw-alert.err { background: var(--red-light); color: var(--red); border-left: 3px solid var(--red); }
+.bio-section { padding: 13px 18px 20px; border-top: 1px solid var(--border); }
+.bio-section-label { font-size: 10.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px; }
+.bio-status { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 11px; }
+.bio-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: var(--text-muted); }
+.bio-dot.active { background: var(--green); }
+.bio-btn { width: 100%; padding: 9px 14px; border-radius: var(--r-sm); font-size: 13px; font-weight: 600; border: none; cursor: pointer; transition: opacity .15s; }
+.bio-btn:disabled { opacity: .55; cursor: not-allowed; }
+.bio-btn.register { background: var(--accent); color: #fff; }
+.bio-btn.remove { background: var(--red-light); color: var(--red); }
+.bio-alert { padding: 9px 11px; border-radius: var(--r-sm); font-size: 12.5px; font-weight: 500; margin-top: 8px; display: none; }
+.bio-alert.ok  { background: var(--green-light); color: var(--green); border-left: 3px solid var(--green); display: block; }
+.bio-alert.err { background: var(--red-light); color: var(--red); border-left: 3px solid var(--red); display: block; }
+
+/* ── CHAT ────────────────────────────────────────── */
+.chat-bubble-wrap { display: flex; flex-direction: column; max-width: 82%; }
+.chat-bubble-wrap.student { align-self: flex-end; align-items: flex-end; }
+.chat-bubble-wrap.support,
+.chat-bubble-wrap.admin   { align-self: flex-start; align-items: flex-start; }
+.chat-bubble { padding: 9px 13px; border-radius: 16px; font-size: 13.5px; line-height: 1.45; word-break: break-word; }
+.chat-bubble-wrap.student .chat-bubble { background: var(--blue); color: #fff; border-bottom-right-radius: 4px; }
+.chat-bubble-wrap.support .chat-bubble { background: var(--surface); color: var(--text-1); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+.chat-bubble-wrap.admin .chat-bubble   { background: var(--green-light); color: #14532d; border: 1px solid #a7f3d0; border-bottom-left-radius: 4px; }
+.chat-meta   { font-size: 9.5px; color: var(--text-3); margin-top: 3px; padding: 0 3px; }
+.chat-sender { font-size: 10.5px; font-weight: 700; color: var(--text-2); margin-bottom: 3px; padding: 0 3px; }
+.chat-typing { display: flex; align-items: center; gap: 4px; padding: 9px 13px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; border-bottom-left-radius: 4px; width: fit-content; }
+.chat-typing span { width: 6px; height: 6px; background: var(--text-3); border-radius: 50%; animation: typingDot 1.2s infinite; }
+.chat-typing span:nth-child(2) { animation-delay: .2s; }
+.chat-typing span:nth-child(3) { animation-delay: .4s; }
+@keyframes typingDot { 0%,80%,100%{transform:scale(.8);opacity:.4} 40%{transform:scale(1.1);opacity:1} }
+.chat-welcome { text-align: center; padding: 22px 14px; color: var(--text-2); font-size: 13px; line-height: 1.6; }
+.chat-welcome strong { color: var(--text-1); }
+
+/* ── CONFIRM DIALOG ──────────────────────────────── */
+.confirm-overlay {
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(20,22,63,.6); backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px; opacity: 0; pointer-events: none; transition: opacity .2s;
+}
+.confirm-overlay.show { opacity: 1; pointer-events: all; }
+.confirm-box {
+  background: var(--surface); border-radius: 18px;
+  padding: 24px 20px 18px; width: 100%; max-width: 320px;
+  box-shadow: 0 24px 64px rgba(0,0,0,.25);
+  transform: scale(.94) translateY(12px);
+  transition: transform .25s cubic-bezier(.34,1.56,.64,1); text-align: center;
+}
+.confirm-overlay.show .confirm-box { transform: scale(1) translateY(0); }
+.confirm-icon-wrap { width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 13px; }
+.confirm-icon-wrap.warn   { background: var(--amber-light); color: var(--amber); }
+.confirm-icon-wrap.danger { background: var(--red-light); color: var(--red); }
+.confirm-icon-wrap.info   { background: var(--blue-light); color: var(--blue); }
+.confirm-icon-wrap svg { display: block; }
+.confirm-title { font-size: 15.5px; font-weight: 700; color: var(--text-1); margin-bottom: 6px; letter-spacing: -.2px; }
+.confirm-msg   { font-size: 13px; color: var(--text-2); line-height: 1.6; margin-bottom: 20px; }
+.confirm-actions { display: flex; gap: 8px; }
+.confirm-actions button {
+  flex: 1; padding: 10px 0; border-radius: 10px;
+  font-size: 13.5px; font-weight: 700; border: none; cursor: pointer; transition: opacity .15s;
+}
+.confirm-actions button:active { opacity: .8; }
+.confirm-btn-cancel { background: var(--bg); color: var(--text-1); border: 1px solid var(--border) !important; }
+.confirm-btn-ok        { color: #fff; }
+.confirm-btn-ok.warn   { background: var(--amber); }
+.confirm-btn-ok.danger { background: var(--red); }
+.confirm-btn-ok.info   { background: var(--blue); }
+
+@media (max-width: 400px) {
+  .hero-name { font-size: 28px; }
+  .page { padding: 12px 10px; }
+}
+</style>
+</head>
+<body>
+
+<!-- PULL-TO-REFRESH -->
+<div class="ptr-indicator" id="ptrIndicator">
+  <div class="ptr-spinner"></div>
+  <span class="ptr-label" id="ptrLabel">Pull to refresh</span>
+</div>
+
+<!-- PROFILE SHEET -->
+<div class="sheet-overlay" id="profileOverlay" onclick="overlayClose(event)">
+  <div class="profile-sheet" id="profileSheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-head">
+      <h2>My Profile</h2>
+      <button class="sheet-close" onclick="closeProfile()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="profile-avatar-wrap">
+      <div class="profile-avatar" id="profileAvatar">?</div>
+      <div class="profile-name" id="profileName">—</div>
+      <div class="profile-matric" id="profileMatricDisp">—</div>
+      <a href="student-capture.html" style="display:inline-block;margin-top:10px;padding:7px 16px;background:var(--blue);color:#fff;border-radius:999px;font-size:11.5px;font-weight:700;text-decoration:none;">Update Face Photo</a>
+    </div>
+    <div class="profile-info-section">
+      <div class="profile-section-label">Academic Details</div>
+      <div class="profile-info-row">
+        <div class="profile-info-icon pii-blue"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4448b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg></div>
+        <div><div class="profile-info-label">Department</div><div class="profile-info-value" id="profileDept">—</div></div>
+      </div>
+      <div class="profile-info-row">
+        <div class="profile-info-icon" style="background:#d1fae5;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>
+        <div><div class="profile-info-label">Sub-Department</div><div class="profile-info-value empty" id="profileSubDept">Not set</div></div>
+      </div>
+      <div class="profile-info-row">
+        <div class="profile-info-icon pii-purple"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
+        <div><div class="profile-info-label">Level</div><div class="profile-info-value" id="profileLevel">—</div></div>
+      </div>
+    </div>
+    <div class="profile-info-section">
+      <div class="profile-section-label">Contact</div>
+      <div class="profile-info-row">
+        <div class="profile-info-icon pii-green"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></div>
+        <div><div class="profile-info-label">Phone</div><div class="profile-info-value" id="profilePhone">—</div></div>
+      </div>
+      <div class="profile-info-row">
+        <div class="profile-info-icon pii-amber"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
+        <div><div class="profile-info-label">Email</div><div class="profile-info-value" id="profileEmail">—</div></div>
+      </div>
+    </div>
+    <div class="pw-section">
+      <div id="pwAlert"></div>
+      <button class="pw-toggle-btn" onclick="togglePwForm()">
+        <span>Change Password</span>
+        <svg id="pwToggleIcon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="transition:transform .2s;"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="pw-form" id="pwForm">
+        <div><label class="pw-field-label">Current Password</label><div class="pw-input-wrap"><input type="password" id="pwOld" class="pw-input" placeholder="Current password"><button type="button" class="pw-eye" onclick="togglePwEye('pwOld')"><svg viewBox="0 0 24 24"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg></button></div></div>
+        <div><label class="pw-field-label">New Password</label><div class="pw-input-wrap"><input type="password" id="pwNew" class="pw-input" placeholder="At least 6 characters"><button type="button" class="pw-eye" onclick="togglePwEye('pwNew')"><svg viewBox="0 0 24 24"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg></button></div></div>
+        <div><label class="pw-field-label">Confirm New Password</label><div class="pw-input-wrap"><input type="password" id="pwConfirm" class="pw-input" placeholder="Re-enter new password"><button type="button" class="pw-eye" onclick="togglePwEye('pwConfirm')"><svg viewBox="0 0 24 24"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg></button></div></div>
+        <button class="pw-submit-btn" id="pwSubmitBtn" onclick="doChangePassword()">Update Password</button>
+      </div>
+    </div>
+    <div class="bio-section" id="bioSection" style="display:none;">
+      <div class="bio-section-label">Fingerprint Login</div>
+      <div class="bio-status">
+        <span class="bio-dot" id="bioDot"></span>
+        <span id="bioStatusText">Checking...</span>
+      </div>
+      <button class="bio-btn register" id="bioRegisterBtn" onclick="doRegisterBiometric()" style="display:none;">Register Fingerprint</button>
+      <button class="bio-btn remove" id="bioRemoveBtn" onclick="doRemoveBiometric()" style="display:none;">Remove Fingerprint</button>
+      <div class="bio-alert" id="bioAlert"></div>
+    </div>
+  </div>
+</div>
+
+<!-- NAV OVERLAY + DRAWER -->
+<div class="nav-overlay" id="navOverlay" onclick="closeNavOverlay(event)">
+  <div class="nav-drawer" id="navDrawer">
+    <div class="nav-head">
+      <div class="nav-avatar" id="navAvatar">?</div>
+      <div class="nav-student-name" id="navName">Loading…</div>
+      <div class="nav-student-matric" id="navMatric">—</div>
+      <div id="navBadges"></div>
+    </div>
+    <div class="nav-body">
+      <div class="nav-section-label">Main</div>
+      <a class="nav-item active" href="dashboard.html">
+        <div class="nav-item-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        </div>
+        Dashboard
+      </a>
+      <a class="nav-item" href="profile.html">
+        <div class="nav-item-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        My Profile
+      </a>
+      <a class="nav-item" href="notifications.html">
+        <div class="nav-item-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        </div>
+        Notifications
+        <span class="nav-item-badge" id="navNotifBadge" style="display:none;"></span>
+      </a>
+      <div class="nav-section-label">Exams</div>
+      <a class="nav-item" href="dashboard.html#exams">
+        <div class="nav-item-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        </div>
+        Available Exams
+      </a>
+      <div class="nav-section-label">Account</div>
+      <a class="nav-item" href="student-capture.html">
+        <div class="nav-item-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        </div>
+        Face Photo
+      </a>
+      <a class="nav-item" href="student-name-request.html">
+        <div class="nav-item-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </div>
+        Name / Matric Change
+      </a>
+      <a class="nav-item" href="javascript:void(0)" onclick="_closeNav();openComplaintForm();">
+        <div class="nav-item-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        Raise a Complaint
+        <span class="nav-item-badge" id="navComplaintBadge" style="display:none;"></span>
+      </a>
+    </div>
+    <div class="nav-foot">
+      <button class="nav-logout" onclick="logout()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Log Out
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-logo">
+    <button class="hamburger-btn" id="hamburgerBtn" onclick="openNav()" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+    <img src="school-logo.png" alt="MARGMOCOTH CBT">
+    <div class="topbar-wordmark">
+      <div class="topbar-name">MARGMOCOTH CBT</div>
+      <div class="topbar-sub">Student Portal</div>
+    </div>
+  </div>
+  <div class="topbar-actions">
+    <a class="t-btn" href="notifications.html" title="Notifications" id="bellBtn">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      <span class="bell-badge" id="bellBadge"></span>
+    </a>
+    <a class="t-btn" href="profile.html" title="My Profile" id="topbarInitials"></a>
+  </div>
+</div>
+
+<div class="page">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-top">
+      <div style="flex:1;min-width:0;">
+        <div class="hero-label" id="greeting">Good morning,</div>
+        <div class="hero-name" id="studentName">Loading…</div>
+        <div class="hero-chips" id="studentBadges"></div>
+      </div>
+      <a href="profile.html" class="hero-avatar" id="welcomeAvatar" title="My Profile" style="text-decoration:none;cursor:pointer;">?</a>
+    </div>
+    <div class="hero-bar"></div>
+    <div class="hero-meta">
+      <div class="hero-matric">
+        <span class="hero-matric-label">Level</span>
+        <span class="hero-matric-val" id="studentMatric">—</span>
+      </div>
+      <div class="hero-last-login" id="lastLoginRow">
+        Last seen: <strong id="lastLoginText">—</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- ANNOUNCEMENTS -->
+  <div id="noticesSection" style="display:none;">
+    <div class="sec">Notices</div>
+    <div id="noticesList"></div>
+  </div>
+
+  <!-- FACE CAPTURE NOTICE -->
+  <div id="faceCaptureNotice" style="display:none;">
+    <div class="notice-card warning" style="cursor:pointer;" onclick="window.location.href='student-capture.html'">
+      <div class="notice-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
+      <div>
+        <div class="notice-title">Face Photo Required</div>
+        <div class="notice-text">You haven't captured your face photo yet. Required for exam identity verification. Tap to capture now.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AVAILABLE EXAMS -->
+  <div class="sec">Available Exams</div>
+  <div id="examsList">
+    <div class="skel-card"><div class="skel-line" style="width:62%;"></div><div class="skel-line" style="width:36%;height:9px;"></div><div class="skel-line" style="width:100%;height:36px;border-radius:8px;margin-top:11px;"></div></div>
+    <div class="skel-card"><div class="skel-line" style="width:72%;"></div><div class="skel-line" style="width:30%;height:9px;"></div><div class="skel-line" style="width:100%;height:36px;border-radius:8px;margin-top:11px;"></div></div>
+  </div>
+
+  <!-- UPCOMING EXAMS -->
+  <div id="upcomingSection" style="display:none;">
+    <div class="sec">Upcoming Exams</div>
+    <div id="upcomingList"></div>
+  </div>
+
+  <!-- SUPPORT CHAT -->
+  <div class="sec">Need Help?</div>
+  <div class="support-card" id="objSupportCard" onclick="openSupportChat()">
+    <div class="support-left">
+      <div class="support-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/></svg>
+      </div>
+      <div>
+        <div class="support-title">MARGMOCOTH Support</div>
+        <div class="support-sub">Ask anything — instant replies, 24/7</div>
+      </div>
+    </div>
+    <div class="support-arrow"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>
+  </div>
+  <div class="contact-btns" id="contactBtns"></div>
+
+  <!-- myComplaintsList kept for loadMyComplaints() badge update -->
+  <div id="myComplaintsList" style="display:none;"></div>
+  <div id="nameChangeStatusBanner" style="display:none;margin-bottom:12px;"></div>
+
+  <!-- SUB-DEPARTMENT ACTION BANNER -->
+  <div id="subDeptBanner" style="display:none;margin-bottom:14px;">
+    <div style="background:linear-gradient(135deg,#fef9c3,#fef3c7);border:1.5px solid #fbbf24;border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px;">
+      <div style="width:38px;height:38px;border-radius:10px;background:#fbbf24;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      </div>
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:700;color:#92400e;">Action Required</div>
+        <div style="font-size:12px;color:#a16207;margin-top:2px;">Please select your sub-department to continue.</div>
+      </div>
+      <button onclick="openSubDeptModal()" style="padding:8px 14px;background:#f59e0b;color:#fff;border:none;border-radius:8px;font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap;">Select Now</button>
+    </div>
+  </div>
+
+
+  <!-- SUB-DEPARTMENT SELECTION MODAL -->
+  <div id="subDeptModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(20,22,63,.75);backdrop-filter:blur(8px);padding:20px;display:none;align-items:center;justify-content:center;">
+    <div style="background:var(--surface);border-radius:20px;max-width:420px;width:100%;padding:26px 22px;box-shadow:0 24px 64px rgba(0,0,0,.3);">
+      <div style="text-align:center;margin-bottom:18px;">
+        <div style="width:52px;height:52px;border-radius:14px;background:#fef9c3;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        </div>
+        <div style="font-size:16px;font-weight:800;color:var(--text-1);letter-spacing:-.3px;">Select Your Sub-Department</div>
+        <div style="font-size:12.5px;color:var(--text-2);margin-top:5px;" id="subDeptModalDesc">Your department has multiple branches. Choose yours below.</div>
+      </div>
+      <div id="subDeptButtons" style="display:flex;flex-direction:column;gap:10px;"></div>
+      <div id="subDeptError" style="display:none;margin-top:12px;padding:9px 12px;background:var(--red-light);color:var(--red);border-radius:8px;font-size:12.5px;font-weight:600;"></div>
+    </div>
+  </div>
+  <!-- COMPLAINT MODAL -->
+  <div id="complaintModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(20,22,63,.7);backdrop-filter:blur(8px);padding:20px;overflow-y:auto;">
+    <div style="background:var(--surface);border-radius:20px;max-width:500px;width:100%;margin:40px auto;padding:24px 20px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <span style="font-size:15.5px;font-weight:700;color:var(--text-1);letter-spacing:-.2px;">Raise a Complaint</span>
+        <button onclick="closeComplaintForm()" style="background:var(--bg);border:1px solid var(--border);width:30px;height:30px;border-radius:50%;cursor:pointer;color:var(--text-2);display:flex;align-items:center;justify-content:center;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div id="complaintAlert"></div>
+      <label style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text-2);display:block;margin-bottom:5px;">Subject</label>
+      <input id="complaintSubject" type="text" placeholder="e.g. Wrong score recorded" maxlength="100"
+        style="width:100%;border:1.5px solid var(--border);border-radius:var(--r-md);padding:10px 12px;font-size:13.5px;margin-bottom:13px;box-sizing:border-box;font-family:'Inter',sans-serif;background:var(--bg);color:var(--text-1);outline:none;">
+      <label style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text-2);display:block;margin-bottom:5px;">Details</label>
+      <textarea id="complaintBody" rows="4" placeholder="Describe your issue clearly..." maxlength="1000"
+        style="width:100%;border:1.5px solid var(--border);border-radius:var(--r-md);padding:10px 12px;font-size:13.5px;resize:none;margin-bottom:16px;box-sizing:border-box;font-family:'Inter',sans-serif;background:var(--bg);color:var(--text-1);outline:none;"></textarea>
+      <button onclick="submitComplaint()" id="complaintSubmitBtn"
+        style="background:var(--blue);color:#fff;border:none;border-radius:var(--r-md);padding:12px;font-size:13.5px;font-weight:700;cursor:pointer;width:100%;font-family:'Inter',sans-serif;box-shadow:var(--shadow-blue);">
+        Send Complaint
+      </button>
+    </div>
+  </div>
+
+  <!-- SUPPORT CHAT SHEET -->
+  <div class="sheet-overlay" id="supportOverlay" onclick="supportOverlayClose(event)">
+    <div class="profile-sheet" id="supportSheet" style="height:88vh;display:flex;flex-direction:column;">
+      <div class="sheet-handle"></div>
+      <div class="sheet-head">
+        <div style="display:flex;align-items:center;gap:9px;">
+          <div style="width:32px;height:32px;border-radius:8px;background:var(--blue-light);display:flex;align-items:center;justify-content:center;color:var(--blue);">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/></svg>
+          </div>
+          <div>
+            <h2 style="margin:0;font-size:13.5px;">MARGMOCOTH Support</h2>
+            <div style="font-size:10px;color:#059669;font-weight:700;margin-top:1px;">Always online</div>
+          </div>
+        </div>
+        <button class="sheet-close" onclick="closeSupportChat()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div id="supportMessages" style="flex:1;overflow-y:auto;padding:12px 13px;display:flex;flex-direction:column;gap:9px;background:var(--bg);"></div>
+      <div style="padding:9px 11px;background:var(--surface);border-top:1px solid var(--border);display:flex;gap:7px;align-items:flex-end;">
+        <textarea id="supportInput" placeholder="Type your question…"
+          style="flex:1;border:1.5px solid var(--border);border-radius:12px;padding:9px 12px;font-size:13.5px;resize:none;min-height:40px;max-height:100px;line-height:1.4;font-family:'Inter',sans-serif;outline:none;background:var(--bg);"
+          rows="1" onkeydown="supportKeyDown(event)" oninput="autoResizeSupport(this)"></textarea>
+        <button onclick="sendSupportMessage()" id="supportSendBtn"
+          style="width:40px;height:40px;border-radius:50%;background:var(--blue);border:none;color:#fff;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-blue);">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /page -->
+
+<footer class="footer-marquee">
+  <div class="marquee-track">
+    <span id="marqueeText">Powered by <b>Tribal Tech</b> &nbsp;&#9670;&nbsp; MARGMOCOTH CBT &nbsp;&#9670;&nbsp; Secure Examination Portal &nbsp;&#9670;&nbsp; Powered by <b>Tribal Tech</b> &nbsp;&#9670;&nbsp; MARGMOCOTH CBT &nbsp;&#9670;&nbsp; Secure Examination Portal</span>
+  </div>
+</footer>
+
+<!-- Confirm Dialog -->
+<div class="confirm-overlay" id="confirmModal">
+  <div class="confirm-box">
+    <div class="confirm-icon-wrap" id="confirmIconWrap">
+      <svg id="confirmIconSVG" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="23" height="23"></svg>
+    </div>
+    <div class="confirm-title" id="confirmTitle"></div>
+    <p class="confirm-msg" id="confirmMsg"></p>
+    <div class="confirm-actions">
+      <button class="confirm-btn-cancel" onclick="_confirmResolve(false)">Cancel</button>
+      <button class="confirm-btn-ok" id="confirmOkBtn" onclick="_confirmResolve(true)">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Auth guard ────────────────────────────────────────────────
+let student = JSON.parse(sessionStorage.getItem('student') || 'null');
+if (student && !student.id) { sessionStorage.removeItem('student'); student = null; }
+if (!student || !student.id) {
+  const stored  = JSON.parse(localStorage.getItem('mcht_student') || 'null');
+  const loginAt = localStorage.getItem('mcht_login_at');
+  const thirtyDays = 30 * 24 * 60 * 60 * 1000;
+  if (stored && stored.id && loginAt && (Date.now() - new Date(loginAt).getTime()) < thirtyDays) {
+    student = stored; sessionStorage.setItem('student', JSON.stringify(student));
+  }
+}
+if (!student || !student.id) { window.location.replace('login.html'); throw new Error('unauthenticated'); }
+
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning,';
+  if (h < 17) return 'Good afternoon,';
+  return 'Good evening,';
+}
+
+function populateWelcome() {
+  document.getElementById('greeting').textContent      = getGreeting();
+  document.getElementById('studentName').textContent   = student.name   || '—';
+  document.getElementById('studentMatric').textContent = [student.level, student.department].filter(Boolean).join(' · ') || '—';
+  const badges = [];
+  if (student.department) badges.push(student.department);
+  if (student.sub_department) badges.push(student.sub_department);
+  if (student.level)      badges.push(student.level);
+  document.getElementById('studentBadges').innerHTML =
+    badges.map(b => `<span class="hero-chip">${b}</span>`).join('');
+  const initials = (student.name || '').split(' ').map(w => w[0] || '').slice(0, 2).join('').toUpperCase();
+  const wAvatar  = document.getElementById('welcomeAvatar');
+  const topEl    = document.getElementById('topbarInitials');
+  if (student.profile_photo_url) {
+    if (wAvatar) { wAvatar.style.background='none'; wAvatar.style.padding='0'; wAvatar.innerHTML=`<img src="${student.profile_photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:10px;" alt="photo">`; }
+    if (topEl)   topEl.innerHTML=`<img src="${student.profile_photo_url}" alt="profile">`;
+  } else {
+    if (wAvatar) { wAvatar.textContent = initials || '?'; wAvatar.style.background=''; }
+    if (topEl && initials) topEl.textContent = initials;
+  }
+  if (student.last_login) {
+    document.getElementById('lastLoginText').textContent = fmtDate(student.last_login);
+    document.getElementById('lastLoginRow').style.display = 'flex';
+  }
+}
+
+async function loadSettings() {
+  try {
+    const data = await fetch('/api/settings/portal').then(r => r.json());
+    if (data.marquee_text) { const t = data.marquee_text; document.getElementById('marqueeText').textContent = `${t} ${t} ${t}`; }
+    const btns = [];
+    if (data.contact_email) btns.push(`<a href="mailto:${data.contact_email}" class="contact-btn email"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> Email Admin</a>`);
+    if (data.contact_phone) btns.push(`<a href="tel:${data.contact_phone}" class="contact-btn phone"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.29 6.29l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7a2 2 0 0 1 1.72 2.02z"/></svg> Call Admin</a>`);
+    if (!btns.length) btns.push(`<a href="mailto:Margmocoth.examinationsmedia@gmail.com" class="contact-btn email">Email Admin</a>`);
+    document.getElementById('contactBtns').innerHTML = btns.join('');
+  } catch(e) { document.getElementById('contactBtns').innerHTML = `<a href="mailto:Margmocoth.examinationsmedia@gmail.com" class="contact-btn email">Email Admin</a>`; }
+}
+
+async function loadAnnouncements() {
+  try {
+    const list = await fetch(`/api/student/announcements?student_id=${student.id}`).then(r => r.json());
+    if (!list.length) return;
+    const icons = {
+      info:    `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2e3192" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`,
+      warning: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
+      success: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`
+    };
+    document.getElementById('noticesList').innerHTML = list.map(a => `
+      <div class="notice-card ${a.type}">
+        <div class="notice-icon">${icons[a.type]||''}</div>
+        <div><div class="notice-title">${escHtml(a.title)}</div><div class="notice-text">${escHtml(a.body)}</div><div class="notice-time">${fmtDate(a.created_at)}</div></div>
+      </div>`).join('');
+    document.getElementById('noticesSection').style.display = 'block';
+  } catch(e) {}
+}
+
+async function loadExams() {
+  try {
+    const list = await fetch(`/api/student/available-exams?student_id=${student.id}`).then(r => r.json());
+    const el   = document.getElementById('examsList');
+    if (!list.length) {
+      el.innerHTML = `<div class="empty-box"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><p>No exams available right now.<br>Check back later or contact your administrator.</p></div>`;
+      return;
+    }
+    const fileSVG = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2e3192" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>`;
+    const arrowSVG = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>`;
+    el.innerHTML = list.map(e => {
+      return `
+      <div class="exam-card">
+        <div class="exam-top">
+          <div class="exam-icon">${fileSVG}</div>
+          <div style="flex:1;min-width:0;">
+            <div class="exam-title">${escHtml(e.title)}</div>
+            ${e.course?`<div class="exam-course">${escHtml(e.course)}${e.course_code?' &middot; '+e.course_code:''}</div>`:''}
+          </div>
+        </div>
+        <div class="exam-tags">
+          <span class="exam-tag">${e.duration} min</span>
+          ${e.end_date?`<span class="exam-tag">Closes ${fmtDateShort(e.end_date)}</span>`:''}
+          ${e.already_done?`<span class="exam-tag retake">Retake</span>`:''}
+        </div>
+        ${e.instructions?`<div class="exam-instructions">${escHtml(e.instructions)}</div>`:''}
+        <button class="take-btn ${e.already_done?'retake-btn':''}" onclick="goToExam('${e.id}')">
+          ${e.already_done?'Retake Exam':'Start Exam'}
+          ${arrowSVG}
+        </button>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    document.getElementById('examsList').innerHTML = `<div class="empty-box"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><p>Could not load exams. Please refresh.</p></div>`;
+  }
+}
+
+let _upcomingList = [], _upcomingTimer = null;
+async function loadUpcoming() {
+  try {
+    const list = await fetch(`/api/student/upcoming-exams?student_id=${student.id}`).then(r => r.json());
+    _upcomingList = list;
+    if (!list.length) return;
+    document.getElementById('upcomingSection').style.display = 'block';
+    startCountdownTick();
+  } catch(e) {}
+}
+function startCountdownTick() {
+  if (_upcomingTimer) clearInterval(_upcomingTimer);
+  renderUpcoming(_upcomingList);
+  _upcomingTimer = setInterval(() => {
+    const now = Date.now();
+    const justOpened = _upcomingList.some(e => { const d = new Date(e.start_date)-now; return d<=0&&d>-2000; });
+    if (justOpened) { clearInterval(_upcomingTimer); setTimeout(()=>{loadExams();loadUpcoming();},1500); return; }
+    _upcomingList.forEach((e,i) => {
+      const cd = countdown(e.start_date);
+      const v = document.getElementById(`cd-val-${i}`), u = document.getElementById(`cd-unit-${i}`);
+      if (v) v.textContent = cd.value; if (u) u.textContent = cd.unit;
+    });
+  }, 1000);
+}
+function renderUpcoming(list) {
+  if (!list.length) return;
+  document.getElementById('upcomingList').innerHTML = list.map((e,i) => {
+    const cd = countdown(e.start_date);
+    return `
+      <div class="upcoming-card${cd.isImminent?' upcoming-card--live':''}">
+        <div class="cd-box${cd.isImminent?' cd-box--live':''}">
+          <div class="cd-val" id="cd-val-${i}">${cd.value}</div>
+          <div class="cd-unit" id="cd-unit-${i}">${cd.unit}</div>
+        </div>
+        <div class="upcoming-info">
+          <div class="upcoming-title">${escHtml(e.title)}</div>
+          ${e.course?`<div class="upcoming-sub">${escHtml(e.course)}</div>`:''}
+          <div class="upcoming-opens">Opens ${fmtDate(e.start_date)}</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+function countdown(dateStr) {
+  const diff = new Date(dateStr)-Date.now();
+  if (diff<=0) return {value:'NOW',unit:'opening!',isImminent:true};
+  const s=Math.floor(diff/1000), d=Math.floor(s/86400), h=Math.floor((s%86400)/3600), m=Math.floor((s%3600)/60), sec=s%60;
+  const isImminent = s<3600;
+  if (d>0)  return {value:d,  unit:d===1?'day':'days',   isImminent:false};
+  if (h>0)  return {value:h,  unit:h===1?'hour':'hours', isImminent:false};
+  if (m>0)  return {value:String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0'),unit:'min:sec',isImminent};
+  return          {value:'0:'+String(sec).padStart(2,'0'),unit:'sec',isImminent:true};
+}
+function goToExam(id) { window.location.href=`exam-access.html?exam_id=${id}`; }
+// ── NAV DRAWER ────────────────────────────────────
+function openNav() {
+  document.getElementById('navOverlay').classList.add('open');
+  document.getElementById('hamburgerBtn').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  populateNavDrawer(student);
+}
+function closeNavOverlay(e) {
+  if (e && e.target !== document.getElementById('navOverlay')) return;
+  _closeNav();
+}
+function _closeNav() {
+  document.getElementById('navOverlay').classList.remove('open');
+  const hb = document.getElementById('hamburgerBtn');
+  if (hb) hb.classList.remove('open');
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') _closeNav(); });
+
+function populateNavDrawer(s) {
+  if (!s) return;
+  const initials = (s.name||'?').split(' ').map(w=>w[0]||'').slice(0,2).join('').toUpperCase();
+  const navAv = document.getElementById('navAvatar');
+  if (s.profile_photo_url) {
+    navAv.style.background = 'none';
+    navAv.innerHTML = `<img src="${s.profile_photo_url}" alt="photo" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+  } else {
+    navAv.textContent = initials || '?';
+    navAv.style.background = '';
+  }
+  document.getElementById('navName').textContent   = s.name   || '—';
+  document.getElementById('navMatric').textContent = [s.level, s.department].filter(Boolean).join(' · ') || '—';
+  const badgesEl = document.getElementById('navBadges');
+  badgesEl.innerHTML = '';
+  if (s.department) badgesEl.innerHTML += `<span class="nav-student-badge">${s.department}</span>`;
+  if (s.sub_department) badgesEl.innerHTML += `<span class="nav-student-badge">${s.sub_department}</span>`;
+}
+
+async function logout() {
+  const ok = await showConfirm({type:'warn',title:'Log Out?',msg:'You will be signed out of your account.',okLabel:'Log Out'});
+  if (!ok) return;
+  sessionStorage.clear(); window.location.href='login.html';
+}
+async function loadBellBadge() {
+  try {
+    const seenAt = Number(localStorage.getItem('mcht_notif_seen_at')||'0');
+    const data   = await fetch('/api/student/notifications').then(r=>r.json());
+    if (!Array.isArray(data)) return;
+    const unseen = data.filter(n=>new Date(n.created_at).getTime()>seenAt).length;
+    const badge  = document.getElementById('bellBadge');
+    if (badge&&unseen>0) { badge.textContent=unseen>9?'9+':String(unseen); badge.style.display='flex'; }
+  } catch(_) {}
+}
+loadBellBadge();
+function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function fmtDate(d) { return new Date(d).toLocaleString('en-NG',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',timeZone:'Africa/Lagos',hour12:false}); }
+function fmtDateShort(d) { return new Date(d).toLocaleString('en-NG',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'Africa/Lagos',hour12:false}); }
+
+// PTR
+let ptrStartY=0,ptrActive=false,ptrRefreshing=false;
+const PTR_THRESHOLD=80, ptrEl=document.getElementById('ptrIndicator'), ptrLbl=document.getElementById('ptrLabel');
+document.addEventListener('touchstart',e=>{if(window.scrollY===0&&!ptrRefreshing){ptrStartY=e.touches[0].clientY;ptrActive=true;}},{passive:true});
+document.addEventListener('touchmove',e=>{if(!ptrActive)return;const d=e.touches[0].clientY-ptrStartY;if(d>10){const p=Math.min(d/PTR_THRESHOLD,1);ptrEl.classList.add('pulling');ptrEl.style.transform=`translateY(${Math.min(d*.35,44)}px)`;ptrEl.style.opacity=p;ptrLbl.textContent=d>=PTR_THRESHOLD?'Release to refresh':'Pull to refresh';}},{passive:true});
+document.addEventListener('touchend',e=>{if(!ptrActive)return;ptrActive=false;const d=e.changedTouches[0].clientY-ptrStartY;if(d>=PTR_THRESHOLD&&!ptrRefreshing){ptrRefreshing=true;ptrEl.classList.add('spinning');ptrEl.style.transform='';ptrEl.style.opacity='';ptrLbl.textContent='Refreshing…';doRefresh().finally(()=>{setTimeout(()=>{ptrEl.classList.remove('pulling','spinning');ptrLbl.textContent='Pull to refresh';ptrRefreshing=false;},700);});}else{ptrEl.classList.remove('pulling');ptrEl.style.transform='';ptrEl.style.opacity='';}});
+async function doRefresh(){await Promise.allSettled([loadExams(),loadUpcoming(),loadAnnouncements()]);}
+
+// Profile sheet
+function openProfile(){fillProfileSheet(student);document.getElementById('profileOverlay').classList.add('open');document.body.style.overflow='hidden';fetchFreshProfile();initBioSection();}
+function closeProfile(){document.getElementById('profileOverlay').classList.remove('open');document.body.style.overflow='';}
+function overlayClose(e){if(e.target===document.getElementById('profileOverlay'))closeProfile();}
+function fillProfileSheet(s){
+  const initials=(s.name||'?').split(' ').map(w=>w[0]||'').slice(0,2).join('').toUpperCase();
+  const avatarEl=document.getElementById('profileAvatar');
+  if(s.profile_photo_url){avatarEl.style.background='none';avatarEl.innerHTML=`<img src="${s.profile_photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt="photo">`;}
+  else{avatarEl.textContent=initials||'?';avatarEl.style.background='';}
+  document.getElementById('profileName').textContent=s.name||'—';
+  document.getElementById('profileMatricDisp').textContent=[s.level,s.department].filter(Boolean).join(' · ')||'—';
+  const set=(id,val)=>{const el=document.getElementById(id);el.textContent=val||'Not set';el.className='profile-info-value'+(val?'':' empty');};
+  set('profileDept',s.department);set('profileSubDept',s.sub_department);set('profileLevel',s.level);set('profilePhone',s.phone);set('profileEmail',s.email);
+}
+async function fetchFreshProfile(){
+  try{
+    const data=await fetch(`/api/student/profile?student_id=${student.id}`).then(r=>r.json());
+    if(data.success){
+      Object.assign(student,data.student);
+      sessionStorage.setItem('student',JSON.stringify(student));
+      try{localStorage.setItem('mcht_student',JSON.stringify(student));}catch(_){}
+      fillProfileSheet(data.student);
+      checkSubDepartmentAction();
+      const nameEl=document.getElementById('studentName'),matricEl=document.getElementById('studentMatric');
+      if(nameEl)nameEl.textContent=student.name||'—';if(matricEl)matricEl.textContent=student.matric||'—';
+      const topEl=document.getElementById('topbarInitials'),wAvatar=document.getElementById('welcomeAvatar');
+      if(data.student.profile_photo_url){
+        if(topEl)topEl.innerHTML=`<img src="${data.student.profile_photo_url}" alt="profile">`;
+        if(wAvatar){wAvatar.style.background='none';wAvatar.innerHTML=`<img src="${data.student.profile_photo_url}" style="width:50px;height:50px;object-fit:cover;border-radius:10px;" alt="photo">`;}
+        document.getElementById('faceCaptureNotice').style.display='none';
+      }else{
+        const init=(student.name||'').split(' ').map(w=>w[0]||'').slice(0,2).join('').toUpperCase();
+        if(wAvatar)wAvatar.textContent=init||'?';if(topEl&&init)topEl.textContent=init;
+        document.getElementById('faceCaptureNotice').style.display='block';
+      }
+    }
+  }catch(e){}
+}
+
+// Password
+let pwFormOpen=false;
+function togglePwForm(){pwFormOpen=!pwFormOpen;document.getElementById('pwForm').classList.toggle('open',pwFormOpen);document.getElementById('pwToggleIcon').style.transform=pwFormOpen?'rotate(180deg)':'';if(!pwFormOpen){['pwOld','pwNew','pwConfirm'].forEach(id=>document.getElementById(id).value='');document.getElementById('pwAlert').innerHTML='';}}
+function togglePwEye(id){const inp=document.getElementById(id);inp.type=inp.type==='password'?'text':'password';}
+async function doChangePassword(){
+  const old_pw=document.getElementById('pwOld').value,new_pw=document.getElementById('pwNew').value,conf_pw=document.getElementById('pwConfirm').value,alertEl=document.getElementById('pwAlert');
+  alertEl.innerHTML='';
+  if(!old_pw){alertEl.innerHTML='<div class="pw-alert err">Enter your current password.</div>';return;}
+  if(!new_pw||new_pw.length<6){alertEl.innerHTML='<div class="pw-alert err">New password must be at least 6 characters.</div>';return;}
+  if(new_pw!==conf_pw){alertEl.innerHTML='<div class="pw-alert err">New passwords do not match.</div>';return;}
+  if(new_pw===old_pw){alertEl.innerHTML='<div class="pw-alert err">New password must be different from current.</div>';return;}
+  const btn=document.getElementById('pwSubmitBtn');btn.disabled=true;btn.textContent='Updating…';
+  try{
+    const data=await fetch('/api/student/change-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({student_id:student.id,old_password:old_pw,new_password:new_pw})}).then(r=>r.json());
+    if(data.success){alertEl.innerHTML='<div class="pw-alert ok">Password changed successfully.</div>';['pwOld','pwNew','pwConfirm'].forEach(id=>document.getElementById(id).value='');setTimeout(()=>{togglePwForm();alertEl.innerHTML='';},2500);}
+    else alertEl.innerHTML=`<div class="pw-alert err">${data.message}</div>`;
+  }catch(e){alertEl.innerHTML='<div class="pw-alert err">Server error. Please try again.</div>';}
+  btn.disabled=false;btn.textContent='Update Password';
+}
+
+
+// ── Biometric (WebAuthn) Registration ────────────────────
+async function initBioSection() {
+  if (!window.PublicKeyCredential) return;
+  const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().catch(() => false);
+  if (!available) return;
+  document.getElementById('bioSection').style.display = 'block';
+  await refreshBioStatus();
+}
+
+async function refreshBioStatus() {
+  const dot = document.getElementById('bioDot');
+  const statusText = document.getElementById('bioStatusText');
+  const regBtn = document.getElementById('bioRegisterBtn');
+  const remBtn = document.getElementById('bioRemoveBtn');
+  try {
+    const data = await fetch(`/api/webauthn/status?student_id=${student.id}`).then(r => r.json());
+    if (data.registered) {
+      dot.classList.add('active');
+      statusText.textContent = 'Fingerprint registered';
+      regBtn.style.display = 'none';
+      remBtn.style.display = 'block';
+    } else {
+      dot.classList.remove('active');
+      statusText.textContent = 'No fingerprint registered';
+      regBtn.style.display = 'block';
+      remBtn.style.display = 'none';
+    }
+  } catch(e) {
+    statusText.textContent = 'Could not check status';
+  }
+}
+
+async function doRegisterBiometric() {
+  const alert = document.getElementById('bioAlert');
+  const btn = document.getElementById('bioRegisterBtn');
+  alert.className = 'bio-alert';
+  alert.textContent = '';
+  btn.disabled = true;
+  btn.textContent = 'Waiting for fingerprint...';
+  try {
+    const optRes = await fetch(`/api/webauthn/registration-options?matric=${encodeURIComponent(student.matric)}`);
+    const optData = await optRes.json();
+    if (!optData.success) {
+      alert.className = 'bio-alert err';
+      alert.textContent = optData.message || 'Could not start registration.';
+      btn.disabled = false; btn.textContent = 'Register Fingerprint';
+      return;
+    }
+    const opts = optData.options;
+    opts.challenge = Uint8Array.from(atob(opts.challenge.replace(/-/g,'+').replace(/_/g,'/')), c => c.charCodeAt(0));
+    opts.user.id = Uint8Array.from(atob(opts.user.id.replace(/-/g,'+').replace(/_/g,'/')), c => c.charCodeAt(0));
+    const credential = await navigator.credentials.create({ publicKey: opts });
+    const credId = btoa(String.fromCharCode(...new Uint8Array(credential.rawId))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+    const pubKey = btoa(String.fromCharCode(...new Uint8Array(credential.response.getPublicKey ? credential.response.getPublicKey() : new ArrayBuffer(0)))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+    const regRes = await fetch('/api/webauthn/register', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ credential_id: credId, public_key: pubKey, matric: student.matric })
+    });
+    const regData = await regRes.json();
+    if (regData.success) {
+      alert.className = 'bio-alert ok';
+      alert.textContent = 'Fingerprint registered. You can now log in with your fingerprint.';
+      await refreshBioStatus();
+    } else {
+      alert.className = 'bio-alert err';
+      alert.textContent = regData.message || 'Registration failed.';
+    }
+  } catch(e) {
+    alert.className = 'bio-alert err';
+    alert.textContent = e.name === 'NotAllowedError' ? 'Fingerprint scan was cancelled.' : 'Registration failed: ' + e.message;
+  }
+  btn.disabled = false; btn.textContent = 'Register Fingerprint';
+}
+
+async function doRemoveBiometric() {
+  const alert = document.getElementById('bioAlert');
+  const btn = document.getElementById('bioRemoveBtn');
+  alert.className = 'bio-alert';
+  alert.textContent = '';
+  btn.disabled = true; btn.textContent = 'Removing...';
+  try {
+    const data = await fetch('/api/webauthn/deregister', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ student_id: student.id })
+    }).then(r => r.json());
+    if (data.success) {
+      alert.className = 'bio-alert ok';
+      alert.textContent = 'Fingerprint removed.';
+      await refreshBioStatus();
+    } else {
+      alert.className = 'bio-alert err';
+      alert.textContent = data.message || 'Could not remove fingerprint.';
+    }
+  } catch(e) {
+    alert.className = 'bio-alert err';
+    alert.textContent = 'Server error.';
+  }
+  btn.disabled = false; btn.textContent = 'Remove Fingerprint';
+}
+
+// Support chat
+let _supportLoaded=false;
+function openSupportChat(){document.getElementById('supportOverlay').classList.add('open');document.body.style.overflow='hidden';if(!_supportLoaded){_supportLoaded=true;loadSupportHistory();}}
+function closeSupportChat(){document.getElementById('supportOverlay').classList.remove('open');document.body.style.overflow='';}
+function supportOverlayClose(e){if(e.target===document.getElementById('supportOverlay'))closeSupportChat();}
+async function loadSupportHistory(){
+  const box=document.getElementById('supportMessages');
+  try{
+    const msgs=await fetch(`/api/support/history?student_id=${student.id}`).then(r=>r.json());
+    if(!msgs.length){box.innerHTML=`<div class="chat-welcome"><strong>Hi ${student.name?.split(' ')[0]||'there'}! I'm MARGMOCOTH Support.</strong><br>Ask me anything about your exams, login, results, or the CBT system.</div>`;}
+    else{box.innerHTML='';msgs.forEach(m=>appendSupportBubble(m.role,m.content,m.is_ai,m.created_at,false));box.scrollTop=box.scrollHeight;}
+  }catch(e){box.innerHTML=`<div class="chat-welcome">Couldn't load chat history. Please try again.</div>`;}
+}
+function appendSupportBubble(role,content,isAi,createdAt,scroll=true){
+  const box=document.getElementById('supportMessages'),wrap=document.createElement('div');
+  wrap.className=`chat-bubble-wrap ${role}`;
+  let sl='';if(role==='support')sl=`<div class="chat-sender">MARGMOCOTH Support</div>`;if(role==='admin')sl=`<div class="chat-sender" style="color:#065f46;">Admin</div>`;
+  const t=createdAt?new Date(createdAt).toLocaleTimeString('en-NG',{hour:'2-digit',minute:'2-digit',hour12:true}):'';
+  wrap.innerHTML=`${sl}<div class="chat-bubble">${escHtml(content).replace(/\n/g,'<br>')}</div><div class="chat-meta">${t}</div>`;
+  const w=box.querySelector('.chat-welcome');if(w)w.remove();box.appendChild(wrap);if(scroll)box.scrollTop=box.scrollHeight;
+}
+function showTypingIndicator(){const box=document.getElementById('supportMessages'),el=document.createElement('div');el.id='supportTyping';el.className='chat-bubble-wrap support';el.innerHTML=`<div class="chat-sender">MARGMOCOTH Support</div><div class="chat-typing"><span></span><span></span><span></span></div>`;box.appendChild(el);box.scrollTop=box.scrollHeight;}
+function removeTypingIndicator(){document.getElementById('supportTyping')?.remove();}
+async function sendSupportMessage(){
+  const inp=document.getElementById('supportInput'),msg=inp.value.trim();if(!msg)return;
+  const btn=document.getElementById('supportSendBtn');btn.disabled=true;inp.value='';inp.style.height='auto';
+  appendSupportBubble('student',msg,false,new Date());showTypingIndicator();
+  try{
+    const data=await fetch('/api/support/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({student_id:student.id,message:msg})}).then(r=>r.json());
+    removeTypingIndicator();
+    if(data.success)appendSupportBubble('support',data.reply,true,data.created_at);
+    else appendSupportBubble('support','Something went wrong. Please try again or contact Admin directly.',true,new Date());
+  }catch(e){removeTypingIndicator();appendSupportBubble('support','Network error. Please check your connection and try again.',true,new Date());}
+  btn.disabled=false;
+}
+function supportKeyDown(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendSupportMessage();}}
+function autoResizeSupport(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,100)+'px';}
+
+// Complaints
+function openComplaintForm(){document.getElementById('complaintModal').style.display='block';document.body.style.overflow='hidden';loadMyComplaints();}
+function closeComplaintForm(){document.getElementById('complaintModal').style.display='none';document.body.style.overflow='';}
+async function submitComplaint(){
+  const subject=document.getElementById('complaintSubject').value.trim(),body=document.getElementById('complaintBody').value.trim(),alertEl=document.getElementById('complaintAlert'),btn=document.getElementById('complaintSubmitBtn');
+  alertEl.innerHTML='';
+  if(!subject){alertEl.innerHTML='<p style="color:var(--red);font-size:12.5px;margin:0 0 9px;">Please enter a subject.</p>';return;}
+  if(!body){alertEl.innerHTML='<p style="color:var(--red);font-size:12.5px;margin:0 0 9px;">Please describe your issue.</p>';return;}
+  btn.disabled=true;btn.textContent='Sending…';
+  try{
+    const data=await fetch('/api/student/complaint',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({student_id:student.id,subject,body})}).then(r=>r.json());
+    if(data.success){alertEl.innerHTML='<p style="color:var(--green);font-size:12.5px;margin:0 0 9px;">Complaint submitted. Admin will respond shortly.</p>';document.getElementById('complaintSubject').value='';document.getElementById('complaintBody').value='';loadMyComplaints();setTimeout(closeComplaintForm,2000);}
+    else alertEl.innerHTML=`<p style="color:var(--red);font-size:12.5px;margin:0 0 9px;">${data.message}</p>`;
+  }catch(e){alertEl.innerHTML='<p style="color:var(--red);font-size:12.5px;margin:0 0 9px;">Network error. Try again.</p>';}
+  btn.disabled=false;btn.textContent='Send Complaint';
+}
+async function loadMyComplaints(){
+  try{
+    const list=await fetch(`/api/student/complaints?student_id=${student.id}`).then(r=>r.json());
+    // Update nav badge with count of open/pending complaints
+    const open=Array.isArray(list)?list.filter(c=>c.status!=='resolved').length:0;
+    const badge=document.getElementById('navComplaintBadge');
+    if(badge){if(open>0){badge.textContent=open;badge.style.display='inline-flex';}else{badge.style.display='none';}}
+    const el=document.getElementById('myComplaintsList');if(!el)return;if(!list.length){el.innerHTML='';return;}
+    const sColor={open:'#2e3192',in_progress:'#d97706',resolved:'#059669'},sLabel={open:'Open',in_progress:'In Progress',resolved:'Resolved'};
+    el.innerHTML=`<div style="font-size:9.5px;font-weight:700;color:var(--text-3);margin-bottom:8px;letter-spacing:1px;text-transform:uppercase;">Your Complaints</div>`+
+      list.map(c=>{
+        const threadHtml=(c.thread&&c.thread.length)?c.thread.map(msg=>{const isA=msg.role==='admin';return `<div style="display:flex;flex-direction:column;align-items:${isA?'flex-start':'flex-end'};margin-bottom:5px;"><div style="max-width:85%;background:${isA?'#f0f1ff':'#f0f9ff'};border:1px solid ${isA?'#e0e2ff':'#bae6fd'};border-radius:9px;padding:6px 10px;font-size:12px;color:var(--text-1);line-height:1.5;">${escHtml(msg.text)}</div><div style="font-size:9.5px;color:var(--text-3);margin-top:2px;">${isA?'Admin':'You'} &middot; ${timeAgo(msg.created_at)}</div></div>`;}).join(''):'';
+        return `<div style="border:1px solid var(--border);border-radius:10px;padding:11px 13px;margin-bottom:7px;background:var(--bg);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+            <span style="font-size:12.5px;font-weight:700;color:var(--text-1);">${escHtml(c.subject)}</span>
+            <span style="font-size:10px;font-weight:700;color:${sColor[c.status]||'#5b5f80'};background:${sColor[c.status]||'#5b5f80'}18;padding:2px 8px;border-radius:999px;">${sLabel[c.status]||c.status}</span>
+          </div>
+          ${threadHtml?`<div style="margin:7px 0 5px;">${threadHtml}</div>`:(c.admin_reply?`<div style="font-size:11.5px;color:#374151;margin-top:5px;background:var(--green-light);border-radius:6px;padding:7px 10px;border-left:3px solid var(--green);"><strong>Admin:</strong> ${escHtml(c.admin_reply)}</div>`:'')}
+          <div style="display:flex;gap:5px;margin-top:7px;">
+            <input id="cReplyInput_${c.id}" type="text" placeholder="Reply to admin…" style="flex:1;border:1.5px solid var(--border);border-radius:7px;padding:6px 9px;font-size:12px;outline:none;font-family:'Inter',sans-serif;background:var(--surface);" onkeydown="if(event.key==='Enter')replyToComplaint('${c.id}')">
+            <button onclick="replyToComplaint('${c.id}')" style="padding:6px 11px;background:var(--blue);color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;">Reply</button>
+          </div>
+          <div style="font-size:10px;color:var(--text-3);margin-top:5px;">${new Date(c.created_at).toLocaleDateString('en-NG')}</div>
+        </div>`;
+      }).join('');
+  }catch(e){}
+}
+async function replyToComplaint(id){
+  const input=document.getElementById(`cReplyInput_${id}`);if(!input)return;
+  const text=input.value.trim();if(!text)return;input.value='';input.disabled=true;
+  try{const r=await fetch(`/api/student/complaints/${id}/reply`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({student_id:student.id,text})});const d=await r.json();if(d.success)loadMyComplaints();else{input.value=text;input.disabled=false;}}
+  catch(e){input.value=text;input.disabled=false;}
+}
+function timeAgo(ts){if(!ts)return '';const s=Math.floor((Date.now()-new Date(ts))/1000);if(s<60)return 'just now';if(s<3600)return Math.floor(s/60)+'m ago';if(s<86400)return Math.floor(s/3600)+'h ago';return Math.floor(s/86400)+'d ago';}
+
+// Confirm dialog
+const _CSVG={warn:'<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',danger:'<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>',info:'<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>'};
+let __confirmCb=null;
+function showConfirm({type='warn',title,msg,okLabel='Confirm'}){
+  document.getElementById('confirmIconWrap').className='confirm-icon-wrap '+type;
+  document.getElementById('confirmIconSVG').innerHTML=_CSVG[type]||_CSVG.warn;
+  document.getElementById('confirmTitle').textContent=title;
+  document.getElementById('confirmMsg').innerHTML=msg;
+  const ok=document.getElementById('confirmOkBtn');ok.textContent=okLabel;ok.className='confirm-btn-ok '+type;
+  document.getElementById('confirmModal').classList.add('show');
+  return new Promise(res=>{__confirmCb=res;});
+}
+function _confirmResolve(val){document.getElementById('confirmModal').classList.remove('show');if(__confirmCb){__confirmCb(val);__confirmCb=null;}}
+document.getElementById('confirmModal').addEventListener('click',function(e){if(e.target===this)_confirmResolve(false);});
+
+// Init
+populateWelcome();loadSettings();loadAnnouncements();
+loadExams();loadUpcoming();
+loadMyComplaints();fetchFreshProfile();loadNameChangeStatus();checkSubDepartmentAction();
+if(window.location.hash==='#complaint'){setTimeout(openComplaintForm,400);}
+
+async function loadNameChangeStatus(){
+  try{
+    const list=await fetch(`/api/student/name-change-requests?student_id=${student.id}`).then(r=>r.json());
+    const banner=document.getElementById('nameChangeStatusBanner');
+    if(!Array.isArray(list)||!list.length){banner.style.display='none';banner.innerHTML='';return;}
+    const r=list[0];
+    const fieldLabel=r.request_type==='name'?'Full Name':'Matric Number';
+    const cfg={
+      pending:{bg:'linear-gradient(135deg,#f0f1ff,#e0e2ff)',border:'#b9bcf5',dot:'#2e3192',title:'Request Pending',text:`Your ${fieldLabel} change request is awaiting admin review.`},
+      approved:{bg:'linear-gradient(135deg,#ecfdf5,#d1fae5)',border:'#6ee7b7',dot:'#059669',title:'Request Approved',text:`Your ${fieldLabel} has been updated to "${r.new_value}".`},
+      declined:{bg:'linear-gradient(135deg,#fef2f2,#fee2e2)',border:'#fca5a5',dot:'#dc2626',title:'Request Declined',text:r.admin_note?`Reason: ${escHtml(r.admin_note)}`:`Your ${fieldLabel} change request was declined.`}
+    };
+    const c=cfg[r.status]||cfg.pending;
+    banner.innerHTML=`<div style="background:${c.bg};border:1.5px solid ${c.border};border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px;">
+      <div style="width:10px;height:10px;border-radius:50%;background:${c.dot};flex-shrink:0;"></div>
+      <div style="flex:1;"><div style="font-size:13px;font-weight:700;color:var(--text-1);">${c.title}</div>
+      <div style="font-size:12px;color:var(--text-2);margin-top:2px;">${c.text}</div></div></div>`;
+    banner.style.display='block';
+  }catch(e){}
+}
+
+// ── Sub-department selection ─────────────────────
+function checkSubDepartmentAction(){
+  const banner=document.getElementById('subDeptBanner');
+  if(banner) banner.style.display=(student && student.action_needed)?'block':'none';
+}
+function openSubDeptModal(){
+  const list=student.sub_departments_available||[];
+  const wrap=document.getElementById('subDeptButtons');
+  document.getElementById('subDeptError').style.display='none';
+  wrap.innerHTML = list.length
+    ? list.map(d=>`<button onclick="selectSubDepartment('${d.replace(/'/g,"\\'")}')" style="padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;background:var(--bg);color:var(--text-1);font-size:13.5px;font-weight:700;cursor:pointer;text-align:left;font-family:'Inter',sans-serif;">${escHtml(d)}</button>`).join('')
+    : `<div style="font-size:12.5px;color:var(--text-2);">No sub-departments available — contact admin.</div>`;
+  document.getElementById('subDeptModal').style.display='flex';
+}
+async function selectSubDepartment(name){
+  const errEl=document.getElementById('subDeptError');
+  errEl.style.display='none';
+  try{
+    const data=await fetch('/api/student/select-sub-department',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({student_id:student.id,sub_department:name})}).then(r=>r.json());
+    if(data.success){
+      student.sub_department=data.sub_department; student.action_needed=false;
+      sessionStorage.setItem('student',JSON.stringify(student));
+      try{localStorage.setItem('mcht_student',JSON.stringify(student));}catch(_){}
+      document.getElementById('subDeptModal').style.display='none';
+      document.getElementById('subDeptBanner').style.display='none';
+      const el=document.getElementById('profileSubDept');
+      if(el){el.textContent=data.sub_department;el.className='profile-info-value';}
+      populateWelcome();
+      populateNavDrawer(student);
+    }else{
+      errEl.textContent=data.message||'Could not save selection.';
+      errEl.style.display='block';
+    }
+  }catch(e){
+    errEl.textContent='Network error. Please try again.';
+    errEl.style.display='block';
+  }
+}
+</script>
+<script src="/js/pending-submit.js"></script>
+</body>
+</html>
