@@ -467,6 +467,20 @@ select.field-input option { background: #fff; color: #111; }
           </div>
         </div>
 
+        <!-- Matric Number -->
+        <div class="field">
+          <label class="field-label">Matric Number <span class="req">*</span></label>
+          <div class="field-wrap">
+            <span class="field-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="11" r="2.2"/><path d="M5.5 17c.6-1.9 2-3 3.5-3s2.9 1.1 3.5 3M15 9.5h3.5M15 13h3.5"/>
+              </svg>
+            </span>
+            <input type="text" id="matric" class="field-input" placeholder="Your matric number" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="40">
+          </div>
+          <div class="field-note">Type it exactly as shown on your school ID. You can use it to sign in.</div>
+        </div>
+
         <!-- Department -->
         <div class="field" id="deptField">
           <label class="field-label">Department <span class="req">*</span></label>
@@ -696,6 +710,7 @@ async function doRegister() {
   clearAlert();
 
   const name     = document.getElementById('name').value.trim();
+  const matric   = document.getElementById('matric').value.trim().replace(/\s+/g, ' ');
   const dept     = document.getElementById('department_id').value;
   const levelId  = document.getElementById('level_id').value;
   const phone    = document.getElementById('phone').value.trim();
@@ -705,6 +720,8 @@ async function doRegister() {
   const terms    = document.getElementById('termsCheck').checked;
 
   if (!name)    { showAlert('Please enter your full name.', 'err'); return; }
+  if (!matric)  { showAlert('Please enter your matric number.', 'err'); return; }
+  if (matric.length < 3) { showAlert('Please enter a valid matric number.', 'err'); return; }
   if (!dept)    { showAlert('Please select your department.', 'err'); return; }
   if (!levelId) { showAlert('Please select your class.', 'err'); return; }
   if (!phone && !email) { showAlert('Please provide at least a phone number or email address.', 'err'); return; }
@@ -721,7 +738,7 @@ async function doRegister() {
     const res  = await fetch('/api/student-register', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ name, phone: phone||null, email: email||null,
+      body:    JSON.stringify({ name, matric, phone: phone||null, email: email||null,
                                 department_id: dept, level_id: levelId, password,
                                 dept_token: _deptToken || undefined })
     });
@@ -736,7 +753,7 @@ async function doRegister() {
             </svg>
           </div>
           <div class="success-title">Registration Successful</div>
-          <div class="success-msg">Your account has been created.<br>You can now log in with your name, level, department and password.</div>
+          <div class="success-msg">Your account has been created.<br>You can now sign in with your name, matric number or email, and your password.</div>
           <a href="login.html" class="go-login-btn">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="m15 18-6-6 6-6"/>

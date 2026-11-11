@@ -584,48 +584,37 @@ select.field-input option { background: #ffffff; color: #111111; }
         <div class="welcome-line" id="welcomeLine">Sign in to continue</div>
         <div id="alertBox"></div>
 
-        <!-- Full Name -->
+        <!-- Name / Matric / Email -->
         <div class="field">
-          <label class="field-label">Full Name</label>
+          <label class="field-label" for="identifier">Name, Matric Number or Email</label>
           <div class="field-wrap">
             <span class="field-icon">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
               </svg>
             </span>
-            <input type="text" id="studentName" class="field-input"
-                   placeholder="e.g. John Adeyemi"
-                   autocomplete="off">
+            <input type="text" id="identifier" class="field-input"
+                   placeholder="Full name, matric number or email"
+                   autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false">
           </div>
         </div>
 
-        <!-- Level -->
+        <!-- Password -->
         <div class="field">
-          <label class="field-label">Level</label>
+          <label class="field-label" for="password">Password</label>
           <div class="field-wrap">
             <span class="field-icon">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
               </svg>
             </span>
-            <select id="studentClass" class="field-input">
-              <option value="">Select your level</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- Department -->
-        <div class="field">
-          <label class="field-label">Department</label>
-          <div class="field-wrap">
-            <span class="field-icon">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
-              </svg>
-            </span>
-            <select id="department" class="field-input" onchange="onDeptChange()">
-              <option value="">Select your department</option>
-            </select>
+            <input type="password" id="password" class="field-input"
+                   placeholder="Enter your password"
+                   autocomplete="current-password" style="padding-right:46px;">
+            <button type="button" class="toggle-password" onclick="togglePw()" aria-label="Show or hide password">
+              <svg id="eyeClosed" viewBox="0 0 24 24"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>
+              <svg id="eyeOpen" style="display:none;" viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
           </div>
         </div>
 
@@ -636,15 +625,32 @@ select.field-input option { background: #ffffff; color: #111111; }
           </svg>
         </button>
 
+        <div class="forgot-link-wrap">
+          <button type="button" class="forgot-link" onclick="toggleForgot()">Forgot password?</button>
+        </div>
 
-    </div>
+        <!-- Forgot password: ask the exam office to reset -->
+        <div class="forgot-panel" id="forgotPanel">
+          <div class="forgot-panel-title">Request a password reset</div>
+          <div class="fp-desc">Enter your name, matric number or email. The examination office will set a new password for you.</div>
+          <div id="fpResult"></div>
+          <input type="text" id="fpIdentifier" class="fp-input" placeholder="Name, matric number or email" autocapitalize="none" autocomplete="off">
+          <div class="fp-btn-row">
+            <button type="button" class="fp-btn fp-btn-cancel" onclick="toggleForgot(false)">Cancel</button>
+            <button type="button" class="fp-btn fp-btn-primary" id="fpBtn" onclick="sendResetRequest()">Send request</button>
+          </div>
+        </div>
+
+      </div><!-- /loginForm -->
+    </div><!-- /loginBody -->
 
     <div class="card-foot" id="cardFoot">
-      Having issues? Contact your school administrator.
+      <span id="regLinkWrap" style="display:none;">New student? <a href="register.html">Create an account</a><br></span>
+      Having issues? Tap the chat button or contact your school administrator.
     </div>
 
-  </div>
-</div>
+  </div><!-- /card -->
+</div><!-- /page -->
 
 <!-- Footer ticker -->
 <footer class="footer-ticker">
@@ -691,7 +697,6 @@ select.field-input option { background: #ffffff; color: #111111; }
     </button>
   </div>
 </div>
-</div>
 
 <script>
 // ===== PORTAL CHECK =====
@@ -707,8 +712,9 @@ async function checkPortal() {
       document.getElementById('marqueeText').innerHTML =
         `Powered by <b>Tribal Tech</b> &nbsp;&#183;&nbsp; ${t} &nbsp;&#183;&nbsp; Powered by <b>Tribal Tech</b> &nbsp;&#183;&nbsp; ${t}`;
     }
-    if (data.contact_email) {
-      document.getElementById('contactLink').href = `mailto:${data.contact_email}`;
+    if (data.registration_open) {
+      const rw = document.getElementById('regLinkWrap');
+      if (rw) rw.style.display = 'inline';
     }
     if (!data.portal_open) {
       document.getElementById('portalDot').classList.add('closed');
@@ -733,49 +739,67 @@ if (sessionStorage.getItem('examSubmitted') === 'true') {
   document.getElementById('welcomeLine').style.display     = 'none';
 }
 
-async function loadDepartments() {
-  try {
-    const res  = await fetch('/api/departments');
-    const list = await res.json();
-    const sel  = document.getElementById('department');
-    list.forEach(d => {
-      const o = document.createElement('option');
-      o.value = d.id; o.textContent = d.name;
-      sel.appendChild(o);
-    });
-  } catch(e) {}
-  try {
-    const res  = await fetch('/api/levels');
-    const list = await res.json();
-    const sel  = document.getElementById('studentClass');
-    list.forEach(l => {
-      const o = document.createElement('option');
-      o.value = l.id; o.textContent = l.name;
-      sel.appendChild(o);
-    });
-  } catch(e) {}
+const ARROW_SVG = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>';
+
+function escapeHtml(t) {
+  return String(t == null ? '' : t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
-function onDeptChange() {}
+function togglePw() {
+  const inp = document.getElementById('password');
+  const show = inp.type === 'password';
+  inp.type = show ? 'text' : 'password';
+  document.getElementById('eyeOpen').style.display   = show ? 'block' : 'none';
+  document.getElementById('eyeClosed').style.display = show ? 'none'  : 'block';
+}
+
+function toggleForgot(force) {
+  const panel = document.getElementById('forgotPanel');
+  const open  = typeof force === 'boolean' ? force : panel.style.display !== 'block';
+  panel.style.display = open ? 'block' : 'none';
+  if (open) {
+    document.getElementById('fpResult').innerHTML = '';
+    const typed = document.getElementById('identifier').value.trim();
+    const fp = document.getElementById('fpIdentifier');
+    if (typed && !fp.value) fp.value = typed;
+    setTimeout(() => fp.focus(), 50);
+  }
+}
+
+async function sendResetRequest() {
+  const id  = document.getElementById('fpIdentifier').value.trim();
+  const out = document.getElementById('fpResult');
+  const btn = document.getElementById('fpBtn');
+  if (!id) { out.innerHTML = '<div class="fp-result err">Please enter your name, matric number or email.</div>'; return; }
+  btn.disabled = true; btn.textContent = 'Sending...';
+  try {
+    const res  = await fetch('/api/student/password-contact-request', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ identifier: id })
+    });
+    const data = await res.json();
+    out.innerHTML = `<div class="fp-result ${data.success ? 'ok' : 'err'}">${escapeHtml(data.message || (data.success ? 'Request sent.' : 'Could not send request.'))}</div>`;
+  } catch(e) {
+    out.innerHTML = '<div class="fp-result err">Server error. Please try again.</div>';
+  }
+  btn.disabled = false; btn.textContent = 'Send request';
+}
 
 async function doLogin() {
-  const name        = document.getElementById('studentName').value.trim();
-  const level_id    = document.getElementById('studentClass').value;
-  const department  = document.getElementById('department').value;
-  const box         = document.getElementById('alertBox');
-  const btn         = document.getElementById('loginBtn');
-  box.innerHTML     = '';
+  const identifier = document.getElementById('identifier').value.trim();
+  const password   = document.getElementById('password').value;
+  const box        = document.getElementById('alertBox');
+  const btn        = document.getElementById('loginBtn');
+  box.innerHTML    = '';
 
-  if (!name) {
-    box.innerHTML = '<div class="alert-msg alert-err">Please enter your full name.</div>';
+  if (!identifier) {
+    box.innerHTML = '<div class="alert-msg alert-err">Please enter your name, matric number or email.</div>';
+    document.getElementById('identifier').focus();
     return;
   }
-  if (!level_id) {
-    box.innerHTML = '<div class="alert-msg alert-err">Please select your class.</div>';
-    return;
-  }
-  if (!department) {
-    box.innerHTML = '<div class="alert-msg alert-err">Please select your department.</div>';
+  if (!password) {
+    box.innerHTML = '<div class="alert-msg alert-err">Please enter your password.</div>';
+    document.getElementById('password').focus();
     return;
   }
 
@@ -786,7 +810,7 @@ async function doLogin() {
     const res  = await fetch('/api/student-login', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ name, level_id, department_id: department })
+      body:    JSON.stringify({ identifier, password })
     });
     const data = await res.json();
 
@@ -797,27 +821,33 @@ async function doLogin() {
       sessionStorage.setItem('student', JSON.stringify(data.student));
       setTimeout(() => window.location.href = 'dashboard.html', 800);
     } else {
-      box.innerHTML = `<div class="alert-msg alert-err">${data.message}</div>`;
+      box.innerHTML = `<div class="alert-msg alert-err">${escapeHtml(data.message)}</div>`;
       btn.disabled  = false;
-      btn.innerHTML = '<span>Sign In</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>';
+      btn.innerHTML = '<span>Sign In</span>' + ARROW_SVG;
     }
   } catch(e) {
     box.innerHTML = '<div class="alert-msg alert-err">Server error. Please try again.</div>';
     btn.disabled  = false;
-    btn.innerHTML = '<span>Sign In</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>';
+    btn.innerHTML = '<span>Sign In</span>' + ARROW_SVG;
   }
 }
 
-document.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+// Enter signs in — but not while typing in the chat box or the reset-request box
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  const id = e.target && e.target.id;
+  if (id === 'objInput') return;
+  if (id === 'fpIdentifier') { sendResetRequest(); return; }
+  doLogin();
+});
 
 checkPortal();
-loadDepartments();
 checkBiometricAvailability();
 
-// ── Biometric (WebAuthn) — disabled: requires matric, which MARGMOCOTH CBT no longer uses ──
+// ── Biometric (WebAuthn) — disabled in this edition ──
 async function checkBiometricAvailability() { /* disabled */ }
 async function doBiometricLogin() {
-  document.getElementById('alertBox').innerHTML = '<div class="alert-msg alert-err">Fingerprint login is unavailable. Please sign in with your name, class and arm.</div>';
+  document.getElementById('alertBox').innerHTML = '<div class="alert-msg alert-err">Fingerprint login is unavailable. Please sign in with your name, matric number or email and your password.</div>';
 }
 
 // ── OBJ Assistant ──────────────────────────────────────────
@@ -838,7 +868,7 @@ function toggleObjChat() {
   document.getElementById('objFab').style.display = objOpen ? 'none' : 'flex';
   if (objOpen && !objStarted) {
     objStarted = true;
-    appendObjBubble('bot', 'Hi! I\'m the MARGMOCOTH Login Assistant.\n\nI can help if you\'re having trouble logging in. Tell me:\n\n- What error message do you see?\n- Or describe what\'s happening when you try to log in.');
+    appendObjBubble('bot', 'Hi! I\'m the MARGMOCOTH Login Assistant.\n\nYou sign in with your name, matric number or email, plus your password. If something is not working, tell me:\n\n- What error message do you see?\n- Or describe what happens when you try to log in.');
   }
   if (objOpen) setTimeout(() => document.getElementById('objInput').focus(), 100);
 }

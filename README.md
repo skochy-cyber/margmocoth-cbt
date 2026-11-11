@@ -10,8 +10,8 @@ A full-featured, AI-proctored, real-time Computer-Based Testing (CBT) platform b
 | Page | Purpose |
 |------|---------|
 | `index.html` | College landing page |
-| `login.html` | Student login |
-| `register.html` | Student registration |
+| `login.html` | Student login — full name, matric number **or** email, plus password |
+| `register.html` | Student registration (full name, matric number, level, department, phone/email, password) |
 | `admin-login.html` | Staff / admin login |
 
 There is no payment or fee feature in this edition.
@@ -70,6 +70,7 @@ Edit `.env` with your credentials:
 | `CLOUDINARY_CLOUD_NAME`| Cloudinary cloud name                     |
 | `CLOUDINARY_API_KEY`   | Cloudinary API key                        |
 | `CLOUDINARY_API_SECRET`| Cloudinary API secret                     |
+| `GROQ_API_KEY`         | Optional. Turns on live AI in the login-page helper and student dashboard chat (free key at console.groq.com). Without it both assistants still answer common questions with built-in replies. |
 | `SESSION_SECRET`       | Long random string for session cookies    |
 | `PORT`                 | Server port (default: 3000)               |
 
@@ -91,6 +92,24 @@ Visit:
 > Set your admin credentials via environment variables (`ADMIN_EMAIL`, `ADMIN_PASSWORD`) before deploying.
 
 Only the configured super-admin account is permitted. All other admin accounts are removed on startup.
+
+After signing in, change the password at **Admin → Settings → Change Admin Password**.
+
+## Violation Volume (AI sharpness)
+
+**Admin → Settings → Violation Volume** takes a value from 1 to 100. At 1 the AI checks the camera about once a second and forgives short movements (head turn flagged after ~5 s, no face after ~8 s, leaving the exam window after ~4 s). At 100 it checks about 10 times a second and flags a head turn after ~0.4 s, no face after ~1 s, talking after ~1.2 s and leaving the exam window after ~0.8 s. The AI toggles (Strict Face Anti-Cheat, Restrict Side Look, Restrict Voice) must still be switched on for the camera checks; leaving the exam window is always monitored.
+
+## Lecturers and exam assignment
+
+A lecturer does not need a department. **Settings → Exam Assignments** lets you assign an exam to all lecturers (including ones added later) or to any ticked lecturers. Assigned lecturers see that exam's questions, results and violations.
+
+## Student Sign-in
+
+Students sign in with **one** of their full name, matric number or email, plus their password
+(their own password, or the active department password from *Batch Passwords*). If two students share a name,
+the portal asks that student to use their matric number or email. After 8 wrong attempts from one device the
+account pauses sign-in for 10 minutes. Students who forget a password tap **Forgot password?** and the request
+appears in the admin panel, where an admin sets a new one.
 
 ---
 
@@ -128,9 +147,13 @@ Network errors are logged but **do not** count toward the auto-submit violation 
 ### Students CSV
 
 ```
-name,matric,department,level,password
-John Doe,MCH/2025/001,CHEW,100,pass1234
+name,matric,email,department,level
+John Doe,MCH/2025/001,john@example.com,Public Health,100L
 ```
+
+`matric` and `email` are optional but needed for students to sign in with them. Department and level names must match
+the ones in the system. Each imported student gets the active department password from *Batch Passwords* (or `changeme`
+if none exists) until they set their own.
 
 ### Questions CSV
 

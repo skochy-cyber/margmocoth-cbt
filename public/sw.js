@@ -6,18 +6,18 @@
      • Everything else                → Stale-While-Revalidate
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME    = 'margmocoth-cbt-v1';
+const CACHE_NAME    = 'margmocoth-cbt-v4';
 const SHELL_ASSETS  = [
   '/',
   '/index.html',
   '/login.html',
   '/school-logo.png',
+  '/cbt-hall-sm.jpg',
   '/admin-login.html',
   '/admin-dashboard.html',
 
   '/css/style.css',
   '/js/admin.js',
-  '/js/ai-assistant.js',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
   '/manifest.json'

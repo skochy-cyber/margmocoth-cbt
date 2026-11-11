@@ -298,6 +298,34 @@
 .dept-reg-link-box code { font-size:11px; color:#166534; word-break:break-all; flex:1; }
 .btn-copy-link { background:#16a34a; color:#fff; border:none; border-radius:6px; padding:5px 10px; font-size:11px; font-weight:700; cursor:pointer; white-space:nowrap; }
 .btn-copy-link:hover { background:#15803d; }
+
+/* ── Change admin password ── */
+.pw-form { padding: 20px 24px 24px; display: grid; gap: 14px; max-width: 460px; }
+.pw-field label { display:block; font-size:11px; font-weight:600; color:#5b5f80; text-transform:uppercase; letter-spacing:.5px; margin-bottom:6px; }
+.pw-wrap { position:relative; }
+.pw-wrap input { width:100%; border:1px solid #d1d5db; border-radius:10px; padding:11px 44px 11px 14px; font-size:14px; color:#1b1e45; background:#fafafa; font-family:inherit; }
+.pw-wrap input:focus { outline:none; border-color:#2e3192; background:#fff; box-shadow:0 0 0 3px rgba(46,49,146,.12); }
+.pw-eye { position:absolute; right:8px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:#8e92b3; padding:6px; display:flex; }
+.pw-eye:hover { color:#2e3192; }
+.pw-eye svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+.pw-hint { font-size:12px; color:#8e92b3; line-height:1.5; }
+.pw-meter { height:5px; border-radius:99px; background:#e6e8f3; overflow:hidden; margin-top:8px; }
+.pw-meter i { display:block; height:100%; width:0; border-radius:99px; transition:width .25s, background .25s; }
+.btn-pw { background:#2e3192; color:#fff; border:none; border-radius:10px; padding:12px 20px; font-size:14px; font-weight:700; cursor:pointer; justify-self:start; font-family:inherit; }
+.btn-pw:hover { background:#4448b8; }
+.btn-pw:disabled { opacity:.55; cursor:not-allowed; }
+.pw-msg { font-size:13px; border-radius:10px; padding:10px 14px; display:none; }
+.pw-msg.ok  { display:block; background:#f0fdf4; color:#166534; border:1px solid #86efac; }
+.pw-msg.err { display:block; background:#fef2f2; color:#b91c1c; border:1px solid #fecaca; }
+
+/* ── Violation volume ── */
+.vol-wrap { display:flex; align-items:center; gap:14px; }
+.vol-wrap input[type=range] { flex:1; accent-color:#2e3192; height:6px; cursor:pointer; }
+.vol-num { width:72px; border:1px solid #d1d5db; border-radius:10px; padding:9px 10px; font-size:15px; font-weight:700; text-align:center; color:#1b1e45; background:#fafafa; font-family:inherit; }
+.vol-num:focus { outline:none; border-color:#2e3192; background:#fff; }
+.vol-scale { display:flex; justify-content:space-between; font-size:11px; color:#8e92b3; font-weight:600; margin-top:-4px; }
+.vol-level { display:inline-block; font-size:12px; font-weight:700; padding:3px 10px; border-radius:99px; background:#eef2ff; color:#2e3192; margin-left:8px; }
+.vol-summary { font-size:12.5px; color:#4a4e73; background:#f6f7fc; border:1px solid #e6e8f3; border-radius:10px; padding:10px 14px; line-height:1.7; }
 </style>
 </head>
 <body>
@@ -313,6 +341,46 @@
         <div class="settings-hero-tag"><span></span>System Configuration</div>
         <h1>Settings</h1>
         <p>Control exam behaviour, security, branding and student access from one place.</p>
+      </div>
+
+      <!-- ⓪ ACCOUNT SECURITY — CHANGE ADMIN PASSWORD -->
+      <div class="settings-section" id="adminPasswordSection">
+        <div class="section-head">
+          <div class="section-head-icon" style="background:#eef2ff;"><svg viewBox="0 0 16 16" fill="none" width="18" height="18"><rect x="3" y="7" width="10" height="7" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M5 7V5a3 3 0 016 0v2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="10.5" r="1" fill="currentColor"/></svg></div>
+          <div class="section-head-text">
+            <h3>Change Admin Password</h3>
+            <p>Update the password you use to sign in to this admin panel</p>
+          </div>
+        </div>
+        <div class="pw-form">
+          <div id="pwMsg" class="pw-msg" role="status"></div>
+          <div class="pw-field">
+            <label for="pwCurrent">Current password</label>
+            <div class="pw-wrap">
+              <input type="password" id="pwCurrent" autocomplete="current-password" >
+              <button type="button" class="pw-eye" onclick="toggleVis('pwCurrent')" aria-label="Show or hide password"><svg viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>
+            </div>
+          </div>
+          <div class="pw-field">
+            <label for="pwNew">New password</label>
+            <div class="pw-wrap">
+              <input type="password" id="pwNew" autocomplete="new-password" oninput="pwStrength()">
+              <button type="button" class="pw-eye" onclick="toggleVis('pwNew')" aria-label="Show or hide password"><svg viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>
+            </div>
+          </div>
+          <div>
+            <div class="pw-meter"><i id="pwMeterBar"></i></div>
+            <div class="pw-hint" id="pwHint">Use at least 8 characters. A mix of letters, numbers and symbols is stronger.</div>
+          </div>
+          <div class="pw-field">
+            <label for="pwConfirm">Confirm new password</label>
+            <div class="pw-wrap">
+              <input type="password" id="pwConfirm" autocomplete="new-password" >
+              <button type="button" class="pw-eye" onclick="toggleVis('pwConfirm')" aria-label="Show or hide password"><svg viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>
+            </div>
+          </div>
+          <button type="button" class="btn-pw" id="pwBtn" onclick="changeAdminPassword()">Update password</button>
+        </div>
       </div>
 
       <!-- ① PORTAL CONTROL -->
@@ -551,6 +619,29 @@
           </div>
         </div>
 
+        <!-- Violation Volume -->
+        <div class="setting-row" id="volumeRow" style="flex-direction:column;align-items:stretch;gap:12px;">
+          <div class="setting-info">
+            <div class="setting-title">
+              Violation Volume
+              <span class="face-anticheat-badge">AI Powered</span>
+              <span class="vol-level" id="volLevel">Balanced</span>
+            </div>
+            <div class="setting-desc">
+              Sets how sharp the AI monitoring is, from <strong>1</strong> to <strong>100</strong>.
+              At <strong>1</strong> the AI captures slowly and forgives short movements.
+              At <strong>100</strong> it checks the camera many times a second and flags even small head turns, brief talking and short absences.
+              It adjusts Strict Face Anti-Cheat, Restrict Side Look, Restrict Voice and how fast leaving the exam window is counted.
+            </div>
+          </div>
+          <div class="vol-wrap">
+            <input type="range" id="volRange" min="1" max="100" step="1" value="50" oninput="onVolumeInput(this.value)" aria-label="Violation volume">
+            <input type="number" id="val_violation_volume" class="vol-num" min="1" max="100" value="50" oninput="onVolumeInput(this.value)" aria-label="Violation volume number">
+          </div>
+          <div class="vol-scale"><span>1 · Gentle</span><span>50 · Balanced</span><span>100 · Very sharp</span></div>
+          <div class="vol-summary" id="volSummary"></div>
+        </div>
+
         <!-- Strict Face Anti-Cheat -->
         <div class="setting-row">
           <div class="setting-info">
@@ -685,7 +776,7 @@
           <div class="section-head-icon" style="background:#dcfce7;"><svg viewBox="0 0 16 16" fill="none" width="18" height="18"><rect x="3" y="2" width="10" height="12" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M6 1.5h4v2H6v-2z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M5 7h6M5 10h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div>
           <div class="section-head-text">
             <h3>Exam Assignments</h3>
-            <p>Assign exams to department lecturers so they can upload questions and generate access codes</p>
+            <p>Assign any exam to all lecturers or just the ones you choose, whatever department or level they teach</p>
           </div>
         </div>
 
@@ -693,7 +784,7 @@
           <!-- Department filter -->
           <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
             <select id="assignDeptFilter" class="settings-select" style="flex:1;min-width:200px;" onchange="loadAssignmentExams()">
-              <option value="">— Filter by Department —</option>
+              <option value="">— All exams (optionally filter by department) —</option>
             </select>
             <button class="btn btn-primary" onclick="loadAssignmentExams()" style="white-space:nowrap;">Load Exams</button>
           </div>
@@ -707,7 +798,16 @@
           <!-- Assignment panel (shown after selecting an exam) -->
           <div id="assignPanel" style="display:none;margin-top:12px;border:1px solid #e5e7eb;border-radius:12px;padding:16px;background:#f9fafb;">
             <div style="font-weight:600;color:#0f6b30;font-size:15px;margin-bottom:4px;" id="assignPanelTitle">Assign Lecturers</div>
-            <div style="font-size:13px;color:#6b7280;margin-bottom:14px;" id="assignPanelSub">Tick the lecturers who should be able to add questions to this exam.</div>
+            <div style="font-size:13px;color:#6b7280;margin-bottom:12px;" id="assignPanelSub">Choose every lecturer who should work on this exam (add questions, see results and violations). Departments and levels do not matter.</div>
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;border-radius:10px;border:1px solid #c7d2fe;background:#eef2ff;margin-bottom:10px;">
+              <input type="checkbox" id="assignAllToggle" style="width:17px;height:17px;accent-color:#2e3192;" onchange="onAssignAllToggle(this.checked)">
+              <span style="font-size:14px;font-weight:700;color:#1b1e45;">Assign to ALL lecturers</span>
+              <span style="font-size:12px;color:#5b5f80;margin-left:auto;">includes lecturers added later</span>
+            </label>
+            <div style="display:flex;gap:8px;margin-bottom:10px;" id="assignQuickBtns">
+              <button type="button" class="btn btn-outline btn-sm" onclick="setAllLecturerChecks(true)">Select all</button>
+              <button type="button" class="btn btn-outline btn-sm" onclick="setAllLecturerChecks(false)">Clear</button>
+            </div>
             <div id="assignLecturerList" style="display:flex;flex-direction:column;gap:10px;max-height:260px;overflow-y:auto;"></div>
             <div style="margin-top:14px;display:flex;gap:10px;">
               <button class="btn btn-primary" onclick="saveAssignments()">Save Assignments</button>
@@ -792,8 +892,8 @@
               </select>
             </div>
             <div>
-              <label style="font-size:12px;color:#5b5f80;font-weight:500;display:block;margin-bottom:4px;">Department <span style="color:#ef4444;">*</span></label>
-              <select id="lec_department" class="lec-input"><option value="">— Select Department —</option></select>
+              <label style="font-size:12px;color:#5b5f80;font-weight:500;display:block;margin-bottom:4px;">Department <span style="color:#8e92b3;font-weight:400;">(optional)</span></label>
+              <select id="lec_department" class="lec-input"><option value="">— All departments / levels —</option></select>
             </div>
             <div>
               <label style="font-size:12px;color:#5b5f80;font-weight:500;display:block;margin-bottom:4px;">Password <span style="color:#ef4444;">*</span></label>
@@ -899,7 +999,7 @@
       </div>
       <div>
         <label style="font-size:12px;color:#5b5f80;font-weight:500;display:block;margin-bottom:4px;">Department</label>
-        <select id="editLecDept" class="lec-input"><option value="">— Select Department —</option></select>
+        <select id="editLecDept" class="lec-input"><option value="">— All departments / levels —</option></select>
       </div>
       <div class="full">
         <label style="font-size:12px;color:#5b5f80;font-weight:500;display:block;margin-bottom:4px;">New Password <span style="color:#8e92b3;">(leave blank to keep current)</span></label>
@@ -980,6 +1080,7 @@ async function loadSettings() {
   });
   const vSel = document.getElementById('val_max_violations');
   if (vSel) vSel.value = currentSettings.max_violations || 3;
+  renderVolume(currentSettings.violation_volume || 50);
 
   // Exam rules
   const rulesEl = document.getElementById('val_exam_rules');
@@ -1278,7 +1379,7 @@ async function loadDeptDropdowns() {
     const options = depts.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
     ['lec_department', 'editLecDept'].forEach(id => {
       const sel = document.getElementById(id);
-      if (sel) sel.innerHTML = '<option value="">— Select Department —</option>' + options;
+      if (sel) sel.innerHTML = '<option value="">— All departments / levels —</option>' + options;
     });
   } catch(e) {}
 }
@@ -1298,7 +1399,7 @@ const PERM_LABELS = {
 // Permissions available per role with icons and descriptions
 const ROLE_PERMS = {
   lecturer: [
-    { value: 'manage_exams',       icon: '', label: 'Create Exams',       desc: 'Create & manage exams in their dept' },
+    { value: 'manage_exams',       icon: '', label: 'Create Exams',       desc: 'Create & manage their exams' },
     { value: 'manage_questions',   icon: '', label: 'Upload Questions',    desc: 'Add / upload question bank entries' },
     { value: 'view_results',       icon: '', label: 'View Results',        desc: 'See student exam results' },
     { value: 'manage_own_courses', icon: '', label: 'Manage Own Courses',  desc: 'Edit only their assigned courses' },
@@ -1426,8 +1527,6 @@ async function createLecturer() {
     return lecAlert('lecCreateAlert', 'Name, username and password are required.', 'danger');
   if (!role)
     return lecAlert('lecCreateAlert', 'Please select a role.', 'danger');
-  if (!department_id)
-    return lecAlert('lecCreateAlert', 'Please select a department.', 'danger');
   if (password !== password2)
     return lecAlert('lecCreateAlert', 'Passwords do not match.', 'danger');
   if (password.length < 6)
@@ -1476,7 +1575,6 @@ async function saveLecEdit() {
   const permissions  = getCheckedPerms('editPermGrid');
 
   if (!display_name) return lecAlert('editLecAlert', 'Name cannot be empty.', 'danger');
-  if (!department_id) return lecAlert('editLecAlert', 'Please select a department.', 'danger');
   if (!permissions.length) return lecAlert('editLecAlert', 'Select at least one permission.', 'danger');
   if (password && password.length < 6) return lecAlert('editLecAlert', 'Password must be at least 6 characters.', 'danger');
 
@@ -1579,7 +1677,7 @@ async function loadAssignmentExams() {
       container.innerHTML = '<div style="color:#6b7280;font-size:13px;padding:10px 0;">No exams found. Try selecting a department.</div>';
     } else {
       exams.forEach(e => {
-        const names = e.assigned_to.map(l => l.display_name || l.username).join(', ') || '<em style="color:#9ca3af;">None assigned</em>';
+        const names = e.assigned_to_all ? '<strong style="color:#2e3192;">All lecturers</strong>' : (e.assigned_to.map(l => l.display_name || l.username).join(', ') || '<em style="color:#9ca3af;">None assigned</em>');
         const card = document.createElement('div');
         card.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;background:#fff;border:1px solid #e5e7eb;border-radius:10px;flex-wrap:wrap;';
         card.innerHTML = `
@@ -1613,6 +1711,8 @@ async function openAssignPanel(examId, examTitle) {
     ]);
     const lecturers = (lecRes.lecturers || lecRes || []).filter(l => l.role === 'lecturer');
     const assignedIds = new Set((assignRes.assigned_to || []).map(l => l.id));
+    const allFlag = !!assignRes.assigned_to_all;
+    document.getElementById('assignAllToggle').checked = allFlag;
 
     if (!lecturers.length) {
       listEl.innerHTML = '<div style="color:#6b7280;font-size:13px;">No lecturers found. Add lecturers under Staff Accounts first.</div>';
@@ -1624,8 +1724,8 @@ async function openAssignPanel(examId, examTitle) {
           style="width:16px;height:16px;accent-color:#0f6b30;"
           onchange="this.closest('label').style.background=this.checked?'#f0fdf4':'#fff'">
         <span style="font-size:14px;font-weight:500;color:#111827;">${l.display_name || l.username}</span>
-        <span style="font-size:12px;color:#6b7280;margin-left:auto;">${l.department_name || ''}</span>
       </label>`).join('');
+    onAssignAllToggle(allFlag);
   } catch(e) {
     listEl.innerHTML = '<div style="color:#dc2626;font-size:13px;">Error loading lecturers.</div>';
   }
@@ -1634,10 +1734,11 @@ async function openAssignPanel(examId, examTitle) {
 async function saveAssignments() {
   if (!_assignCurrentExamId) return;
   const checked = [...document.querySelectorAll('#assignLecturerList input[type=checkbox]:checked')].map(i => i.value);
+  const assignAll = document.getElementById('assignAllToggle').checked;
   try {
-    const res = await apiPost('/api/admin/exam-assignments', { exam_id: _assignCurrentExamId, lecturer_ids: checked });
+    const res = await apiPost('/api/admin/exam-assignments', { exam_id: _assignCurrentExamId, lecturer_ids: checked, assign_all: assignAll });
     if (res.success) {
-      showAlert(`Assignments saved. ${checked.length} lecturer(s) assigned.`, 'success');
+      showAlert(assignAll ? 'Exam assigned to <strong>all lecturers</strong>.' : `Assignments saved. ${checked.length} lecturer(s) assigned.`, 'success');
       closeAssignPanel();
       loadAssignmentExams(); // refresh list
     } else {
@@ -1648,6 +1749,20 @@ async function saveAssignments() {
   }
 }
 
+function onAssignAllToggle(on) {
+  document.querySelectorAll('#assignLecturerList input[type=checkbox]').forEach(i => {
+    i.disabled = on;
+    i.closest('label').style.opacity = on ? '.5' : '1';
+  });
+  const q = document.getElementById('assignQuickBtns');
+  if (q) q.style.display = on ? 'none' : 'flex';
+}
+function setAllLecturerChecks(on) {
+  document.querySelectorAll('#assignLecturerList input[type=checkbox]').forEach(i => {
+    i.checked = on; i.closest('label').style.background = on ? '#f0fdf4' : '#fff';
+  });
+}
+
 function closeAssignPanel() {
   _assignCurrentExamId = null;
   document.getElementById('assignPanel').style.display = 'none';
@@ -1656,6 +1771,96 @@ function closeAssignPanel() {
 initExamAssignSection();
 
 const token = () => sessionStorage.getItem('adminToken') || '';
+
+
+
+// ── Violation volume (1–100) ───────────────────────────────
+let _volSaveTimer = null;
+function volumeProfile(v) {
+  const t = (v - 1) / 99, g = (a, b) => a * Math.pow(b / a, t);
+  return {
+    checksPerSec: 1000 / g(1000, 100),
+    sideLookSec:  g(5000, 400) / 1000,
+    noFaceSec:    g(8000, 1000) / 1000,
+    talkSec:      g(6000, 1200) / 1000,
+    leaveSec:     g(4000, 800) / 1000
+  };
+}
+function volumeLabel(v) { return v <= 20 ? 'Very gentle' : v <= 40 ? 'Gentle' : v <= 60 ? 'Balanced' : v <= 80 ? 'Strict' : 'Very sharp'; }
+function renderVolume(v) {
+  v = Math.min(100, Math.max(1, Math.round(Number(v)) || 50));
+  document.getElementById('volRange').value = v;
+  document.getElementById('val_violation_volume').value = v;
+  document.getElementById('volLevel').textContent = v + ' · ' + volumeLabel(v);
+  const p = volumeProfile(v), f = n => n < 10 ? n.toFixed(1) : Math.round(n);
+  document.getElementById('volSummary').innerHTML =
+    `Camera checks ~<strong>${f(p.checksPerSec)}</strong>/second &nbsp;·&nbsp; Head turn flagged after ~<strong>${f(p.sideLookSec)}s</strong> &nbsp;·&nbsp; ` +
+    `No face flagged after ~<strong>${f(p.noFaceSec)}s</strong> &nbsp;·&nbsp; Talking flagged after ~<strong>${f(p.talkSec)}s</strong> &nbsp;·&nbsp; ` +
+    `Leaving the exam window flagged after ~<strong>${f(p.leaveSec)}s</strong>`;
+  return v;
+}
+function onVolumeInput(raw) {
+  if (raw === '' ) return;
+  const v = renderVolume(raw);
+  currentSettings.violation_volume = v;
+  clearTimeout(_volSaveTimer);
+  _volSaveTimer = setTimeout(async () => {
+    try { await apiPost('/api/admin/settings', { key: 'violation_volume', value: v }); showAlert(`Violation volume set to <strong>${v}</strong> (${volumeLabel(v)}).`, 'success'); }
+    catch(e) { showAlert('Failed to save violation volume.', 'danger'); }
+  }, 600);
+}
+
+// ── Change admin password ──────────────────────────────────
+function pwStrength() {
+  const v = document.getElementById('pwNew').value;
+  let score = 0;
+  if (v.length >= 8) score++;
+  if (v.length >= 12) score++;
+  if (/[a-z]/.test(v) && /[A-Z]/.test(v)) score++;
+  if (/\d/.test(v)) score++;
+  if (/[^A-Za-z0-9]/.test(v)) score++;
+  const bar = document.getElementById('pwMeterBar');
+  const hint = document.getElementById('pwHint');
+  const colors = ['#ef4444','#ef4444','#f59e0b','#84cc16','#16a34a','#16a34a'];
+  const labels = ['Too short','Weak','Fair','Good','Strong','Very strong'];
+  bar.style.width = (v ? Math.max(12, score * 20) : 0) + '%';
+  bar.style.background = colors[score];
+  hint.textContent = v ? labels[v.length < 8 ? 0 : score] : 'Use at least 8 characters. A mix of letters, numbers and symbols is stronger.';
+}
+
+async function changeAdminPassword() {
+  const cur = document.getElementById('pwCurrent').value;
+  const nw  = document.getElementById('pwNew').value;
+  const cf  = document.getElementById('pwConfirm').value;
+  const msg = document.getElementById('pwMsg');
+  const btn = document.getElementById('pwBtn');
+  const show = (t, ok) => { msg.textContent = t; msg.className = 'pw-msg ' + (ok ? 'ok' : 'err'); };
+
+  if (!cur || !nw || !cf) return show('Please fill in all three fields.', false);
+  if (nw.length < 8)      return show('New password must be at least 8 characters.', false);
+  if (nw !== cf)          return show('New password and confirmation do not match.', false);
+  if (nw === cur)         return show('New password must be different from the current one.', false);
+
+  btn.disabled = true; btn.textContent = 'Updating...';
+  try {
+    const res = await fetch('/api/admin/change-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Admin-Token': getAdminToken() },
+      body: JSON.stringify({ current_password: cur, new_password: nw })
+    });
+    const data = await res.json();
+    if (data.success) {
+      show('Password changed successfully. Use the new password next time you sign in.', true);
+      ['pwCurrent','pwNew','pwConfirm'].forEach(id => { document.getElementById(id).value = ''; });
+      pwStrength();
+    } else {
+      show(data.message || 'Could not change password.', false);
+    }
+  } catch(e) {
+    show('Server error. Please try again.', false);
+  }
+  btn.disabled = false; btn.textContent = 'Update password';
+}
 
 function toggleVis(id) {
   const el = document.getElementById(id);

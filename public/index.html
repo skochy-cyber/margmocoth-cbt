@@ -4,7 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>MARGMOCOTH CBT — Margaret Mosunmola College of Health Science and Technology, Owo</title>
-<meta name="description" content="Computer-based test portal for students of Margaret Mosunmola College of Health Science and Technology, Owo, Ondo State.">
+<meta name="description" content="MARGMOCOTH CBT — Smart Assessment, Better Future. The official computer-based test portal of Margaret Mosunmola College of Health Science and Technology, Owo, Ondo State.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="MARGMOCOTH CBT — Smart Assessment, Better Future">
+<meta property="og:description" content="Sign in, enter your access code, write your exam and see your results online. Margaret Mosunmola College of Health Science and Technology, Owo.">
+<meta property="og:image" content="/cbt-hall-og.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preload" as="image" href="/cbt-hall-sm.jpg" imagesrcset="/cbt-hall-sm.jpg 900w, /cbt-hall.jpg 1672w" imagesizes="(max-width: 960px) 100vw, 540px">
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#2e3192">
 <meta name="mobile-web-app-capable" content="yes">
@@ -99,6 +105,41 @@ h1 span { color: var(--navy); }
 .m-foot span { font-size: 13px; font-weight: 600; padding: 9px 18px; border-radius: 10px; border: 1px solid var(--line); color: var(--mute); }
 .m-foot span.p { background: var(--navy); border-color: var(--navy); color: #fff; }
 
+
+/* Hero visual: CBT hall photo + floating cards */
+.visual { position: relative; padding: 0 0 34px 28px; }
+.photo { margin: 0; border-radius: 22px; overflow: hidden; border: 1px solid var(--line); box-shadow: 0 34px 70px -30px rgba(31,33,112,.5), 0 2px 8px rgba(15,18,48,.06); background: var(--soft); aspect-ratio: 5 / 4; position: relative; }
+.photo img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 28%; display: block; }
+.photo::after { content: ""; position: absolute; inset: auto 0 0 0; height: 38%; background: linear-gradient(to top, rgba(15,18,48,.55), rgba(15,18,48,0)); pointer-events: none; }
+.photo figcaption { position: absolute; left: 20px; right: 20px; bottom: 16px; z-index: 1; color: #fff; font-weight: 700; font-size: 14.5px; letter-spacing: .01em; text-shadow: 0 1px 8px rgba(0,0,0,.35); }
+.float { position: absolute; background: #fff; border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 22px 44px -20px rgba(31,33,112,.45); }
+.f-exam { left: 0; bottom: 0; width: min(270px, 66%); padding: 14px 16px 15px; }
+.f-exam .r1 { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 12px; font-weight: 700; color: var(--mute); }
+.f-exam .r1 .m-timer { font-size: 13px; }
+.f-exam .bar { margin-top: 10px; height: 6px; border-radius: 99px; background: var(--line); overflow: hidden; }
+.f-exam .bar i { display: block; width: 40%; height: 100%; background: var(--navy); border-radius: 99px; }
+.f-exam .r2 { margin-top: 8px; display: flex; justify-content: space-between; font-size: 12px; font-weight: 600; color: var(--mute); }
+.f-badge { right: -8px; top: 22px; display: flex; align-items: center; gap: 10px; padding: 10px 14px 10px 10px; font-size: 13px; font-weight: 700; line-height: 1.25; }
+.f-badge .ic2 { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: #e8f7ee; color: var(--ok); }
+.f-badge .ic2 svg { width: 18px; height: 18px; stroke-width: 2.2; }
+.f-badge small { display: block; font-size: 11.5px; font-weight: 500; color: var(--mute); }
+
+/* Tagline band */
+.band { background: linear-gradient(135deg, var(--navy-d), var(--navy)); color: #fff; }
+.band .wrap { padding-block: 26px; display: grid; grid-template-columns: 1.1fr repeat(4, auto); gap: 14px 40px; align-items: center; }
+.band .tag { font-weight: 800; font-size: clamp(16px, 2.2vw, 21px); letter-spacing: -.01em; font-style: italic; }
+.band .tag small { display: block; margin-top: 2px; font-style: normal; font-weight: 500; font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase; color: rgba(255,255,255,.7); }
+.stat b { display: block; font-size: 22px; font-weight: 800; line-height: 1.1; }
+.stat span { font-size: 12.5px; color: rgba(255,255,255,.72); font-weight: 500; }
+
+/* CBT guidelines panel */
+.guide { margin-top: 26px; background: linear-gradient(160deg, var(--navy), var(--navy-d)); color: #fff; border-radius: 18px; padding: 24px 24px 22px; box-shadow: 0 24px 48px -24px rgba(31,33,112,.6); max-width: 460px; }
+.guide h3 { font-size: 20px; font-weight: 800; letter-spacing: -.01em; }
+.guide ul { list-style: none; margin-top: 14px; display: grid; gap: 12px; }
+.guide li { display: flex; gap: 12px; align-items: center; font-size: 15px; font-weight: 500; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.14); border-radius: 12px; padding: 12px 14px; }
+.guide li svg { width: 20px; height: 20px; color: #7ff0ad; stroke-width: 2.6; }
+.guide p { margin-top: 14px; font-size: 13px; color: rgba(255,255,255,.75); font-style: italic; }
+
 /* Sections */
 section.block { padding-block: clamp(52px, 7vw, 92px); }
 section.soft { background: var(--soft); border-block: 1px solid var(--line); }
@@ -170,7 +211,9 @@ footer .links { display: flex; gap: 18px; flex-wrap: wrap; }
   .grid { grid-template-columns: repeat(2, 1fr); }
   .steps, .depts { grid-template-columns: repeat(2, 1fr); }
   .contact { position: static; }
-  .mock { max-width: 520px; }
+  .visual { max-width: 560px; }
+  .band .wrap { grid-template-columns: repeat(2, 1fr); }
+  .band .tag { grid-column: 1 / -1; }
 }
 @media (max-width: 640px) {
   .menu a.lnk { display: none; }
@@ -178,6 +221,10 @@ footer .links { display: flex; gap: 18px; flex-wrap: wrap; }
   .grid, .steps, .depts { grid-template-columns: 1fr; }
   .cta .btn { flex: 1 1 100%; }
   .menu .btn-line { display: none; }
+  .visual { padding-left: 0; padding-bottom: 28px; }
+  .f-exam { left: 10px; width: 62%; }
+  .f-badge { right: 8px; top: 10px; }
+  .guide { max-width: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
@@ -213,9 +260,9 @@ footer .links { display: flex; gap: 18px; flex-wrap: wrap; }
   <section class="hero">
     <div class="wrap">
       <div>
-        <span class="pill"><i></i> Official exam portal · Owo, Ondo State</span>
+        <span class="pill"><i></i> Smart Assessment, Better Future</span>
         <h1>Margaret Mosunmola College <span>computer-based exams</span></h1>
-        <p class="lead">Sign in, enter your access code, write your exam on your phone or computer, and see your results here when the college releases them.</p>
+        <p class="lead">The official exam portal of Margaret Mosunmola College of Health Science and Technology, Owo. Sign in with your name, matric number or email, enter your access code, write your exam on your phone or computer, and see your results here when the college releases them.</p>
         <div class="cta">
           <a class="btn btn-solid" href="login.html">Student login
             <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
@@ -230,27 +277,36 @@ footer .links { display: flex; gap: 18px; flex-wrap: wrap; }
         </div>
       </div>
 
-      <div class="mock rv" aria-label="Preview of the exam screen" role="img">
-        <div class="m-bar">
-          <div class="m-dots"><i></i><i></i><i></i></div>
-          <span>Anatomy &amp; Physiology · Exam</span>
-          <span class="m-timer"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M9 2h6"/></svg>42:15</span>
+      <div class="visual rv">
+        <figure class="photo">
+          <img src="cbt-hall.jpg" srcset="cbt-hall-sm.jpg 900w, cbt-hall.jpg 1672w" sizes="(max-width: 960px) 100vw, 540px"
+               width="1672" height="941" fetchpriority="high" decoding="async"
+               alt="The MARGMOCOTH CBT examination centre: rows of computers showing the MARGMOCOTH CBT login screen">
+          <figcaption>MARGMOCOTH CBT Examination Centre</figcaption>
+        </figure>
+        <div class="float f-badge" aria-hidden="true">
+          <span class="ic2"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg></span>
+          <span>Secure &amp; monitored<small>Fair exams for everyone</small></span>
         </div>
-        <div class="m-body">
-          <div class="m-prog"><i></i></div>
-          <div class="m-meta"><span>Question 8 of 20</span><span>40% done</span></div>
-          <p class="m-q">Which organ is responsible for filtering blood and producing urine?</p>
-          <div class="m-opts">
-            <div class="opt"><b>A</b>Liver</div>
-            <div class="opt sel"><b>B</b>Kidney</div>
-            <div class="opt"><b>C</b>Spleen</div>
-            <div class="opt"><b>D</b>Pancreas</div>
-          </div>
-          <div class="m-foot"><span>Previous</span><span class="p">Next</span></div>
+        <div class="float f-exam" role="img" aria-label="Preview of an exam in progress: question 8 of 20, 42 minutes 15 seconds left">
+          <div class="r1"><span>Anatomy &amp; Physiology</span>
+            <span class="m-timer"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M9 2h6"/></svg>42:15</span></div>
+          <div class="bar"><i></i></div>
+          <div class="r2"><span>Question 8 of 20</span><span>40% done</span></div>
         </div>
       </div>
     </div>
   </section>
+
+  <div class="band">
+    <div class="wrap">
+      <div class="tag">&hellip;Smart Assessment, Better Future&hellip;<small>MARGMOCOTH CBT</small></div>
+      <div class="stat"><b id="statDepts">4</b><span>Departments</span></div>
+      <div class="stat"><b>100L – 400L</b><span>All levels</span></div>
+      <div class="stat"><b>Any device</b><span>Phone or computer</span></div>
+      <div class="stat"><b>Online</b><span>Results portal</span></div>
+    </div>
+  </div>
 
   <section class="block soft" id="features">
     <div class="wrap">
@@ -260,7 +316,7 @@ footer .links { display: flex; gap: 18px; flex-wrap: wrap; }
         <p class="sub">The portal handles sign-in, exam access, timing, monitoring and results in one place.</p>
       </div>
       <div class="grid">
-        <article class="card rv"><div class="ic"><svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg></div><h3>Secure sign-in</h3><p>Only students registered by the college can log in with their name, level, department and password.</p></article>
+        <article class="card rv"><div class="ic"><svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg></div><h3>Secure sign-in</h3><p>Sign in with your name, matric number or email and your own password. Only registered students get in.</p></article>
         <article class="card rv"><div class="ic"><svg viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M16 7l3 3"/></svg></div><h3>Access-code exams</h3><p>Your lecturer gives you a code on exam day. Without it, the exam stays locked.</p></article>
         <article class="card rv"><div class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M9 2h6"/></svg></div><h3>Live countdown</h3><p>See your time left while you answer. When time is up, your exam is submitted automatically.</p></article>
         <article class="card rv"><div class="ic"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg></div><h3>Fair and monitored</h3><p>The portal watches for rule breaking, such as leaving the exam page, so every student gets a fair chance.</p></article>
@@ -275,10 +331,10 @@ footer .links { display: flex; gap: 18px; flex-wrap: wrap; }
       <div class="center rv">
         <span class="kick">How it works</span>
         <h2>Four steps from login to result</h2>
-        <p class="sub">You only need a phone or computer with internet and your login details.</p>
+        <p class="sub">You only need a phone or computer with internet and your sign-in details.</p>
       </div>
       <ol class="steps">
-        <li class="rv"><h3>Sign in</h3><p>Enter your full name, level, department and password from the examination office.</p></li>
+        <li class="rv"><h3>Sign in</h3><p>Enter your name, matric number or email, plus your password.</p></li>
         <li class="rv"><h3>Open your exam</h3><p>On your dashboard, choose the exam available to you.</p></li>
         <li class="rv"><h3>Enter access code</h3><p>Type the code from your lecturer to unlock the exam and start the timer.</p></li>
         <li class="rv"><h3>Write and submit</h3><p>Answer before the timer ends, then submit. Results show when the college releases them.</p></li>
@@ -292,6 +348,15 @@ footer .links { display: flex; gap: 18px; flex-wrap: wrap; }
         <span class="kick">Before you start</span>
         <h2>Get ready for exam day</h2>
         <p class="sub">A few simple habits keep your exam smooth and free of problems.</p>
+        <div class="guide" aria-label="CBT guidelines">
+          <h3>CBT Guidelines</h3>
+          <ul>
+            <li><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg>Sign in with your details</li>
+            <li><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg>Do not refresh the page</li>
+            <li><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg>Submit before time expires</li>
+          </ul>
+          <p>Excel with Integrity</p>
+        </div>
       </div>
       <ul class="list">
         <li class="rv"><svg viewBox="0 0 24 24"><rect x="3" y="7" width="16" height="10" rx="2"/><path d="M21 11v2M7 12h4"/></svg><span><b>Charge your device</b>Use a stable internet connection.</span></li>
@@ -307,7 +372,7 @@ footer .links { display: flex; gap: 18px; flex-wrap: wrap; }
       <div class="center rv">
         <span class="kick">Departments</span>
         <h2>Who the portal is for</h2>
-        <p class="sub">Pick your department and level exactly as the college registered you.</p>
+        <p class="sub">Choose your department and level exactly as the college registered you when you create your account.</p>
       </div>
       <div class="depts">
         <div class="dept rv"><h3>Community Health</h3><span>100L – 300L</span></div>
@@ -324,8 +389,10 @@ footer .links { display: flex; gap: 18px; flex-wrap: wrap; }
         <span class="kick">Support</span>
         <h2>Having trouble signing in?</h2>
         <div class="faq">
-          <details><summary>My name is not found</summary><p>Type your name the way the college registered it, and choose the same level and department.</p></details>
-          <details><summary>I forgot my password</summary><p>Contact the examination office. Do not share your password with anyone.</p></details>
+          <details><summary>What can I use to sign in?</summary><p>Your full name, your matric number or your email, together with your password. Matric numbers and emails are not case-sensitive.</p></details>
+          <details><summary>It says no account was found</summary><p>Check your spelling, or try your matric number or the email you registered with. If you have not registered yet, use the registration link from your department or ask the examination office.</p></details>
+          <details><summary>I forgot my password</summary><p>On the login page, tap &ldquo;Forgot password?&rdquo; and enter your name, matric number or email. The examination office will set a new password for you. Do not share your password with anyone.</p></details>
+          <details><summary>It says more than one student has my name</summary><p>Sign in with your matric number or email instead. Those are unique to you.</p></details>
           <details><summary>The page will not load</summary><p>Check your internet connection, then refresh the page.</p></details>
           <details><summary>I do not have an access code</summary><p>Your lecturer gives the access code for each exam. Ask them before the exam starts.</p></details>
           <details><summary>My internet dropped during an exam</summary><p>Reconnect and continue. The portal records it as a network issue. Tell your lecturer if the problem continues.</p></details>
@@ -378,6 +445,21 @@ document.getElementById('yr').textContent = new Date().getFullYear();
     } else {
       document.getElementById('regNote').hidden = false;
     }
+
+    try {
+      var depts = await fetch('/api/departments').then(function (r) { return r.json(); });
+      if (Array.isArray(depts) && depts.length) {
+        document.getElementById('statDepts').textContent = depts.length;
+        var box = document.querySelector('#departments .depts');
+        box.innerHTML = '';
+        depts.forEach(function (d) {
+          var el = document.createElement('div'); el.className = 'dept in';
+          var h = document.createElement('h3'); h.textContent = d.name;
+          var sp = document.createElement('span'); sp.textContent = '100L – 400L';
+          el.appendChild(h); el.appendChild(sp); box.appendChild(el);
+        });
+      }
+    } catch (e) {}
 
     if (s.contact_email) {
       var a = document.getElementById('contactEmail');

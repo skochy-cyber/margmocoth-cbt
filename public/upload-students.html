@@ -70,6 +70,14 @@
  <label class="form-label">Full Name *</label>
  <input type="text" id="name" class="form-control" placeholder="John Doe">
  </div>
+ <div class="form-group">
+ <label class="form-label">Matric Number <span style="color:#8e92b3;font-weight:400;">(lets the student sign in with it)</span></label>
+ <input type="text" id="matric" class="form-control" placeholder="Matric number">
+ </div>
+ <div class="form-group">
+ <label class="form-label">Email <span style="color:#8e92b3;font-weight:400;">(optional)</span></label>
+ <input type="email" id="email" class="form-control" placeholder="student@example.com">
+ </div>
 
  <div class="form-group">
  <label class="form-label">Department *</label>
@@ -128,10 +136,11 @@
  <div class="card-header" style="background:linear-gradient(135deg,#0f1230,#1b1e45);">CSV Format</div>
  <div class="card-body">
  <p style="font-size:13px;margin-bottom:14px;color:#71717a;">Required CSV format:</p>
- <div class="code-block">name,department,level<br>
-John Doe,Medical Laboratory,100L<br>
-Jane Smith,Public Health,200L<br>
-Ali Hassan,HIM,300L</div>
+ <div class="code-block">name,matric,email,department,level<br>
+John Doe,MAT001,john@example.com,Medical Laboratory,100L<br>
+Jane Smith,MAT002,,Public Health,200L<br>
+Ali Hassan,MAT003,ali@example.com,HIM,300L</div>
+ <div style="margin-top:10px;font-size:12px;color:#71717a;">Matric and email are optional but let students sign in with them. The old name,department,level format still works.</div>
  <div style="margin-top:14px;font-size:13px;color:#71717a;line-height:2;">
  Password is auto-assigned from the active generated password for each department. Department and class names must match exactly as created in Settings.
  </div>
@@ -279,6 +288,8 @@ async function addStudent() {
  const admin  = JSON.parse(sessionStorage.getItem('admin') || '{}');
  const payload = {
  name:  document.getElementById('name').value.trim(),
+ matric: document.getElementById('matric').value.trim(),
+ email:  document.getElementById('email').value.trim(),
  department_id: document.getElementById('department_id').value,
  level_id:  document.getElementById('level_id').value,
  created_by:  admin.id || null
@@ -292,7 +303,7 @@ async function addStudent() {
  btn.innerHTML = ' Add Student'; btn.disabled = false;
  if (data.success) {
  showAlert('Student added successfully! Password auto-assigned from department generated password.', 'success');
- ['name'].forEach(id => document.getElementById(id).value = '');
+ ['name','matric','email'].forEach(id => document.getElementById(id).value = '');
  } else showAlert(data.message, 'danger');
 }
 
@@ -303,11 +314,19 @@ function previewStudents(file) {
  fileInfo.textContent = ` ${file.name}`;
  const reader = new FileReader();
  reader.onload = e => {
- const lines = e.target.result.trim().split('\n');
+ const lines = e.target.result.replace(/\r/g,'').trim().split('\n');
  parsedStudents = [];
+ const clean = c => c.trim().replace(/^"|"$/g,'');
+ const head = lines[0].split(',').map(c => clean(c).toLowerCase());
+ const idx = (...names) => head.findIndex(h => names.includes(h));
+ const iName = idx('name','full name','fullname'), iMat = idx('matric','matric number','matric_number'),
+ iEmail = idx('email'), iDept = idx('department','arm'), iLvl = idx('level','class');
+ const hasHeader = iName >= 0;
  for (let i = 1; i < lines.length; i++) {
- const cols = lines[i].split(',').map(c => c.trim().replace(/^"|"$/g,''));
- if (cols.length >= 3) parsedStudents.push({ name: cols[0], department: cols[1], level: cols[2], password: cols[3] || '' });
+ const cols = lines[i].split(',').map(clean);
+ if (hasHeader) {
+ if (cols[iName]) parsedStudents.push({ name: cols[iName], matric: iMat>=0 ? cols[iMat]||'' : '', email: iEmail>=0 ? cols[iEmail]||'' : '', department: iDept>=0 ? cols[iDept]||'' : '', level: iLvl>=0 ? cols[iLvl]||'' : '' });
+ } else if (cols.length >= 3) parsedStudents.push({ name: cols[0], matric: '', email: '', department: cols[1], level: cols[2] });
  }
  document.getElementById('studentPreview').innerHTML =
  parsedStudents.slice(0,20).map((s,i) => `
@@ -330,6 +349,8 @@ async function uploadStudents() {
  const classOverride = document.getElementById('csvClassOverride').value;
  const students = parsedStudents.map(s => ({
  name:       s.name,
+ matric:     s.matric || '',
+ email:      s.email  || '',
  arm:        armOverride   || s.department,
  class:      classOverride || s.level,
  }));
@@ -489,7 +510,7 @@ async function saveStudentEdit() {
 }
 
 function downloadStudentTemplate() {
- const csv = 'name,department,level\nJohn Doe,Medical Laboratory,100L\nJane Smith,Public Health,200L';
+ const csv = 'name,matric,email,department,level\nJohn Doe,MAT001,john@example.com,Medical Laboratory,100L\nJane Smith,MAT002,,Public Health,200L';
  const a = document.createElement('a'); a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv); a.download = 'students_template.csv'; a.click();
 }
 

@@ -82,10 +82,10 @@ const SemesterSchema = new mongoose.Schema({
 
 const StudentSchema = new mongoose.Schema({
   name:            { type: String, required: true },
-  matric:          { type: String, unique: true, sparse: true }, // internal ID only, not used for login
-  department_id:   { type: mongoose.Schema.Types.ObjectId, ref: 'Department' }, // used as ARM (A/B/C)
+  matric:          { type: String, unique: true, sparse: true }, // matric number — can be used (with password) to sign in
+  department_id:   { type: mongoose.Schema.Types.ObjectId, ref: 'Department' }, // student's department
   sub_department:  { type: String, default: null },
-  level_id:        { type: mongoose.Schema.Types.ObjectId, ref: 'Level' },       // used as CLASS (JSS1-3 / SS1-3)
+  level_id:        { type: mongoose.Schema.Types.ObjectId, ref: 'Level' },       // student's level (100L-400L)
   password:        { type: String, required: true },
   phone:           { type: String, default: null },
   email:           { type: String, default: null },
@@ -115,6 +115,7 @@ const ExamSchema = new mongoose.Schema({
   instructions:       String,
   created_by:         { type: mongoose.Schema.Types.ObjectId, ref: 'Admin', default: null },
   assigned_to:        [{ type: mongoose.Schema.Types.ObjectId, ref: 'Admin' }], // lecturers allowed to add questions
+  assigned_to_all:    { type: Boolean, default: false }, // true = every lecturer can work on this exam
   allowed_students:   [{ type: mongoose.Schema.Types.ObjectId, ref: 'Student' }], // if set, only these students can use the access code
   access_restrictions_saved: { type: Boolean, default: false }, // true once admin has explicitly saved the access list
   created_at:         { type: Date, default: Date.now }
@@ -396,7 +397,6 @@ app.use(session({
   saveUninitialized: false,
   store: MongoStore.create({
     mongoUrl:    MONGO_URI,
-    dbName:      'tribaltestpro',
     collectionName: 'sessions',
     ttl:         24 * 60 * 60 // sessions expire after 24 hours
   }),
@@ -536,6 +536,7 @@ async function initDB() {
     { key: 'restrict_side_look',      value: false },
     { key: 'reshuffle_on_violation',  value: false },
     { key: 'restrict_voice',          value: false },
+    { key: 'violation_volume',        value: 50    },
     { key: 'global_allow_retake',     value: false },
     { key: 'school_name',             value: 'Margaret Mosunmola College of Health Science and Technology' },
     { key: 'school_short',            value: 'MARGMOCOTH'             },
@@ -652,7 +653,7 @@ app.get('/api/settings/exam-engine', async (req, res) => {
       'webcam_enabled','fullscreen_enabled','anticheat_enabled','face_anticheat_enabled',
       'restrict_side_look','reshuffle_on_violation','restrict_voice','global_allow_retake',
       'show_results','show_percentage','show_score_breakdown','show_grade','face_verify_required',
-      'calculator_enabled'
+      'calculator_enabled','violation_volume'
     ];
     const settings = await Setting.find({ key: { $in: keys } });
     const obj      = Object.fromEntries(settings.map(s => [s.key, s.value]));
@@ -664,10 +665,12 @@ app.get('/api/settings/exam-engine', async (req, res) => {
       webcam_enabled:         obj.webcam_enabled         !== undefined ? obj.webcam_enabled         : true,
       fullscreen_enabled:     obj.fullscreen_enabled     !== undefined ? obj.fullscreen_enabled     : true,
       anticheat_enabled:      true,  // basic tab-switch / fullscreen-exit warning only — no AI proctoring
-      face_anticheat_enabled: false, // AI face/violation proctoring removed
-      restrict_side_look:     false,
-      reshuffle_on_violation: false,
-      restrict_voice:         false,
+      face_anticheat_enabled: obj.face_anticheat_enabled === true,
+      restrict_side_look:     obj.restrict_side_look     === true,
+      reshuffle_on_violation: obj.reshuffle_on_violation === true,
+      restrict_voice:         obj.restrict_voice         === true,
+      // 1 = AI captures slowly / leniently, 100 = very sharp monitoring
+      violation_volume:       Math.min(100, Math.max(1, Math.round(Number(obj.violation_volume)) || 50)),
       global_allow_retake:    obj.global_allow_retake    !== undefined ? obj.global_allow_retake    : false,
       show_results:           obj.show_results           !== undefined ? obj.show_results           : false,
       show_percentage:        obj.show_percentage        !== undefined ? obj.show_percentage        : true,
@@ -687,19 +690,74 @@ app.get('/api/settings/exam-engine', async (req, res) => {
       face_anticheat_enabled: false, restrict_side_look: false,
       reshuffle_on_violation: false, restrict_voice: false, global_allow_retake: false,
       show_results: false, show_percentage: true, show_score_breakdown: true, show_grade: true,
-      face_verify_required: false
+      face_verify_required: false, violation_volume: 50
     });
   }
 });
 
+// ===== LOGIN / REGISTRATION HELPERS =====
+function escapeRegex(str) { return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+function cleanSpaces(str) { return String(str || '').trim().replace(/\s+/g, ' '); }
+function normalizeMatric(str) { return cleanSpaces(str).toUpperCase(); }
+
+// Find every student whose name, matric number or email equals the identifier
+// (case-insensitive, extra spaces ignored).
+async function findStudentsByIdentifier(identifier) {
+  const id = cleanSpaces(identifier);
+  if (!id) return [];
+  const exact = { $regex: `^${escapeRegex(id)}$`, $options: 'i' };
+  const or = [{ name: exact }, { matric: exact }];
+  if (id.includes('@')) or.push({ email: exact });
+  return Student.find({ $or: or }).populate('department_id').populate('level_id');
+}
+
+// A student password is valid if it matches their own hash, or the currently
+// active generated password for their department (given out by the exam office).
+async function studentPasswordMatches(student, plain) {
+  if (!plain) return false;
+  try { if (student.password && bcrypt.compareSync(plain, student.password)) return true; } catch(e) {}
+  const deptName = student.department_id?.name || '';
+  if (!deptName) return false;
+  const genPw = await GeneratedPassword.findOne({
+    scope: deptName, is_active: true,
+    $or: [{ expires_at: null }, { expires_at: { $gt: new Date() } }]
+  }).sort({ created_at: -1 });
+  return !!(genPw && genPw.plain_password === plain);
+}
+
+// Very small in-memory brute-force guard: 8 failed attempts / 10 min per IP + identifier.
+const _loginFails = new Map();
+function loginThrottleKey(req, identifier) {
+  const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket.remoteAddress || 'unknown';
+  return ip + '|' + cleanSpaces(identifier).toLowerCase();
+}
+function loginIsBlocked(key) {
+  const e = _loginFails.get(key);
+  if (!e) return false;
+  if (Date.now() - e.first > 10 * 60 * 1000) { _loginFails.delete(key); return false; }
+  return e.count >= 8;
+}
+function loginRecordFail(key) {
+  const e = _loginFails.get(key);
+  if (!e || Date.now() - e.first > 10 * 60 * 1000) _loginFails.set(key, { count: 1, first: Date.now() });
+  else e.count++;
+}
+setInterval(() => {
+  const now = Date.now();
+  for (const [k, e] of _loginFails) if (now - e.first > 10 * 60 * 1000) _loginFails.delete(k);
+}, 10 * 60 * 1000).unref();
+
 // Self-registration — only works if registration_open setting is true OR valid dept token link
 app.post('/api/student-register', async (req, res) => {
   try {
-    const { name, phone, email, department_id, level_id, password, dept_token } = req.body;
+    const { name, matric, phone, email, department_id, level_id, password, dept_token } = req.body;
     if (!name || !name.trim()) return res.json({ success: false, message: 'Full name is required.' });
+    if (!matric || !matric.trim()) return res.json({ success: false, message: 'Matric number is required.' });
+    if (matric.trim().length < 3 || matric.trim().length > 40) return res.json({ success: false, message: 'Please enter a valid matric number.' });
     if (!phone && !email) return res.json({ success: false, message: 'Please provide at least a phone number or email.' });
-    if (!level_id) return res.json({ success: false, message: 'Please select your class.' });
-    if (!department_id) return res.json({ success: false, message: 'Please select your arm/section.' });
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return res.json({ success: false, message: 'Please enter a valid email address.' });
+    if (!level_id) return res.json({ success: false, message: 'Please select your level.' });
+    if (!department_id) return res.json({ success: false, message: 'Please select your department.' });
     if (!password || password.length < 6) return res.json({ success: false, message: 'Password must be at least 6 characters.' });
 
     // Check registration permission: global toggle OR valid dept token
@@ -713,14 +771,20 @@ app.post('/api/student-register', async (req, res) => {
       if (!regOpen) return res.json({ success: false, message: 'Student self-registration is currently disabled.' });
     }
 
-    // Duplicate name within same class + arm (this combo is the login key)
-    const cleanName = name.trim().replace(/\s+/g, ' ');
+    const cleanName    = cleanSpaces(name);
+    const cleanMatric  = normalizeMatric(matric);
+
+    // Duplicate matric number (case-insensitive)
+    const existingMatric = await Student.findOne({ matric: { $regex: `^${escapeRegex(cleanMatric)}$`, $options: 'i' } });
+    if (existingMatric) return res.json({ success: false, message: 'This matric number is already registered. If it is yours, sign in instead or contact the examination office.' });
+
+    // Duplicate name within same level + department
     const existingName = await Student.findOne({
-      name:          { $regex: `^${cleanName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' },
+      name:          { $regex: `^${escapeRegex(cleanName)}$`, $options: 'i' },
       department_id: toOID(department_id),
       level_id:      toOID(level_id)
     });
-    if (existingName) return res.json({ success: false, message: `A student named "${cleanName}" is already registered in this class and arm. Contact your administrator — do not create a duplicate account.` });
+    if (existingName) return res.json({ success: false, message: `A student named "${cleanName}" is already registered in this level and department. Contact your administrator — do not create a duplicate account.` });
 
     // Duplicate phone
     if (phone && phone.trim()) {
@@ -730,12 +794,13 @@ app.post('/api/student-register', async (req, res) => {
 
     // Duplicate email
     if (email && email.trim()) {
-      const existingEmail = await Student.findOne({ email: email.trim().toLowerCase() });
+      const existingEmail = await Student.findOne({ email: { $regex: `^${escapeRegex(email.trim())}$`, $options: 'i' } });
       if (existingEmail) return res.json({ success: false, message: 'This email address is already linked to an existing account.' });
     }
 
-    const s = await Student.create({
+    await Student.create({
       name:            cleanName,
+      matric:          cleanMatric,
       department_id:   toOID(department_id),
       level_id:        toOID(level_id),
       phone:           phone ? phone.trim() : null,
@@ -743,36 +808,50 @@ app.post('/api/student-register', async (req, res) => {
       password:        bcrypt.hashSync(password, 10),
       self_registered: true
     });
-    res.json({ success: true, message: 'Registration successful! You can now log in with your name, class and arm.' });
+    res.json({ success: true, message: 'Registration successful! You can now sign in with your name, matric number or email and your password.' });
   } catch(e) {
+    if (e.code === 11000) return res.json({ success: false, message: 'This matric number is already registered.' });
     res.json({ success: false, message: e.message });
   }
 });
 
-// Student login: identified by Full Name + Class (level_id) + Arm (department_id).
-// No matric number and no password required — names are matched case-insensitively
-// within the chosen class+arm.
+// Student login: ONE identifier (full name OR matric number OR email) + password.
 app.post('/api/student-login', async (req, res) => {
   try {
-    const { name, level_id, department_id } = req.body;
+    const body = req.body || {};
+    const identifier = cleanSpaces(body.identifier || body.matric || body.email || body.name || '');
+    const password   = typeof body.password === 'string' ? body.password : '';
+
     const portalOpen = await getSetting('portal_open', true);
     if (!portalOpen) {
       const msg = await getSetting('maintenance_msg', 'The exam portal is currently closed.');
       return res.json({ success: false, message: msg });
     }
-    if (!name || !name.trim() || !level_id || !department_id) {
-      return res.json({ success: false, message: 'Please enter your full name and select your class and arm.' });
+    if (!identifier) return res.json({ success: false, message: 'Please enter your name, matric number or email.' });
+    if (!password)   return res.json({ success: false, message: 'Please enter your password.' });
+
+    const throttleKey = loginThrottleKey(req, identifier);
+    if (loginIsBlocked(throttleKey))
+      return res.json({ success: false, message: 'Too many failed attempts. Please wait 10 minutes and try again, or ask the examination office to reset your password.' });
+
+    const candidates = await findStudentsByIdentifier(identifier);
+    if (!candidates.length) {
+      loginRecordFail(throttleKey);
+      return res.json({ success: false, message: 'No account found with that name, matric number or email.' });
     }
 
-    const cleanName = name.trim().replace(/\s+/g, ' ');
-    const student = await Student.findOne({
-      name:          { $regex: `^${cleanName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' },
-      level_id:      toOID(level_id),
-      department_id: toOID(department_id)
-    }).populate('department_id').populate('level_id');
+    const matched = [];
+    for (const c of candidates) { if (await studentPasswordMatches(c, password)) matched.push(c); }
 
-    if (!student)
-      return res.json({ success: false, message: 'No student found with that name in the selected class and arm.' });
+    if (!matched.length) {
+      loginRecordFail(throttleKey);
+      return res.json({ success: false, message: 'Incorrect password. Please try again.' });
+    }
+    if (matched.length > 1) {
+      return res.json({ success: false, message: 'More than one student has that name. Please sign in with your matric number or email instead.' });
+    }
+    const student = matched[0];
+    _loginFails.delete(throttleKey);
 
     // Log login IP for concurrent session detection
     const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket.remoteAddress || 'unknown';
@@ -795,6 +874,7 @@ app.post('/api/student-login', async (req, res) => {
       student: {
         id:            student._id.toString(),
         name:          student.name,
+        matric:        student.matric || null,
         department:    student.department_id?.name,
         department_id: student.department_id?._id.toString(),
         level:         student.level_id?.name,
@@ -842,6 +922,32 @@ app.post('/api/admin-login', async (req, res) => {
         permissions:  admin.permissions || []
       }
     });
+  } catch(e) { res.json({ success: false, message: e.message }); }
+});
+
+
+// ===== ADMIN: CHANGE OWN PASSWORD =====
+// Body: { current_password, new_password }. Works for the super admin and for lecturer accounts.
+app.post('/api/admin/change-password', adminAuth, async (req, res) => {
+  try {
+    const token = req.headers['x-admin-token'] || req.query._t;
+    const { current_password, new_password } = req.body || {};
+    if (!current_password || !new_password)
+      return res.json({ success: false, message: 'Current password and new password are required.' });
+    if (new_password.length < 8)
+      return res.json({ success: false, message: 'New password must be at least 8 characters.' });
+    if (new_password === current_password)
+      return res.json({ success: false, message: 'New password must be different from the current password.' });
+
+    const admin = await Admin.findOne({ activeToken: token });
+    if (!admin) return res.status(401).json({ success: false, message: 'Session expired. Please log in again.' });
+    if (!bcrypt.compareSync(current_password, admin.password))
+      return res.json({ success: false, message: 'Current password is incorrect.' });
+
+    admin.password = bcrypt.hashSync(new_password, 10);
+    await admin.save();
+    await logActivity(admin._id, admin.display_name || admin.username, 'CHANGE_PASSWORD', 'Admin changed own password');
+    res.json({ success: true, message: 'Password changed successfully.' });
   } catch(e) { res.json({ success: false, message: e.message }); }
 });
 
@@ -1595,6 +1701,13 @@ setInterval(finalizeStrandedSubmissions, 60 * 1000);
 // ===== LECTURER ACCOUNTS ===
 // ===========================
 
+// Exams a lecturer can work on: ones they created, ones assigned to them, and ones
+// assigned to ALL lecturers. Not tied to any department or level.
+function lecturerExamQuery(lecturerId) {
+  const id = toOID(lecturerId);
+  return { $or: [{ created_by: id }, { assigned_to: id }, { assigned_to_all: true }] };
+}
+
 app.get("/api/admin/lecturers", async (req, res) => {
   try {
     const lecturers = await Admin.find({ role: { $in: ["lecturer","admin","moderator"] } }, { password: 0 }).sort({ created_at: -1 }).populate('department_id');
@@ -1613,18 +1726,21 @@ app.post("/api/admin/lecturers", async (req, res) => {
     const assignedRole = ['admin','moderator','lecturer'].includes(role) ? role : 'lecturer';
     if (!username || !password) return res.json({ success: false, message: "Username and password are required." });
     if (password.length < 6) return res.json({ success: false, message: "Password must be at least 6 characters." });
-    if (!department_id) return res.json({ success: false, message: "Please select a department." });
     const exists = await Admin.findOne({ username });
     if (exists) return res.json({ success: false, message: "That username is already taken." });
-    const dept = await Department.findById(toOID(department_id));
-    if (!dept) return res.json({ success: false, message: "Selected department not found." });
+    // Department is OPTIONAL — a lecturer can teach several departments and levels.
+    let dept = null;
+    if (department_id) {
+      dept = await Department.findById(toOID(department_id));
+      if (!dept) return res.json({ success: false, message: "Selected department not found." });
+    }
     const lec = await Admin.create({
       username, password: bcrypt.hashSync(password, 10),
       display_name: display_name || username, role: assignedRole,
       permissions: Array.isArray(permissions) ? permissions : [],
-      department_id: dept._id
+      department_id: dept ? dept._id : null
     });
-    res.json({ success: true, lecturer: { id: lec._id.toString(), username: lec.username, display_name: lec.display_name, role: lec.role, permissions: lec.permissions, department_id: dept._id.toString(), department_name: dept.name } });
+    res.json({ success: true, lecturer: { id: lec._id.toString(), username: lec.username, display_name: lec.display_name, role: lec.role, permissions: lec.permissions, department_id: dept ? dept._id.toString() : null, department_name: dept ? dept.name : null } });
   } catch(e) { res.json({ success: false, message: e.message }); }
 });
 
@@ -1641,6 +1757,8 @@ app.put("/api/admin/lecturers/:id", async (req, res) => {
       const dept = await Department.findById(toOID(department_id));
       if (!dept) return res.json({ success: false, message: "Selected department not found." });
       update.department_id = dept._id;
+    } else if (department_id === '' || department_id === null) {
+      update.department_id = null; // cleared → works across all departments
     }
     if (password) {
       if (password.length < 6) return res.json({ success: false, message: "Password must be at least 6 characters." });
@@ -1670,19 +1788,22 @@ app.get('/api/admin/stats', async (req, res) => {
     const { lecturer_id } = req.query;
     let lecturerDoc = null;
     let myExamIds   = null;
+    let lecturerDeptIds = [];
 
     if (lecturer_id) {
       lecturerDoc = await Admin.findById(toOID(lecturer_id));
       if (!lecturerDoc || lecturerDoc.role !== 'lecturer')
         return res.json({ error: 'Not a lecturer' });
-      const myExams = await Exam.find(
-        { $or: [{ created_by: lecturerDoc._id }, { assigned_to: lecturerDoc._id }] },
-        { _id: 1 }
-      );
+      const myExams = await Exam.find(lecturerExamQuery(lecturerDoc._id), { _id: 1, department_id: 1 });
       myExamIds = myExams.map(e => e._id);
+      lecturerDeptIds = [...new Set(myExams.map(e => e.department_id && e.department_id.toString()).filter(Boolean))].map(toOID);
     }
 
-    const deptFilter = lecturerDoc ? { department_id: lecturerDoc.department_id } : {};
+    // Students a lecturer sees = students in the departments of their exams (or their own
+    // department if set and they have no exams yet); no department lock otherwise.
+    const deptFilter = !lecturerDoc ? {}
+      : lecturerDeptIds.length ? { department_id: { $in: lecturerDeptIds } }
+      : lecturerDoc.department_id ? { department_id: lecturerDoc.department_id } : {};
     const examFilter = myExamIds  ? { _id: { $in: myExamIds } }                  : {};
     const resultExamFilter = myExamIds ? { exam_id: { $in: myExamIds } }         : {};
 
@@ -1746,9 +1867,7 @@ app.get('/api/admin/exams', async (req, res) => {
   try {
     const { lecturer_id } = req.query;
     // For lecturers: show exams they created OR exams super admin assigned to them
-    const filter = lecturer_id
-      ? { $or: [{ created_by: toOID(lecturer_id) }, { assigned_to: toOID(lecturer_id) }] }
-      : {};
+    const filter = lecturer_id ? lecturerExamQuery(lecturer_id) : {};
     const exams = await Exam.find(filter).sort({ created_at: -1 }).populate('course_id');
     const data  = await Promise.all(exams.map(async e => ({
       id: e._id.toString(), title: e.title, access_code: e.access_code,
@@ -1846,7 +1965,7 @@ app.get('/api/admin/exams/:id/assignments', async (req, res) => {
   try {
     const exam = await Exam.findById(toOID(req.params.id)).populate('assigned_to', 'display_name username department_id');
     if (!exam) return res.json({ success: false, message: 'Exam not found.' });
-    res.json({ success: true, assigned_to: exam.assigned_to.map(l => ({ id: l._id.toString(), display_name: l.display_name, username: l.username })) });
+    res.json({ success: true, assigned_to_all: !!exam.assigned_to_all, assigned_to: exam.assigned_to.map(l => ({ id: l._id.toString(), display_name: l.display_name, username: l.username })) });
   } catch(e) { res.json({ success: false, message: e.message }); }
 });
 
@@ -1858,6 +1977,7 @@ app.get('/api/admin/exam-assignments', async (req, res) => {
     const exams = await Exam.find(filter).sort({ created_at: -1 }).populate('course_id').populate('assigned_to', 'display_name username');
     const data = exams.map(e => ({
       id: e._id.toString(), title: e.title,
+      assigned_to_all: !!e.assigned_to_all,
       course_name: e.course_id?.name || '',
       assigned_to: (e.assigned_to || []).map(l => ({ id: l._id.toString(), display_name: l.display_name, username: l.username }))
     }));
@@ -1868,10 +1988,10 @@ app.get('/api/admin/exam-assignments', async (req, res) => {
 // POST /api/admin/exam-assignments  — save assignments {exam_id, lecturer_ids:[]}
 app.post('/api/admin/exam-assignments', async (req, res) => {
   try {
-    const { exam_id, lecturer_ids } = req.body;
+    const { exam_id, lecturer_ids, assign_all } = req.body;
     if (!exam_id) return res.json({ success: false, message: 'exam_id required.' });
-    const ids = Array.isArray(lecturer_ids) ? lecturer_ids.map(toOID) : [];
-    const exam = await Exam.findByIdAndUpdate(toOID(exam_id), { assigned_to: ids }, { new: true });
+    const ids = Array.isArray(lecturer_ids) ? lecturer_ids.map(toOID).filter(Boolean) : [];
+    const exam = await Exam.findByIdAndUpdate(toOID(exam_id), { assigned_to: ids, assigned_to_all: !!assign_all }, { new: true });
     if (!exam) return res.json({ success: false, message: 'Exam not found.' });
     res.json({ success: true });
   } catch(e) { res.json({ success: false, message: e.message }); }
@@ -2238,7 +2358,7 @@ app.get('/api/admin/students', async (req, res) => {
 
 app.post('/api/admin/add-student', async (req, res) => {
   try {
-    const { name, matric, department_id, level_id, created_by } = req.body;
+    const { name, matric, email, department_id, level_id, created_by } = req.body;
 
     // Auto-assign the active generated password for this department
     // Falls back to a placeholder if none exists yet
@@ -2254,7 +2374,8 @@ app.post('/api/admin/add-student', async (req, res) => {
     const hashedPw = bcrypt.hashSync(plainPw, 10);
 
     const s = await Student.create({
-      name, matric,
+      name, matric: matric ? normalizeMatric(matric) : undefined,
+      email: email ? String(email).trim().toLowerCase() : null,
       department_id: toOID(department_id),
       level_id:      toOID(level_id),
       password:      hashedPw
@@ -2304,6 +2425,8 @@ app.post('/api/admin/upload-students', upload.single('csv'), async (req, res) =>
         const name  = r.name  || r.Name  || '';
         const dept  = r.arm   || r.department || r.Department || '';
         const level = r.class || r.level      || r.Level      || '';
+        const matricIn = r.matric || r.Matric || r.matric_number || r['Matric Number'] || '';
+        const emailIn  = r.email  || r.Email  || '';
         if (!name) { skipped++; continue; }
         const deptDoc  = departments.find(d => d.name.toLowerCase() === dept.toLowerCase());
         const levelDoc = levels.find(l => l.name.toLowerCase() === level.toLowerCase());
@@ -2313,6 +2436,8 @@ app.post('/api/admin/upload-students', upload.single('csv'), async (req, res) =>
         }).sort({ created_at: -1 }) : null;
         const assignedPw = genPw ? genPw.plain_password : 'changeme';
         const newStudent = { name, password: bcrypt.hashSync(assignedPw, 10) };
+        if (matricIn) newStudent.matric = normalizeMatric(matricIn);
+        if (emailIn)  newStudent.email  = String(emailIn).trim().toLowerCase();
         if (deptDoc)  newStudent.department_id = deptDoc._id;
         if (levelDoc) newStudent.level_id      = levelDoc._id;
         await Student.create(newStudent);
@@ -2324,7 +2449,7 @@ app.post('/api/admin/upload-students', upload.single('csv'), async (req, res) =>
   } catch(e) { res.json({ success: false, message: e.message }); }
 });
 
-// POST /api/admin/bulk-students — JSON array of students (no matric, name-based)
+// POST /api/admin/bulk-students — JSON array of students (name, optional matric/email)
 app.post('/api/admin/bulk-students', adminAuth, async (req, res) => {
   try {
     const { students } = req.body;
@@ -2337,6 +2462,8 @@ app.post('/api/admin/bulk-students', adminAuth, async (req, res) => {
         const name  = (r.name  || '').trim();
         const dept  = (r.arm   || r.department || '').trim();
         const level = (r.class || r.level      || '').trim();
+        const matricIn = (r.matric || '').toString().trim();
+        const emailIn  = (r.email  || '').toString().trim();
         if (!name) { skipped++; continue; }
         const deptDoc  = departments.find(d => d.name.toLowerCase() === dept.toLowerCase());
         const levelDoc = levels.find(l => l.name.toLowerCase() === level.toLowerCase());
@@ -2346,6 +2473,8 @@ app.post('/api/admin/bulk-students', adminAuth, async (req, res) => {
         }).sort({ created_at: -1 }) : null;
         const assignedPw = genPw ? genPw.plain_password : 'changeme';
         const newStudent = { name, password: bcrypt.hashSync(assignedPw, 10) };
+        if (matricIn) newStudent.matric = normalizeMatric(matricIn);
+        if (emailIn)  newStudent.email  = emailIn.toLowerCase();
         if (deptDoc)  newStudent.department_id = deptDoc._id;
         if (levelDoc) newStudent.level_id      = levelDoc._id;
         await Student.create(newStudent);
@@ -2367,7 +2496,7 @@ app.get('/api/admin/violations', async (req, res) => {
     // If lecturer_id given, restrict to exams they created
     let allowedExamIds = null;
     if (lecturer_id) {
-      const myExams = await Exam.find({ created_by: toOID(lecturer_id) }, { _id: 1 });
+      const myExams = await Exam.find(lecturerExamQuery(lecturer_id), { _id: 1 });
       allowedExamIds = myExams.map(e => e._id);
     }
 
@@ -2498,7 +2627,7 @@ app.get('/api/admin/results', async (req, res) => {
     const { lecturer_id, exam_id, department, sub_department } = req.query;
     let resultFilter = {};
     if (lecturer_id) {
-      const myExams = await Exam.find({ created_by: toOID(lecturer_id) }, { _id: 1 });
+      const myExams = await Exam.find(lecturerExamQuery(lecturer_id), { _id: 1 });
       resultFilter.exam_id = { $in: myExams.map(e => e._id) };
     }
     if (exam_id) {
@@ -2612,7 +2741,7 @@ app.get('/api/admin/face-captures', async (req, res) => {
     const { lecturer_id } = req.query;
     let captures;
     if (lecturer_id) {
-      const myExams = await Exam.find({ created_by: toOID(lecturer_id) }, { _id: 1 });
+      const myExams = await Exam.find(lecturerExamQuery(lecturer_id), { _id: 1 });
       const myExamIds = myExams.map(e => e._id);
       captures = await FaceCapture.find({ exam_id: { $in: myExamIds } }).sort({ captured_at: -1 }).limit(500);
     } else {
@@ -3517,27 +3646,127 @@ app.post('/api/admin/notify/results', async (req, res) => {
 // ===== MARGMOCOTH SUPPORT CHAT ====
 // ===========================
 
+// ---------- Shared AI helpers ----------
+// groqChat() returns the reply text, or null if no key / Groq failed. It never throws,
+// so every assistant can fall back to the built-in answers below and stay usable.
+async function groqChat(messages, { max_tokens = 400, temperature = 0.4, label = 'ai' } = {}) {
+  const key = process.env.GROQ_API_KEY;
+  if (!key) return null;
+  if (typeof fetch === 'undefined') { console.warn(`[${label}] fetch() missing — Node 18+ required for AI.`); return null; }
+  const models = [process.env.GROQ_MODEL || 'llama-3.3-70b-versatile', 'llama-3.1-8b-instant'];
+  for (const model of models) {
+    const ctrl  = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 20000);
+    try {
+      const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
+        body: JSON.stringify({ model, max_tokens, temperature, messages }),
+        signal: ctrl.signal
+      });
+      if (!r.ok) {
+        const t = await r.text();
+        console.warn(`[${label}] Groq ${r.status} on ${model}: ${t.slice(0, 200)}`);
+        if (r.status === 401) return null;          // bad key — no point trying another model
+        continue;                                   // rate limit / model problem — try next model
+      }
+      const d = await r.json();
+      const txt = d?.choices?.[0]?.message?.content?.trim();
+      if (txt) return txt;
+    } catch(e) {
+      console.warn(`[${label}] Groq call failed on ${model}: ${e.name === 'AbortError' ? 'timeout' : e.message}`);
+    } finally { clearTimeout(timer); }
+  }
+  return null;
+}
+
+const OFFICE_EMAIL = process.env.ADMIN_EMAIL || 'Margmocoth.examinationsmedia@gmail.com';
+
+// Built-in answers for the LOGIN page assistant (used when AI is unavailable).
+function loginHelpFallback(text) {
+  const t = String(text || '').toLowerCase();
+  const has = (...w) => w.some(x => t.includes(x));
+  if (has('forgot', 'forget', 'reset', "don't know my password", 'dont know my password', 'lost password', 'lost my password'))
+    return `No problem. Tap "Forgot password?" under the Sign In button, enter your name, matric number or email, and the examination office will reset it for you. You can also email ${OFFICE_EMAIL}.`;
+  if (has('incorrect password', 'wrong password', 'password is wrong', 'password not', 'password does not', "password doesn't", 'password error'))
+    return `"Incorrect password" means the password does not match that account. Check Caps Lock, use the eye icon to view what you typed, and use the password you created when you registered (or the one the exam office gave you). Still stuck? Tap "Forgot password?" to ask the office for a reset.`;
+  if (has('not found', 'no account', "can't find", 'cant find', 'not registered', 'no student'))
+    return `"No account found" means that name, matric number or email is not on the system. Try your matric number or the email you registered with, and check spelling. If you have not registered, use "Create an account" (when registration is open) or contact the examination office: ${OFFICE_EMAIL}.`;
+  if (has('matric'))
+    return `You can sign in with your matric number exactly as the college issued it (capital or small letters both work), plus your password. If it is rejected, try your email or full name instead, or contact the examination office.`;
+  if (has('email'))
+    return `If you added an email when you registered, you can sign in with that email and your password. If you did not add one, use your matric number or full name instead.`;
+  if (has('more than one', 'same name', 'duplicate'))
+    return `When two students share a name, the system asks you to sign in with your matric number or email instead. Use one of those with your password.`;
+  if (has('too many', 'blocked', 'wait 10', 'locked'))
+    return `For security, sign-in pauses for 10 minutes after several wrong attempts. Wait a little, then try again carefully, or tap "Forgot password?" to request a reset.`;
+  if (has('maintenance', 'closed', 'portal'))
+    return `When the portal is under maintenance, sign-in is switched off temporarily. Your records are safe. Please check back later or ask your department administrator.`;
+  if (has('register', 'sign up', 'signup', 'create account', 'new student'))
+    return `If registration is open you will see a "Create an account" link on this page. You will need your full name, matric number, level, department, a phone number or email, and a password. If you do not see it, ask the examination office for your department's registration link.`;
+  if (has('hello', 'hi', 'hey', 'good morning', 'good afternoon', 'good evening'))
+    return `Hello! I can help with sign-in problems. Tell me what you see when you try to log in, for example "incorrect password" or "no account found".`;
+  return `You can sign in with your full name, matric number or email, plus your password. If it still fails, tap "Forgot password?" or contact the examination office: ${OFFICE_EMAIL}. Tell me the exact error message and I will explain it.`;
+}
+
+// Built-in answers for the student DASHBOARD assistant (used when AI is unavailable).
+function supportFallback(text, student, exams, results) {
+  const first = (student?.name || '').split(' ')[0] || 'there';
+  const t = String(text || '').toLowerCase();
+  const has = (...w) => w.some(x => t.includes(x));
+  const admin = ' Please contact Admin directly for further assistance.';
+  if (has('upcoming', 'exam', 'schedule', 'timetable', 'when is', 'test')) {
+    if (!exams.length) return `Hi ${first}! I can't see any upcoming exam for your level and department right now. Check your dashboard again later.`;
+    const list = exams.map(e => {
+      const d = e.start_date ? new Date(e.start_date).toDateString() : 'date not set';
+      return `• ${e.title}${e.course_id?.name ? ' (' + e.course_id.name + ')' : ''} — ${d}, ${e.duration} min`;
+    }).join('\n');
+    return `Hi ${first}! Here are your upcoming exams:\n${list}\n\nYour lecturer gives you the access code on the day. Enter it on your dashboard, then tap Start Exam.`;
+  }
+  if (has('result', 'score', 'grade', 'mark', 'passed', 'failed')) {
+    if (!results.length) return `Hi ${first}! You have no exam results yet. Results appear once you submit an exam and the college releases them.`;
+    const list = results.map(r => `• ${r.exam_id?.title || 'Exam'}: ${r.correct}/${r.total} (${Number(r.percentage || 0).toFixed(1)}%)`).join('\n');
+    return `Hi ${first}! Your recent results:\n${list}\n\nSome results may be hidden until the college releases them.`;
+  }
+  if (has('password'))
+    return `Hi ${first}! To change your password, open your Profile and use Change Password. If you forgot it, log out, tap "Forgot password?" on the login page and the examination office will reset it for you.`;
+  if (has('face', 'camera', 'capture', 'photo', 'webcam'))
+    return `Hi ${first}! For face capture, go to Dashboard > Face Capture, allow camera access, and take clear photos in good light facing the camera.`;
+  if (has('name', 'matric') && has('change', 'wrong', 'correct', 'edit', 'update'))
+    return `Hi ${first}! To correct your name or matric number, go to Dashboard > Request Name/Matric Change, fill the form and wait for admin approval.`;
+  if (has('access code', 'code', 'start'))
+    return `Hi ${first}! Enter the access code from your lecturer on your dashboard, then tap Start Exam. If the code is rejected, confirm it with your lecturer and check the exam is for your level and department.`;
+  if (has('network', 'internet', 'disconnect', 'offline', 'data'))
+    return `Hi ${first}! If your internet drops during an exam, reconnect and continue — your answers are saved as you go and the drop is recorded as a network issue, not cheating. Tell your lecturer if it keeps happening.`;
+  if (has('retake', 'resit', 'again'))
+    return `Hi ${first}! If you need a retake, send a retake request from your dashboard (when the exam allows it). An admin will approve or decline it.`;
+  if (has('hello', 'hi', 'hey', 'good morning', 'good afternoon', 'good evening'))
+    return `Hello ${first}! I'm MARGMOCOTH Support. Ask me about your exams, results, access codes, password or face capture.`;
+  return `Hi ${first}! I can help with your exam schedule, results, access codes, password and face capture. For anything else about your account, use Complaints on your dashboard.${admin}`;
+}
+
 const MARGMOCOTH_SUPPORT_SYSTEM = `You are MARGMOCOTH Support, the official AI assistant for the MARGMOCOTH CBT Student Portal at Margaret Mosunmola College of Health Science and Technology, Owo, Ondo State, Nigeria.
 
-You have full access to the student's account data provided below. Use it to give precise, personal answers.
+You have access to the student's account data provided below. Use it to give precise, personal answers.
 
 WHAT YOU CAN HELP WITH:
-- Their exam schedule: upcoming exams, dates, duration, access codes
+- Their exam schedule: upcoming exams, dates and duration
 - Their past results and scores
 - Face capture: go to Dashboard > Face Capture, allow camera, take 3 clear photos in good light
 - Name/matric change: go to Dashboard > Request Name/Matric Change, fill the form, wait for admin approval
-- Password reset: go to Login page > Forgot Password, enter matric and registered phone
-- How to start an exam: enter access code on Dashboard, click Start Exam
-- General knowledge questions — answer them fully and helpfully (English, Math, Science, anything)
-- Any other question — always attempt a helpful answer
+- Password: Profile > Change Password. If forgotten, log out and use "Forgot password?" on the login page so the examination office can reset it
+- Signing in: students sign in with their full name, matric number or email, plus their password
+- How to start an exam: enter the access code from the lecturer on the Dashboard, then click Start Exam
+- General study questions (English, Math, Science, health science) — answer them helpfully
 
 RULES:
 1. Always address the student by their first name.
 2. Use the student data provided to give specific answers (e.g. actual exam names, scores, dates).
 3. Be warm, friendly, and concise — max 150 words unless a detailed answer is needed.
 4. For account issues you cannot fix (blocked account, data errors, department mismatch), end with: "Please contact Admin directly for further assistance."
-5. Never say you don't know general knowledge questions — always answer them.
-6. Respond in clear simple English suitable for Nigerian students.`;
+5. NEVER reveal or guess exam access codes — only the lecturer gives them on exam day.
+6. NEVER help anyone cheat in an exam or answer live exam questions.
+7. Respond in clear simple English suitable for Nigerian students.`;
 
 // POST /api/support/send — student sends a message, AI replies, both saved
 app.post('/api/support/send', async (req, res) => {
@@ -3570,7 +3799,7 @@ app.post('/api/support/send', async (req, res) => {
     const examList = upcomingExams.length
       ? upcomingExams.map(e => {
           const dateStr = e.start_date ? new Date(e.start_date).toDateString() : 'No date set';
-          return `• ${e.title}${e.course_id?.name ? ' (' + e.course_id.name + ')' : ''} — ${dateStr}, ${e.duration}min${e.access_code ? ', Code: ' + e.access_code : ''}`;
+          return `• ${e.title}${e.course_id?.name ? ' (' + e.course_id.name + ')' : ''} — ${dateStr}, ${e.duration}min`;
         }).join('\n')
       : 'No upcoming exams found.';
 
@@ -3581,8 +3810,8 @@ app.post('/api/support/send', async (req, res) => {
     const studentContext = `
 STUDENT ACCOUNT DATA:
 - Name: ${student.name}
-- Class: ${student.level_id?.name || 'N/A'}
-- Arm: ${student.department_id?.name || 'N/A'}
+- Level: ${student.level_id?.name || 'N/A'}
+- Department: ${student.department_id?.name || 'N/A'}
 - Phone: ${student.phone || 'N/A'}
 - Face Capture: ${hasFaceCapture ? 'Done' : 'Not done'}
 
@@ -3608,26 +3837,12 @@ ${resultList}`;
 
     const systemWithCtx = MARGMOCOTH_SUPPORT_SYSTEM + studentContext;
 
-    let aiReply = 'I am temporarily unavailable. Please contact Admin directly for assistance.';
-    const GROQ_KEY = process.env.GROQ_API_KEY;
-    if (GROQ_KEY) {
-      try {
-        const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_KEY}` },
-          body: JSON.stringify({
-            model: 'llama-3.3-70b-versatile',
-            max_tokens: 400,
-            temperature: 0.6,
-            messages: [{ role: 'system', content: systemWithCtx }, ...history]
-          })
-        });
-        if (groqRes.ok) {
-          const groqData = await groqRes.json();
-          aiReply = groqData.choices?.[0]?.message?.content?.trim() || aiReply;
-        }
-      } catch(e) { console.warn('MARGMOCOTH Support Groq error:', e.message); }
-    }
+    let aiReply = await groqChat(
+      [{ role: 'system', content: systemWithCtx }, ...history],
+      { max_tokens: 400, temperature: 0.5, label: 'support' }
+    );
+    // No API key / Groq unavailable → built-in answers so the chat still works
+    if (!aiReply) aiReply = supportFallback(message, student, upcomingExams, recentResults);
 
     // Save AI reply
     const supportMsg = { role: 'support', content: aiReply, is_ai: true, created_at: new Date() };
@@ -3717,7 +3932,7 @@ app.post('/api/admin/support/reply', adminAuth, async (req, res) => {
 app.post('/api/ai-assistant', async (req, res) => {
   try {
     const GROQ_KEY = process.env.GROQ_API_KEY;
-    if (!GROQ_KEY) return res.json({ error: 'GROQ_API_KEY not configured in .env' });
+    if (!GROQ_KEY) return res.json({ error: 'AI is not configured: add GROQ_API_KEY to the server environment (.env) and restart.' });
 
     // fetch() requires Node 18+. Verify it is available.
     if (typeof fetch === 'undefined') {
@@ -3801,126 +4016,82 @@ app.get('/api/admin/login-conversations/:session_key', adminAuth, async (req, re
 // Public endpoint — no auth needed (it's on the login page)
 app.post('/api/login-assistant', async (req, res) => {
   try {
-    const GROQ_KEY = process.env.GROQ_API_KEY;
-    if (!GROQ_KEY) return res.json({ reply: 'AI assistant is not configured yet. Please contact your administrator.' });
+    const { messages, session_key } = req.body || {};
+    const msgs = (Array.isArray(messages) ? messages : [])
+      .filter(m => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string')
+      .map(m => ({ role: m.role, content: m.content.slice(0, 600) }))
+      .slice(-10);
+    if (!msgs.length || msgs[msgs.length - 1].role !== 'user')
+      return res.json({ reply: 'Please type your question and I will help.' });
+    const lastUser = msgs[msgs.length - 1].content;
 
-    const { messages, session_key } = req.body;
+    const systemPrompt = `You are MARGMOCOTH Support, a warm and concise assistant on the student login page of MARGMOCOTH CBT (Margaret Mosunmola College of Health Science and Technology, Owo).
 
-    const systemPrompt = `You are MARGMOCOTH Support, a warm and concise AI support agent on the MARGMOCOTH CBT student login page (MARGMOCOTH CBT).
+Your ONLY job: help students who cannot sign in. You CANNOT change accounts or passwords — only the examination office can.
 
-Your ONLY job: help students who cannot log in. You CANNOT change accounts, passwords, or matric numbers — only admins can.
+How sign-in works:
+- A student signs in with ONE of: full name, matric number, or email — plus their password.
+- Matric numbers and emails are not case-sensitive.
+- If two students share a name, the system asks for matric number or email instead.
+- After several wrong attempts, sign-in pauses for 10 minutes.
+- Forgot password: tap "Forgot password?" under the Sign In button, enter name/matric/email, and the examination office resets it. Or email ${OFFICE_EMAIL}.
+- New students: use "Create an account" if registration is open (needs full name, matric number, level, department, phone or email, password).
 
-Login facts:
-- Matric numbers are stored EXACTLY as typed at registration (spaces, dashes, capitalisation all matter).
-- Students registered themselves and chose their own password. There is NO default password.
-- If a student forgot their password, direct them to the Forgot Password page or the admin WhatsApp.
+Error messages:
+• "No account found with that name, matric number or email." → not registered or typed differently. Try matric or email.
+• "Incorrect password. Please try again." → wrong password. Check Caps Lock, use the eye icon. Never suggest a default password.
+• "More than one student has that name…" → use matric number or email.
+• "Too many failed attempts…" → wait 10 minutes or request a reset.
 
-Error messages and meaning:
-• "Student not found." → matric doesn't match any record (format mismatch or not registered).
-• "Incorrect password." → wrong password. Do NOT suggest any default. Tell them to use the Forgot Password page or contact the examination office by email: Margmocoth.examinationsmedia@gmail.com.
-• "Department does not match." → wrong department selected in the dropdown.
+Account check: if the student gives you a name, matric or email and asks whether they are registered, output ONLY this token on its own line and nothing else:
+[LOOKUP: the value they gave]
+The system will return a result; then answer naturally. The result never includes the matric number or password — never ask for or reveal them.
 
-If a student says they forgot their password or can't log in due to password:
-- First option: Tell them to click "Forgot password?" on the login page to reset it themselves via OTP.
-- Second option: If they can't do that, tell them to contact the examination office by email: Margmocoth.examinationsmedia@gmail.com.
-- NEVER suggest their matric number or any other string as a password.
+Rules: be warm and brief (short sentences). NEVER ask for a password. NEVER invent a password or matric. Login help only — politely decline other topics.`;
 
-CRITICAL INSTRUCTION — Name Lookup:
-When a student tells you their name (or you ask for it and they give it), you MUST output ONLY this exact token on a line by itself, nothing else:
-[LOOKUP_NAME: Full Name Here]
+    let reply = await groqChat([{ role: 'system', content: systemPrompt }, ...msgs],
+                               { max_tokens: 350, temperature: 0.2, label: 'login-assistant' });
 
-The system intercepts this token, searches the student database, and will feed you the result automatically. Do NOT explain what you are doing. Do NOT tell the student to type anything. Just output the token and stop.
-
-After receiving lookup results:
-- Copy the matric number EXACTLY, character-for-character — never alter it.
-- ONLY mention spaces if the lookup result explicitly contains a [NOTE] tag about spaces. If there is NO [NOTE] tag, do NOT mention spaces at all — the matric has none.
-- If a [NOTE] is present: tell the student exactly where the space is and warn them to include it when logging in.
-- If not found: tell them no account exists under that name and they should go to registration or contact the admin office.
-
-Rules:
-- Be warm and brief. Short sentences.
-- NEVER ask for passwords.
-- NEVER suggest a default password of any kind.
-- NEVER assume or invent formatting details (like spaces) that are not stated in the lookup result.
-- Login help only.`;
-
-    async function callGroq(msgs) {
-      const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + GROQ_KEY },
-        body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
-          max_tokens: 350,
-          temperature: 0.2,
-          messages: [{ role: 'system', content: systemPrompt }].concat(msgs)
-        })
-      });
-      if (!r.ok) throw new Error(await r.text());
-      const d = await r.json();
-      return (d.choices && d.choices[0] && d.choices[0].message && d.choices[0].message.content)
-        ? d.choices[0].message.content.trim() : null;
+    // Transparent account-existence check (reveals no matric / password)
+    const lookupMatch = reply && reply.match(/\[LOOKUP:\s*(.+?)\]/i);
+    if (lookupMatch) {
+      const found = await findStudentsByIdentifier(lookupMatch[1]);
+      let dbResult;
+      if (!found.length) {
+        dbResult = 'No account exists with that name, matric number or email.';
+      } else if (found.length > 1) {
+        dbResult = 'More than one account matches that name. The student must sign in with their matric number or email.';
+      } else {
+        const st = found[0];
+        const maskedEmail = st.email ? st.email.replace(/^(.).*(@.*)$/, '$1***$2') : null;
+        dbResult = `An account exists for ${st.name} (${st.level_id?.name || 'level unknown'}, ${st.department_id?.name || 'department unknown'}). ` +
+          `Matric number on file: ${st.matric ? 'yes' : 'no'}. Email on file: ${maskedEmail ? 'yes (' + maskedEmail + ')' : 'no'}.`;
+      }
+      const follow = await groqChat(
+        [{ role: 'system', content: systemPrompt }, ...msgs,
+         { role: 'assistant', content: reply },
+         { role: 'user', content: '[SYSTEM LOOKUP RESULT]: ' + dbResult }],
+        { max_tokens: 300, temperature: 0.2, label: 'login-assistant' });
+      reply = follow || (dbResult + ' Use your password to sign in, or tap "Forgot password?" if you cannot remember it.');
     }
 
-    const msgs = (messages || []).slice(-10);
-
-    // First Groq call
-    let reply = await callGroq(msgs);
-    if (!reply) return res.json({ reply: 'Sorry, I could not generate a response. Please try again.' });
-
-    // Check if AI wants a name lookup — intercept transparently
-    const lookupMatch = reply.match(/\[LOOKUP_NAME:\s*(.+?)\]/i);
-    if (lookupMatch) {
-      const searchName = lookupMatch[1].trim();
-
-      // DB lookup
-      const found = await Student.find(
-        { name: { $regex: searchName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' } },
-        { name: 1, matric: 1 }
-      ).limit(5).lean();
-
-      let dbResult;
-      if (found.length > 0) {
-        // Analyse each matric for spaces so we can give precise warnings
-        const studentLines = found.map(function(s) {
-          const matric = s.matric;
-          const spaces = [];
-          for (let i = 0; i < matric.length; i++) {
-            if (matric[i] === ' ') spaces.push(i);
-          }
-          let spaceNote = '';
-          if (spaces.length > 0) {
-            const positions = spaces.map(function(pos) {
-              const before = matric.slice(Math.max(0, pos - 3), pos);
-              const after  = matric.slice(pos + 1, pos + 4);
-              return '"' + before + ' ' + after + '"';
-            });
-            spaceNote = ' [NOTE: this matric contains ' + spaces.length +
-              ' space(s) — specifically between ' + positions.join(' and ') +
-              '. The student MUST include these spaces exactly when logging in or they will get "Student not found".]';
-          }
-          return s.name + ' — matric: ' + matric + spaceNote;
-        });
-        dbResult = 'Database result for "' + searchName + '":\n' + studentLines.join('\n');
-      } else {
-        dbResult = 'No student found in the database with a name matching "' + searchName + '". The student does not have an account yet.';
+    // No key / Groq failure → built-in answers (and a direct check if they pasted an email)
+    if (!reply) {
+      reply = loginHelpFallback(lastUser);
+      const emailInMsg = lastUser.match(/[^\s@]+@[^\s@]+\.[^\s@]+/);
+      if (emailInMsg) {
+        const found = await findStudentsByIdentifier(emailInMsg[0]);
+        reply = found.length
+          ? 'Yes, an account exists with that email. Sign in with that email and your password, or tap "Forgot password?" if you cannot remember it.'
+          : 'No account exists with that email. Try your matric number or full name, or register if registration is open.';
       }
-
-      // Feed result back to Groq for a natural reply
-      const followUp = msgs.concat([
-        { role: 'assistant', content: reply },
-        { role: 'user',      content: '[SYSTEM LOOKUP RESULT]: ' + dbResult }
-      ]);
-      const finalReply = await callGroq(followUp);
-      const resolvedReply = finalReply || dbResult;
-      await saveLoginConv(session_key, msgs, resolvedReply);
-      return res.json({ reply: resolvedReply });
     }
 
     await saveLoginConv(session_key, msgs, reply);
     res.json({ reply });
   } catch(e) {
     console.error('login-assistant error:', e.message);
-    res.json({ reply: 'Server error. Please try again.' });
+    res.json({ reply: loginHelpFallback('') });
   }
 });
 
@@ -4533,22 +4704,19 @@ app.post('/api/student/forgot-password/reset', async (req, res) => {
 });
 
 // POST /api/student/password-contact-request — student requests admin help
+// Body: { identifier }  (name, matric number or email)
 app.post('/api/student/password-contact-request', async (req, res) => {
   try {
-    const { name, level_id, department_id } = req.body;
-    if (!name?.trim() || !level_id || !department_id)
-      return res.json({ success: false, message: 'Name, class and arm are required.' });
-    const cleanName = name.trim().replace(/\s+/g, ' ');
-    const student = await Student.findOne({
-      name:          { $regex: `^${cleanName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' },
-      level_id:      toOID(level_id),
-      department_id: toOID(department_id)
-    });
-    if (!student) return res.json({ success: false, message: 'No account found with that name, class and arm.' });
+    const identifier = cleanSpaces(req.body?.identifier || req.body?.name || '');
+    if (!identifier) return res.json({ success: false, message: 'Please enter your name, matric number or email.' });
+    const found = await findStudentsByIdentifier(identifier);
+    if (!found.length) return res.json({ success: false, message: 'No account found with that name, matric number or email.' });
+    if (found.length > 1) return res.json({ success: false, message: 'More than one student has that name. Please enter your matric number or email instead.' });
+    const student = found[0];
     // Prevent duplicate pending requests
     const existing = await PasswordContactRequest.findOne({ student_id: student._id, resolved: false });
-    if (existing) return res.json({ success: true, message: 'Request already submitted. An admin will contact you.' });
-    await PasswordContactRequest.create({ student_id: student._id, matric: student.name });
+    if (existing) return res.json({ success: true, message: 'Request already submitted. An admin will contact you.', student_name: student.name });
+    await PasswordContactRequest.create({ student_id: student._id, matric: student.matric || student.name });
     res.json({ success: true, message: 'Request sent! An admin will reset your password shortly.', student_name: student.name });
   } catch(e) { res.json({ success: false, message: e.message }); }
 });

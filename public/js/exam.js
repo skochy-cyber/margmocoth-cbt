@@ -62,6 +62,7 @@ let faceEngineReady       = false;
 let sideLookTimer      = null;
 let sideLookPending    = false;
 let sideLookFrames     = 0;          // consecutive frames with a side-look detected
+let sideLookStartAt    = 0;          // when the current head-turn started
 let sideLookEarlyFrame = null;       // snapshot captured on the FIRST detected frame
 let multiFaceFrames    = 0;          // consecutive frames with multiple faces (debounce noise)
 
@@ -88,11 +89,39 @@ let examSettings = {
   restrict_side_look:     false,
   reshuffle_on_violation: false,
   restrict_voice:         false,
+  violation_volume:       50,   // 1 (gentle) – 100 (very sharp), set in Admin → Settings
   show_results:           false,
   show_percentage:        true,
   show_score_breakdown:   true,
   show_grade:             true,
 };
+
+// ── AI sharpness profile — derived from the admin "Violation Volume" (1–100) ──
+// 1 = AI captures slowly and forgives short movements; 100 = very sharp monitoring.
+let _aiProfileCache = null;
+function aiProfile() {
+  const v = Math.min(100, Math.max(1, Math.round(Number(examSettings.violation_volume)) || 50));
+  if (_aiProfileCache && _aiProfileCache.v === v) return _aiProfileCache;
+  const t   = (v - 1) / 99;
+  const geo = (a, b) => a * Math.pow(b / a, t);   // smooth curve between a (v=1) and b (v=100)
+  const lin = (a, b) => a + (b - a) * t;
+  _aiProfileCache = {
+    v,
+    intervalMs:      Math.round(geo(1000, 100)),  // time between face checks
+    minFacePx:       Math.round(lin(80, 35)),     // smallest face the AI will count
+    startupGraceMs:  Math.round(lin(15000, 5000)),// quiet period after the camera starts
+    noFaceGraceMs:   Math.round(geo(8000, 1000)), // no face for this long = violation
+    multiFaceFrames: Math.max(2, Math.round(lin(6, 2))),
+    sideHoldMs:      Math.round(geo(5000, 400)),  // head turned for this long = violation
+    eyeRatioMax:     lin(0.12, 0.26),             // higher = flags smaller head turns
+    noseOffsetMin:   lin(0.36, 0.20),             // lower = flags smaller head turns
+    voiceThreshold:  lin(0.09, 0.03),             // lower = flags smaller jaw movement
+    voiceHoldMs:     Math.round(geo(6000, 1200)), // mouth moving for this long = violation
+    cooldownMs:      Math.round(geo(6000, 1500)), // gap between AI violations
+    leaveGraceMs:    Math.round(geo(4000, 800))   // away from the exam window this long = violation
+  };
+  return _aiProfileCache;
+}
 
 const student  = JSON.parse(sessionStorage.getItem('student')     || 'null');
 const examData = JSON.parse(sessionStorage.getItem('currentExam') || 'null');
@@ -227,6 +256,9 @@ async function initExam() {
   if (examSettings.anticheat_enabled) {
     setupAntiCheat();
   }
+  if (examSettings.anticheat_enabled || examSettings.fullscreen_enabled) {
+    setupFocusGuard();   // armed only now, so the camera-permission prompt can't trigger it
+  }
 
   applyPrevButtonSetting();
 }
@@ -261,47 +293,8 @@ function setupStrictFullscreen() {
     }
   });
 
-  // Handle visibility change (minimize, notification bar, app overlay)
-  // * FIX: Debounce on mobile — Android fires visibilitychange for keyboard popups,
-  // notifications, and address bar changes. Only count as a violation if hidden > 2s.
-  let _visibilityTimer = null;
-  document.addEventListener('visibilitychange', function() {
-    if (document.hidden && !examSubmitted) {
-      if (isMobile) {
-        visibilityHideAt = Date.now();
-        // * FIX: Store the timer so we can cancel it if the student returns quickly.
-        //        Previously the timer still fired even if the page became visible again.
-        clearTimeout(_visibilityTimer);
-        _visibilityTimer = setTimeout(() => {
-          _visibilityTimer = null;
-          if (document.hidden && !examSubmitted && visibilityHideAt) {
-            visibilityHideAt = null;
-            recordViolation('Page hidden — possible minimize/notification bar/split-screen detected', 'rule_violation', 'focus_loss');
-            showViolationToast('Exam window hidden — violation recorded!');
-          }
-        }, 2000); // * raised from 1500ms to 2000ms for slower Android devices
-      } else {
-        recordViolation('Page hidden — possible minimize/notification bar/split-screen detected', 'rule_violation', 'focus_loss');
-        showViolationToast('Exam window hidden — violation recorded!');
-      }
-    } else if (!document.hidden) {
-      // * FIX: Cancel pending mobile timer when student returns quickly
-      clearTimeout(_visibilityTimer);
-      _visibilityTimer = null;
-      visibilityHideAt = null; // cleared when page comes back
-    }
-  });
-
-  // Handle window blur (clicking outside, taskbar, notification area)
-  window.addEventListener('blur', function() {
-    if (!examSubmitted && examSettings.fullscreen_enabled) {
-      setTimeout(() => {
-        if (document.visibilityState === 'visible' && !document.fullscreenElement) {
-          // Fullscreen lost — record and re-enter
-        }
-      }, 200);
-    }
-  });
+  // Leaving the exam window (minimize / app switch / notification shade) is handled by
+  // setupFocusGuard(), armed once the exam has loaded.
 
   // Re-request fullscreen when exited
   // * FIX: On mobile (Android/iOS) the fullscreen API is unreliable — it fires spuriously
@@ -1035,7 +1028,7 @@ async function runFaceDetection() {
 
     // Throttle to ~3 real detections/sec (was 500ms — missed quick movements)
     const now = performance.now();
-    if (now - _lastFaceDetectTime < 350) return;
+    if (now - _lastFaceDetectTime < aiProfile().intervalMs) return;
     _lastFaceDetectTime = now;
 
     if (!faceEngineReady || !blazeFaceModel) return;
@@ -1052,7 +1045,7 @@ async function runFaceDetection() {
     const validFaces = predictions.filter(f => {
       const w = Math.abs(f.bottomRight[0] - f.topLeft[0]);
       const h = Math.abs(f.bottomRight[1] - f.topLeft[1]);
-      return w > 55 && h > 55;
+      return w > aiProfile().minFacePx && h > aiProfile().minFacePx;
     });
 
     // Always call handleFaceResult so no-face/multi-face state is tracked
@@ -1082,11 +1075,11 @@ function handleFaceResult(faceCount) {
 
   if (faceCount === 0) {
     // Suppress all violations for 20 seconds after engine starts — camera needs time to stabilise
-    if (Date.now() - _examStartTime < 10000) return;
+    if (Date.now() - _examStartTime < aiProfile().startupGraceMs) return;
     // Only trigger no-face violation when the feature is enabled
     if (examSettings.face_anticheat_enabled && !noFaceTimer && !faceViolationPending) {
       // Generous grace: mobile cameras lose face on scroll/brightness/focus changes
-      const noFaceGrace = isMobile ? 3000 : 2000;
+      const noFaceGrace = aiProfile().noFaceGraceMs + (isMobile ? 1000 : 0);
       noFaceTimer = setTimeout(() => {
         noFaceTimer = null;
         if (!examSubmitted && !faceViolationPending) {
@@ -1102,7 +1095,7 @@ function handleFaceResult(faceCount) {
     // Require 3 consecutive frames (~1s) to avoid false positives from
     // background objects or momentary detection noise.
     multiFaceFrames++;
-    if (examSettings.face_anticheat_enabled && multiFaceFrames >= 3 && !faceViolationPending) {
+    if (examSettings.face_anticheat_enabled && multiFaceFrames >= aiProfile().multiFaceFrames && !faceViolationPending) {
       faceViolationPending = true;
       triggerFaceViolation(`Multiple faces detected (${faceCount})`);
       setTimeout(() => { faceViolationPending = false; multiFaceFrames = 0; }, 8000);
@@ -1135,7 +1128,7 @@ function canTriggerViolation(cooldownMs = 3000) {
 function triggerFaceViolation(reason) {
   if (examSubmitted) return;
   if (!isAiMonitoringReliable()) return; // * FIX: suppress AI violations while offline/just reconnected
-  if (!canTriggerViolation(3000)) return; // global 3s cooldown
+  if (!canTriggerViolation(aiProfile().cooldownMs)) return; // global cooldown (scaled by violation volume)
   const frame = captureFrameNow();
   const lower = reason.toLowerCase();
   let subType = 'face';
@@ -1285,15 +1278,17 @@ function handleSideLookResult(prediction) {
   // Tuned thresholds for BlazeFace on Android/mobile cameras:
   // eyeRatio < 0.20 = ~50° head turn (was 0.18 — rarely triggered on mobile)
   // noseOffset > 0.25 = clear lateral shift (was 0.30 — too lenient)
-  const isSideLook = eyeRatio < 0.20 || noseOffset > 0.25;
+  const prof = aiProfile();
+  const isSideLook = eyeRatio < prof.eyeRatioMax || noseOffset > prof.noseOffsetMin;
 
   if (isSideLook) {
     sideLookFrames++;
     // Capture the frame on the VERY FIRST detected frame so the head is still fully turned
     if (sideLookFrames === 1) {
       sideLookEarlyFrame = captureFrameNow();
+      sideLookStartAt    = Date.now();
     }
-    if (sideLookFrames >= 2 && !sideLookPending) {
+    if (sideLookFrames >= 2 && (Date.now() - sideLookStartAt) >= prof.sideHoldMs && !sideLookPending) {
       sideLookPending = true;
       triggerSideLookViolation(sideLookEarlyFrame);
       setTimeout(() => { sideLookPending = false; sideLookFrames = 0; sideLookEarlyFrame = null; }, 5000); // was 10s — re-detect faster
@@ -1316,7 +1311,7 @@ function clearSideLookTimer() {
 function triggerSideLookViolation(preFrame) {
   if (examSubmitted) return;
   if (!isAiMonitoringReliable()) return; // * FIX: suppress AI violations while offline/just reconnected
-  if (!canTriggerViolation(3000)) return; // global 3s cooldown
+  if (!canTriggerViolation(aiProfile().cooldownMs)) return; // global cooldown (scaled by violation volume)
   const frame = preFrame || captureFrameNow(); // use early-captured frame; fall back to now
   showFaceSevereFlash('Side look detected — eyes on screen violation!');
   recordViolation('[SIDE LOOK] Student looked away from screen', 'rule_violation', 'side_look', frame);
@@ -1337,8 +1332,8 @@ let mouthMissFrames  = 0;  // consecutive below-threshold frames (grace buffer)
 // Raise VOICE_THRESHOLD so minor head movements / breathing don't trigger.
 // 0.055 requires a clear jaw-open motion; 0.040 was too sensitive on mobile (false positives from typing vibration / breathing).
 // Increase VOICE_FRAMES_NEEDED to 7 (~2.5s) so a quick twitch or single breath never fires.
-const VOICE_THRESHOLD      = 0.055;
-const VOICE_FRAMES_NEEDED  = 7;
+// Thresholds now come from aiProfile() (Violation Volume setting).
+function voiceFramesNeeded() { const p = aiProfile(); return Math.max(3, Math.round(p.voiceHoldMs / p.intervalMs)); }
 
 function handleVoiceResult(prediction) {
   if (examSubmitted) return;
@@ -1366,7 +1361,7 @@ function handleVoiceResult(prediction) {
   if (prevNoseToMouth !== null) {
     const delta = Math.abs(noseToMouth - prevNoseToMouth);
 
-    if (delta > VOICE_THRESHOLD) {
+    if (delta > aiProfile().voiceThreshold) {
       mouthMissFrames = 0; // clear grace counter — mouth is actively moving
       mouthMoveFrames++;
 
@@ -1375,7 +1370,7 @@ function handleVoiceResult(prediction) {
         startMouthRecording();
       }
 
-      if (mouthMoveFrames === VOICE_FRAMES_NEEDED && !mouthMovePending) {
+      if (mouthMoveFrames === voiceFramesNeeded() && !mouthMovePending) {
         mouthMovePending = true;
         triggerVoiceViolation();
         setTimeout(() => {
@@ -1504,7 +1499,7 @@ function clearMouthMoveTimer() {
 async function triggerVoiceViolation() {
   if (examSubmitted) return;
   if (!isAiMonitoringReliable()) return; // * FIX: suppress AI violations while offline/just reconnected
-  if (!canTriggerViolation(3000)) return; // global 3s cooldown
+  if (!canTriggerViolation(aiProfile().cooldownMs)) return; // global cooldown (scaled by violation volume)
 
   // Stop recording and get the clip (mouth is still detected as moving here)
   const videoClip = await stopMouthRecording(true);
@@ -1952,29 +1947,52 @@ function updateTimerDisplay() {
   else if (timeRemaining <= 300) display.classList.add('warning');
 }
 
-function setupAntiCheat() {
-  // Tab switch detection (handled in setupStrictFullscreen for fullscreen)
-  if (!examSettings.fullscreen_enabled) {
-    // * FIX: Same debounce for mobile in the non-fullscreen path
-    document.addEventListener('visibilitychange', () => {
-      if (document.hidden && !examSubmitted) {
-        if (isMobile) {
-          visibilityHideAt = Date.now();
-          setTimeout(() => {
-            if (document.hidden && !examSubmitted && visibilityHideAt) {
-              visibilityHideAt = null;
-              recordViolation('Tab switch detected', 'rule_violation', 'tab_switch');
-            }
-          }, 1500);
-        } else {
-          recordViolation('Tab switch detected', 'rule_violation', 'tab_switch');
-        }
-      } else if (!document.hidden) {
-        visibilityHideAt = null;
-      }
-    });
+// ═══════════════════════════════════════════════════════════════
+// * FOCUS GUARD — minimize / app switch / tab switch detection
+// Phones freeze page timers while the app is in the background, so the old timer-only
+// check never fired (and "page visible again" cancelled it). We now remember WHEN the
+// student left and judge the absence when they come back, as well as while they are away.
+// The grace period shrinks as Violation Volume rises.
+// ═══════════════════════════════════════════════════════════════
+let _focusGuardOn = false;
+function setupFocusGuard() {
+  if (_focusGuardOn) return;
+  _focusGuardOn = true;
+  let awayAt = null, counted = false, timer = null, lastRecorded = 0;
+  const grace = () => aiProfile().leaveGraceMs + (isMobile ? 500 : 0);
+
+  function fire(elapsedMs) {
+    if (examSubmitted || counted) return;
+    if (Date.now() - lastRecorded < 2000) return;       // never double-count one absence
+    counted = true; lastRecorded = Date.now();
+    const secs = Math.max(1, Math.round(elapsedMs / 1000));
+    recordViolation(`Left the exam window (minimized / switched app or tab) for about ${secs}s`, 'rule_violation', 'focus_loss');
+    showViolationToast('You left the exam window — violation recorded!');
+  }
+  function leave() {
+    if (examSubmitted || awayAt !== null) return;
+    awayAt = Date.now(); counted = false;
+    clearTimeout(timer);
+    timer = setTimeout(() => { if (awayAt !== null) fire(Date.now() - awayAt); }, grace());
+  }
+  function back() {
+    if (awayAt === null) return;
+    const elapsed = Date.now() - awayAt;
+    clearTimeout(timer);
+    if (!counted && elapsed >= grace()) fire(elapsed);   // timer was frozen while hidden
+    awayAt = null; counted = false;
   }
 
+  document.addEventListener('visibilitychange', () => { document.hidden ? leave() : back(); });
+  window.addEventListener('blur',     () => { if (!window.__focusGuardPause) leave(); });
+  window.addEventListener('focus',    back);
+  window.addEventListener('pagehide', leave);
+  window.addEventListener('pageshow', back);
+  document.addEventListener('freeze', leave);
+  document.addEventListener('resume', back);
+}
+
+function setupAntiCheat() {
   document.addEventListener('contextmenu', e => e.preventDefault());
   document.addEventListener('keydown', e => {
     if (examSubmitted) return;
