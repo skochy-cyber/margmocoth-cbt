@@ -130,6 +130,7 @@ function getSidebarHTML(activePage) {
  {
  title: 'PROCTORING',
  items: [
+ { href: 'violations.html', icon: '<svg viewBox="0 0 16 16" fill="none" width="16" height="16"><path d="M8 1.8l6.4 11.2H1.6L8 1.8z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M8 6.4v3.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="11.5" r=".8" fill="currentColor"/></svg>', label: 'Violations', show: can('view_captures') },
  { href: 'admin-capturing.html', icon: '<svg viewBox="0 0 16 16" fill="none" width="16" height="16"><path d="M1 5a1 1 0 011-1h1l1-1h6l1 1h1a1 1 0 011 1v7a1 1 0 01-1 1H2a1 1 0 01-1-1V5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="8" cy="8.5" r="2" stroke="currentColor" stroke-width="1.5"/></svg>', label: 'Face Captures', show: can('view_captures') },
  { href: 'student-profiles.html', icon: '<svg viewBox="0 0 16 16" fill="none" width="16" height="16"><rect x="1" y="4" width="14" height="9" rx="2" stroke="currentColor" stroke-width="1.5"/><circle cx="5.5" cy="8.5" r="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M9 7h4M9 9.5h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>', label: 'Student Profiles', show: can('view_captures') },
  ]

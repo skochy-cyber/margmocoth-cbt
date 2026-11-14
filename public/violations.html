@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#2e3192">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<title>Violations – MARGMOCOTH CBT</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+.v-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:18px; }
+.v-stat { background:var(--surface,#fff); border:1px solid var(--border,#e5e7eb); border-radius:14px; padding:14px 16px; }
+.v-stat .n { font-size:24px; font-weight:800; color:var(--text,#1b1e45); line-height:1.1; }
+.v-stat .l { font-size:12px; color:var(--text-2,#6b7280); margin-top:3px; font-weight:600; }
+.v-stat.warn .n { color:#b45309; } .v-stat.bad .n { color:#b91c1c; }
+.v-filters { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:14px; align-items:center; }
+.v-filters input[type=text], .v-filters input[type=date], .v-filters select { border:1px solid var(--border,#d1d5db); border-radius:10px; padding:9px 12px; font-size:13px; background:#fff; color:var(--text,#1b1e45); font-family:inherit; min-width:0; }
+.v-filters input[type=text] { flex:1 1 200px; }
+.v-check { display:flex; align-items:center; gap:6px; font-size:13px; color:var(--text-2,#4a4e73); font-weight:600; cursor:pointer; }
+.v-tabs { display:flex; gap:8px; margin-bottom:14px; }
+.v-tab { border:1px solid var(--border,#d1d5db); background:#fff; border-radius:99px; padding:7px 16px; font-size:13px; font-weight:700; cursor:pointer; color:var(--text-2,#4a4e73); font-family:inherit; }
+.v-tab.on { background:#2e3192; color:#fff; border-color:#2e3192; }
+.v-card { display:flex; gap:14px; background:var(--surface,#fff); border:1px solid var(--border,#e5e7eb); border-radius:14px; padding:12px; margin-bottom:10px; align-items:flex-start; }
+.v-card:hover { box-shadow:0 4px 16px rgba(0,0,0,.07); }
+.v-thumb { width:92px; height:72px; flex:none; border-radius:10px; overflow:hidden; background:#eef0f7; display:grid; place-items:center; cursor:pointer; position:relative; border:1px solid #e1e4f0; }
+.v-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+.v-thumb .none { font-size:11px; color:#8e92b3; text-align:center; padding:4px; line-height:1.3; cursor:default; }
+.v-thumb .play { position:absolute; right:4px; bottom:4px; background:rgba(15,18,48,.78); color:#fff; font-size:10px; font-weight:700; border-radius:6px; padding:2px 6px; }
+.v-body { flex:1; min-width:0; }
+.v-name { font-size:14px; font-weight:700; color:var(--text,#1b1e45); }
+.v-meta { font-size:12px; color:var(--text-2,#6b7280); margin-top:2px; line-height:1.5; }
+.v-reason { font-size:13px; color:var(--text,#1b1e45); margin-top:6px; word-break:break-word; }
+.v-tags { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; align-items:center; }
+.v-actions { display:flex; flex-direction:column; gap:6px; flex:none; }
+.v-empty { text-align:center; padding:56px 16px; color:var(--text-2,#6b7280); font-size:14px; }
+.v-more { text-align:center; margin:16px 0; }
+.v-table { width:100%; border-collapse:collapse; font-size:13px; background:#fff; border:1px solid var(--border,#e5e7eb); border-radius:12px; overflow:hidden; }
+.v-table th { text-align:left; padding:10px 12px; background:#f6f7fc; color:#5b5f80; font-size:11px; text-transform:uppercase; letter-spacing:.5px; }
+.v-table td { padding:10px 12px; border-top:1px solid #eef0f7; }
+.v-table tr.click { cursor:pointer; } .v-table tr.click:hover td { background:#f9faff; }
+.v-view { position:fixed; inset:0; z-index:10000; background:rgba(10,12,30,.82); display:none; align-items:center; justify-content:center; padding:14px; }
+.v-view.open { display:flex; }
+.v-view-box { background:#fff; border-radius:16px; width:100%; max-width:720px; max-height:92vh; overflow:auto; }
+.v-view-head { display:flex; justify-content:space-between; align-items:center; padding:14px 18px; background:linear-gradient(130deg,#2e3192,#1f2170); color:#fff; border-radius:16px 16px 0 0; font-weight:700; }
+.v-view-head button { background:none; border:none; color:#fff; font-size:22px; cursor:pointer; line-height:1; }
+.v-view-media { background:#0b0d22; display:grid; place-items:center; min-height:140px; }
+.v-view-media img, .v-view-media video { max-width:100%; max-height:56vh; display:block; }
+.v-view-info { padding:16px 18px 18px; font-size:13px; color:#1b1e45; display:grid; gap:6px; }
+.v-view-info b { color:#5b5f80; font-weight:600; display:inline-block; min-width:92px; }
+.v-view-btns { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+@media (max-width:760px){ .v-stats{grid-template-columns:repeat(2,1fr);} .v-card{flex-wrap:wrap;} .v-actions{flex-direction:row;width:100%;} .v-thumb{width:84px;height:68px;} }
+</style>
+</head>
+<body>
+<div class="admin-layout">
+  <div id="sidebarContainer"></div>
+  <div class="admin-main">
+    <div id="topbarContainer"></div>
+    <div class="content">
+      <div id="alertBox"></div>
+
+      <div style="margin-bottom:18px;">
+        <h2 style="font-size:18px;font-weight:800;color:var(--text);margin:0;">Violations</h2>
+        <p style="font-size:13px;color:var(--text-2);margin:4px 0 0;">Every violation recorded during exams, with the webcam capture or clip taken at that moment.</p>
+      </div>
+
+      <div class="v-stats">
+        <div class="v-stat"><div class="n" id="stTotal">–</div><div class="l">Total records</div></div>
+        <div class="v-stat bad"><div class="n" id="stRule">–</div><div class="l">Rule violations</div></div>
+        <div class="v-stat warn"><div class="n" id="stCap">–</div><div class="l">With capture / clip</div></div>
+        <div class="v-stat"><div class="n" id="stStu">–</div><div class="l">Students involved</div></div>
+      </div>
+
+      <div class="v-filters">
+        <input type="text" id="fSearch" placeholder="Search student, matric, exam or reason…" oninput="applyFilters()">
+        <select id="fExam" onchange="applyFilters()"><option value="all">All exams</option></select>
+        <select id="fType" onchange="applyFilters()">
+          <option value="all">All types</option>
+          <option value="rule_violation">Rule violations</option>
+          <option value="network_error">Network issues</option>
+          <option value="system_error">System errors</option>
+        </select>
+        <select id="fSub" onchange="applyFilters()">
+          <option value="all">All kinds</option>
+          <option value="focus_loss">Left exam window</option>
+          <option value="tab_switch">Tab switch</option>
+          <option value="fullscreen_exit">Fullscreen exit</option>
+          <option value="face">Face / identity</option>
+          <option value="no_face">No face</option>
+          <option value="multiple_faces">Multiple faces</option>
+          <option value="side_look">Looking away</option>
+          <option value="voice">Talking</option>
+          <option value="screenshot">Screenshot</option>
+          <option value="back_nav">Back navigation</option>
+          <option value="duplicate_ip">Duplicate login</option>
+          <option value="other">Other</option>
+        </select>
+        <input type="date" id="fFrom" onchange="loadViolations()" title="From date">
+        <input type="date" id="fTo" onchange="loadViolations()" title="To date">
+        <label class="v-check"><input type="checkbox" id="fCap" onchange="applyFilters()"> With capture only</label>
+        <button class="btn btn-secondary btn-sm" onclick="loadViolations()">↻ Refresh</button>
+        <button class="btn btn-secondary btn-sm" onclick="exportCsv()">Export CSV</button>
+      </div>
+
+      <div class="v-tabs">
+        <button class="v-tab on" id="tabList" onclick="setView('list')">All records</button>
+        <button class="v-tab" id="tabStu" onclick="setView('students')">By student</button>
+      </div>
+
+      <div id="viewList"></div>
+      <div id="viewStudents" style="display:none;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Evidence viewer -->
+<div class="v-view" id="viewer" onclick="if(event.target===this)closeViewer()">
+  <div class="v-view-box">
+    <div class="v-view-head"><span id="vwTitle">Violation</span><button onclick="closeViewer()" aria-label="Close">&times;</button></div>
+    <div class="v-view-media" id="vwMedia"></div>
+    <div class="v-view-info" id="vwInfo"></div>
+  </div>
+</div>
+
+<script src="js/admin.js"></script>
+<script>
+document.getElementById('sidebarContainer').innerHTML = getSidebarHTML('violations.html');
+document.getElementById('topbarContainer').innerHTML  = getTopbarHTML('Violations');
+checkAdmin();
+requirePermission('view_captures');
+
+const me         = JSON.parse(sessionStorage.getItem('admin') || '{}');
+const isLecturer = me.role === 'lecturer';
+const canDelete  = me.role === 'super';
+const PAGE_SIZE  = 30;
+let all = [], shown = [], limit = PAGE_SIZE, view = 'list', openId = null;
+
+const SUB_LABEL = { focus_loss:'Left exam window', tab_switch:'Tab switch', fullscreen_exit:'Fullscreen exit', face:'Face / identity',
+  no_face:'No face', multiple_faces:'Multiple faces', side_look:'Looking away', voice:'Talking', screenshot:'Screenshot',
+  back_nav:'Back navigation', duplicate_ip:'Duplicate login', other:'Other' };
+const TYPE_LABEL = { rule_violation:'Rule violation', network_error:'Network', system_error:'System' };
+const TYPE_BADGE = { rule_violation:'badge-danger', network_error:'badge-warning', system_error:'badge-neutral' };
+
+const esc = t => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt = d => d ? new Date(d).toLocaleString('en-GB', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '—';
+const safeUrl = u => (u && (/^https:\/\//.test(u) || u.startsWith('/uploads/'))) ? u : '';
+const stuKey = v => (v.matric && v.matric !== '—') ? v.matric : v.student_name;
+
+async function loadViolations() {
+  document.getElementById('viewList').innerHTML = '<div class="v-empty">Loading violations…</div>';
+  try {
+    const q = new URLSearchParams();
+    if (isLecturer) q.set('lecturer_id', me.id);
+    const f = document.getElementById('fFrom').value, t = document.getElementById('fTo').value;
+    if (f) q.set('date_from', f);
+    if (t) q.set('date_to', t);
+    const data = await apiGet('/api/admin/violations' + (q.toString() ? '?' + q : ''));
+    all = Array.isArray(data) ? data : (data.violations || []);
+  } catch (e) { all = []; }
+  fillExams();
+  applyFilters();
+}
+
+function fillExams() {
+  const sel = document.getElementById('fExam'), keep = sel.value;
+  const seen = new Map();
+  all.forEach(v => { if (v.exam_id) seen.set(v.exam_id, v.exam_title); });
+  sel.innerHTML = '<option value="all">All exams</option>' + [...seen].map(([id, t]) => `<option value="${esc(id)}">${esc(t)}</option>`).join('');
+  if ([...seen.keys()].includes(keep)) sel.value = keep;
+}
+
+function applyFilters() {
+  const s = document.getElementById('fSearch').value.trim().toLowerCase();
+  const ex = document.getElementById('fExam').value, ty = document.getElementById('fType').value;
+  const sb = document.getElementById('fSub').value, cap = document.getElementById('fCap').checked;
+  shown = all.filter(v =>
+    (ex === 'all' || v.exam_id === ex) && (ty === 'all' || v.violation_type === ty) && (sb === 'all' || v.sub_type === sb) &&
+    (!cap || v.capture_url || v.clip_url) &&
+    (!s || [v.student_name, v.matric, v.exam_title, v.reason, v.department_name].some(x => String(x || '').toLowerCase().includes(s))));
+  limit = PAGE_SIZE;
+  renderStats(); render();
+}
+
+function renderStats() {
+  document.getElementById('stTotal').textContent = shown.length;
+  document.getElementById('stRule').textContent  = shown.filter(v => v.violation_type === 'rule_violation').length;
+  document.getElementById('stCap').textContent   = shown.filter(v => v.capture_url || v.clip_url).length;
+  document.getElementById('stStu').textContent   = new Set(shown.map(stuKey)).size;
+}
+
+function setView(v) {
+  view = v;
+  document.getElementById('tabList').classList.toggle('on', v === 'list');
+  document.getElementById('tabStu').classList.toggle('on', v === 'students');
+  document.getElementById('viewList').style.display     = v === 'list' ? '' : 'none';
+  document.getElementById('viewStudents').style.display = v === 'students' ? '' : 'none';
+  render();
+}
+
+function render() { view === 'list' ? renderList() : renderStudents(); }
+
+function renderList() {
+  const box = document.getElementById('viewList');
+  if (!shown.length) {
+    box.innerHTML = `<div class="v-empty">${all.length ? 'No violations match your filters.' : 'No violations have been recorded yet.'}</div>`;
+    return;
+  }
+  const page = shown.slice(0, limit);
+  box.innerHTML = page.map(v => {
+    const img = safeUrl(v.capture_url), clip = safeUrl(v.clip_url);
+    const thumb = img
+      ? `<div class="v-thumb" onclick="openViewer('${esc(v.id)}')"><img src="${esc(img)}" loading="lazy" alt="Capture">${clip ? '<span class="play">▶ clip</span>' : ''}</div>`
+      : clip ? `<div class="v-thumb" onclick="openViewer('${esc(v.id)}')"><span class="none">Video clip</span><span class="play">▶</span></div>`
+      : '<div class="v-thumb"><span class="none">No capture</span></div>';
+    return `<div class="v-card">
+      ${thumb}
+      <div class="v-body">
+        <div class="v-name">${esc(v.student_name)} <span style="font-weight:500;color:var(--text-2);">· ${esc(v.matric)}</span></div>
+        <div class="v-meta">${esc(v.department_name)} · ${esc(v.level_name)} · ${esc(v.exam_title)}</div>
+        <div class="v-reason">${esc(v.reason)}</div>
+        <div class="v-tags">
+          <span class="badge ${TYPE_BADGE[v.violation_type] || 'badge-neutral'}">${esc(TYPE_LABEL[v.violation_type] || v.violation_type)}</span>
+          <span class="badge badge-info">${esc(SUB_LABEL[v.sub_type] || v.sub_type)}</span>
+          <span class="v-meta" style="margin:0;">${fmt(v.created_at)}</span>
+        </div>
+      </div>
+      <div class="v-actions">
+        <button class="btn btn-secondary btn-sm" onclick="openViewer('${esc(v.id)}')">View</button>
+        ${canDelete ? `<button class="btn btn-secondary btn-sm" style="color:#b91c1c;" onclick="delOne('${esc(v.id)}')">Delete</button>` : ''}
+      </div>
+    </div>`;
+  }).join('') + (shown.length > limit ? `<div class="v-more"><button class="btn btn-secondary" onclick="limit+=PAGE_SIZE;renderList()">Show more (${shown.length - limit} left)</button></div>` : '');
+}
+
+function renderStudents() {
+  const box = document.getElementById('viewStudents');
+  if (!shown.length) { box.innerHTML = '<div class="v-empty">Nothing to show.</div>'; return; }
+  const m = new Map();
+  shown.forEach(v => {
+    const k = stuKey(v);
+    if (!m.has(k)) m.set(k, { name: v.student_name, matric: v.matric, dept: v.department_name, level: v.level_name, total: 0, rule: 0, cap: 0, last: v.created_at });
+    const r = m.get(k); r.total++;
+    if (v.violation_type === 'rule_violation') r.rule++;
+    if (v.capture_url || v.clip_url) r.cap++;
+    if (new Date(v.created_at) > new Date(r.last)) r.last = v.created_at;
+  });
+  const rows = [...m.entries()].sort((a, b) => b[1].rule - a[1].rule || b[1].total - a[1].total);
+  box.innerHTML = `<div style="overflow-x:auto;"><table class="v-table"><thead><tr><th>Student</th><th>Matric</th><th>Dept / Level</th><th>Rule</th><th>All</th><th>Captures</th><th>Last</th>${canDelete ? '<th></th>' : ''}</tr></thead><tbody>` +
+    rows.map(([k, r]) => `<tr class="click" data-k="${esc(k)}" data-n="${esc(r.name)}" onclick="filterStudent(this.dataset.k)">
+      <td><b>${esc(r.name)}</b></td><td>${esc(r.matric)}</td><td>${esc(r.dept)} · ${esc(r.level)}</td>
+      <td><b style="color:#b91c1c;">${r.rule}</b></td><td>${r.total}</td><td>${r.cap}</td><td>${fmt(r.last)}</td>
+      ${canDelete ? `<td><button class="btn btn-secondary btn-sm" style="color:#b91c1c;" onclick="event.stopPropagation();var t=this.closest('tr');delStudent(t.dataset.k,t.dataset.n)">Clear</button></td>` : ''}
+    </tr>`).join('') + '</tbody></table></div>';
+}
+
+function filterStudent(key) { document.getElementById('fSearch').value = key; setView('list'); applyFilters(); }
+
+function openViewer(id) {
+  const v = all.find(x => x.id === id); if (!v) return;
+  openId = id;
+  const img = safeUrl(v.capture_url), clip = safeUrl(v.clip_url);
+  document.getElementById('vwTitle').textContent = `${v.student_name} — ${SUB_LABEL[v.sub_type] || v.sub_type}`;
+  document.getElementById('vwMedia').innerHTML =
+    (img ? `<img src="${esc(img)}" alt="Violation capture">` : '') +
+    (clip ? `<video src="${esc(clip)}" controls playsinline preload="metadata" style="margin-top:${img ? 8 : 0}px;"></video>` : '') +
+    (!img && !clip ? '<div style="color:#9aa0c6;padding:40px 16px;font-size:13px;">No capture was stored for this violation.</div>' : '');
+  document.getElementById('vwInfo').innerHTML = `
+    <div><b>Student</b>${esc(v.student_name)} (${esc(v.matric)})</div>
+    <div><b>Department</b>${esc(v.department_name)} · ${esc(v.level_name)}</div>
+    <div><b>Exam</b>${esc(v.exam_title)}</div>
+    <div><b>Type</b>${esc(TYPE_LABEL[v.violation_type] || v.violation_type)} · ${esc(SUB_LABEL[v.sub_type] || v.sub_type)}</div>
+    <div><b>Reason</b>${esc(v.reason)}</div>
+    <div><b>Violation #</b>${esc(v.count)}</div>
+    <div><b>Time</b>${fmt(v.created_at)}</div>
+    <div class="v-view-btns">
+      ${img ? `<a class="btn btn-secondary btn-sm" href="${esc(img)}" target="_blank" rel="noopener" download>Download image</a>` : ''}
+      ${clip ? `<a class="btn btn-secondary btn-sm" href="${esc(clip)}" target="_blank" rel="noopener" download>Download clip</a>` : ''}
+      ${canDelete ? `<button class="btn btn-secondary btn-sm" style="color:#b91c1c;" onclick="delOne('${esc(v.id)}')">Delete</button>` : ''}
+    </div>`;
+  document.getElementById('viewer').classList.add('open');
+}
+function closeViewer() {
+  document.getElementById('viewer').classList.remove('open');
+  const vid = document.querySelector('#vwMedia video'); if (vid) vid.pause();
+  openId = null;
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeViewer(); });
+
+async function api(method, url) {
+  const r = await fetch(url, { method, headers: { 'X-Admin-Token': getAdminToken() } });
+  return r.json();
+}
+async function delOne(id) {
+  if (!confirm('Delete this violation and its capture? This cannot be undone.')) return;
+  const d = await api('DELETE', '/api/admin/violations/' + encodeURIComponent(id));
+  if (d.success) { all = all.filter(v => v.id !== id); closeViewer(); applyFilters(); showAlert('Violation deleted.', 'success'); }
+  else showAlert(d.message || 'Could not delete.', 'danger');
+}
+async function delStudent(key, name) {
+  if (!confirm(`Delete ALL violations and captures for ${name}? This cannot be undone.`)) return;
+  const d = await api('DELETE', '/api/admin/violations/student/' + encodeURIComponent(key));
+  if (d.success) { showAlert(`${d.deleted} violation(s) deleted for ${esc(name)}.`, 'success'); loadViolations(); }
+  else showAlert(d.message || 'Could not delete.', 'danger');
+}
+
+function exportCsv() {
+  if (!shown.length) { showAlert('Nothing to export.', 'danger'); return; }
+  const cell = x => '"' + String(x == null ? '' : x).replace(/"/g, '""') + '"';
+  const head = ['Date','Student','Matric','Department','Level','Exam','Type','Kind','Reason','Violation #','Capture URL','Clip URL'];
+  const rows = shown.map(v => [fmt(v.created_at), v.student_name, v.matric, v.department_name, v.level_name, v.exam_title,
+    TYPE_LABEL[v.violation_type] || v.violation_type, SUB_LABEL[v.sub_type] || v.sub_type, v.reason, v.count,
+    v.capture_url ? (v.capture_url.startsWith('/') ? location.origin + v.capture_url : v.capture_url) : '', v.clip_url ? (v.clip_url.startsWith('/') ? location.origin + v.clip_url : v.clip_url) : ''].map(cell).join(','));
+  const blob = new Blob(['\ufeff' + head.map(cell).join(',') + '\n' + rows.join('\n')], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'violations_' + new Date().toISOString().slice(0, 10) + '.csv'; a.click();
+}
+
+loadViolations();
+</script>
+<script src="/pwa.js"></script>
+</body>
+</html>

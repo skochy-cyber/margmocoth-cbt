@@ -1625,6 +1625,14 @@ async function loadQuestions() {
       sessionId = data.session_id;
       sessionStorage.setItem('examSessionId', sessionId);
 
+      // Restore the violations already recorded on the server, so refreshing the page
+      // cannot reset the student's violation count.
+      if (Number(data.violations) > violationCount) {
+        violationCount = Number(data.violations);
+        const _vc = document.getElementById('violPillCount');
+        if (_vc) _vc.textContent = violationCount;
+      }
+
       // * Clear ALL stale exam_progress keys — including the current session —
       //   so a retake always starts with a blank slate. The server's savedAnswers
       //   (returned in data.savedAnswers) are the only authoritative restore source.

@@ -181,6 +181,8 @@ const ViolationSchema = new mongoose.Schema({
     default: 'other'
   },
   capture_url:    { type: String, default: null }, // Cloudinary URL of webcam capture at violation moment
+  capture_public_id: { type: String, default: null },
+  clip_public_id:    { type: String, default: null },
   clip_url:       { type: String, default: null }, // Cloudinary URL of mouth-movement video clip
   created_at:     { type: Date, default: Date.now }
 });
@@ -1391,6 +1393,7 @@ app.get('/api/exam-questions', async (req, res) => {
       success:      true,
       questions:    mapped,
       session_id:   session._id.toString(),
+      violations:   session.violations || 0,
       savedAnswers: Object.keys(savedAnswers).length ? savedAnswers : undefined
     });
   } catch(e) { res.json({ success: false, message: e.message }); }
@@ -1427,16 +1430,135 @@ app.get('/api/check-submission', async (req, res) => {
 
 // AI exam-violation / proctoring capture system removed for MARGMOCOTH CBT.
 // This endpoint is kept as a harmless no-op so older cached front-end code does not error.
+// ===== VIOLATIONS =====
+// Every violation the exam page detects (tab switch, face, voice, network…) is stored here
+// together with the webcam capture / mouth clip taken at that moment.
+const VIOLATION_SUBTYPES = ['tab_switch','focus_loss','duplicate_ip','fullscreen_exit','back_nav',
+  'face','side_look','voice','screenshot','multiple_faces','no_face','identity','other'];
+const VIOLATIONS_DIR = path.join(__dirname, 'public', 'uploads', 'violations');
+
+// Saves a data: URL (image or video). Cloudinary first; if it is not configured or fails,
+// falls back to the server's disk so the evidence is never silently lost.
+async function storeViolationMedia(dataUrl, kind, key) {
+  if (typeof dataUrl !== 'string' || !dataUrl.startsWith('data:')) return null;
+  if (dataUrl.length > 9 * 1024 * 1024) return null;
+  try {
+    const r = await cloudinary.uploader.upload(dataUrl, {
+      folder: 'margmocoth_violations', public_id: key, overwrite: true,
+      resource_type: kind === 'video' ? 'video' : 'image'
+    });
+    return { url: r.secure_url, public_id: r.public_id };
+  } catch (e) {
+    console.warn('[violation] Cloudinary upload failed, saving to disk:', e.message);
+  }
+  try {
+    const m = dataUrl.match(/^data:(image|video)\/([a-z0-9+.\-]+)[^,]*;base64,(.+)$/i);
+    if (!m) return null;
+    const sub = m[2].toLowerCase();
+    const ext = sub.includes('webm') ? 'webm' : sub.includes('mp4') ? 'mp4'
+              : sub.includes('png') ? 'png' : 'jpg';
+    fs.mkdirSync(VIOLATIONS_DIR, { recursive: true });
+    const file = `${key}.${ext}`;
+    fs.writeFileSync(path.join(VIOLATIONS_DIR, file), Buffer.from(m[3], 'base64'));
+    return { url: '/uploads/violations/' + file, public_id: null };
+  } catch (e) {
+    console.warn('[violation] disk save failed:', e.message);
+    return null;
+  }
+}
+
+async function removeViolationMedia(v) {
+  const jobs = [];
+  if (v.capture_public_id) jobs.push(cloudinary.uploader.destroy(v.capture_public_id).catch(() => {}));
+  if (v.clip_public_id)    jobs.push(cloudinary.uploader.destroy(v.clip_public_id, { resource_type: 'video' }).catch(() => {}));
+  for (const u of [v.capture_url, v.clip_url]) {
+    if (u && u.startsWith('/uploads/violations/')) {
+      try { fs.unlinkSync(path.join(VIOLATIONS_DIR, path.basename(u))); } catch (_) {}
+    }
+  }
+  await Promise.all(jobs);
+}
+
 app.post('/api/record-violation', async (req, res) => {
-  res.json({ success: true });
+  try {
+    const { session_id, reason, count, violation_type, sub_type, capture_data, video_clip_data } = req.body || {};
+    if (!session_id || !mongoose.isValidObjectId(session_id))
+      return res.json({ success: false, message: 'Invalid session.' });
+    const session = await ExamSession.findById(session_id);
+    if (!session) return res.json({ success: false, message: 'Session not found.' });
+
+    const vt  = ['rule_violation', 'network_error', 'system_error'].includes(violation_type) ? violation_type : 'rule_violation';
+    const st  = VIOLATION_SUBTYPES.includes(sub_type) ? sub_type : 'other';
+    const why = String(reason || 'Violation').slice(0, 300);
+    const cnt = Math.max(0, Math.round(Number(count)) || 0);
+
+    // Retry-safe: the exam page re-sends queued violations after a reconnect.
+    const dupFilter = { session_id: session._id, reason: why, count: cnt, violation_type: vt };
+    if (vt !== 'rule_violation') dupFilter.created_at = { $gte: new Date(Date.now() - 60000) };
+    const dup = await Violation.findOne(dupFilter);
+    if (dup) return res.json({ success: true, duplicate: true, id: dup._id.toString() });
+
+    const key = `viol_${session._id}_${Date.now()}`;
+    const [cap, clip] = await Promise.all([
+      capture_data    ? storeViolationMedia(capture_data,    'image', key + '_img') : null,
+      video_clip_data ? storeViolationMedia(video_clip_data, 'video', key + '_clip') : null
+    ]);
+
+    const v = await Violation.create({
+      session_id: session._id, reason: why, count: cnt, violation_type: vt, sub_type: st,
+      capture_url: cap ? cap.url : null, capture_public_id: cap ? cap.public_id : null,
+      clip_url:    clip ? clip.url : null, clip_public_id:  clip ? clip.public_id : null
+    });
+    if (vt === 'rule_violation') await ExamSession.updateOne({ _id: session._id }, { $inc: { violations: 1 } });
+
+    res.json({ success: true, id: v._id.toString(), has_capture: !!cap, has_clip: !!clip });
+  } catch (e) {
+    console.error('record-violation error:', e.message);
+    res.json({ success: false, message: e.message });
+  }
 });
 
-app.delete('/api/admin/violations/:id', adminAuth, async (req, res) => {
-  res.json({ success: true });
+// Only the super admin may delete violation evidence (lecturers can view, not erase).
+async function superAdminOnly(req, res, next) {
+  try {
+    const token = req.headers['x-admin-token'] || req.query._t;
+    const a = await Admin.findOne({ activeToken: token });
+    if (!a || a.role === 'lecturer') return res.status(403).json({ success: false, message: 'Only the super admin can delete violations.' });
+    next();
+  } catch (e) { res.status(500).json({ success: false, message: e.message }); }
+}
+
+app.delete('/api/admin/violations/:id', adminAuth, superAdminOnly, async (req, res) => {
+  try {
+    const v = await Violation.findById(req.params.id);
+    if (!v) return res.json({ success: false, message: 'Violation not found.' });
+    await removeViolationMedia(v);
+    if (v.violation_type === 'rule_violation' || !v.violation_type)
+      await ExamSession.updateOne({ _id: v.session_id, violations: { $gt: 0 } }, { $inc: { violations: -1 } });
+    await v.deleteOne();
+    res.json({ success: true });
+  } catch (e) { res.json({ success: false, message: e.message }); }
 });
 
-app.delete('/api/admin/violations/student/:matric', adminAuth, async (req, res) => {
-  res.json({ success: true, deleted: 0 });
+// :matric accepts a matric number, a student id, or a full name
+app.delete('/api/admin/violations/student/:matric', adminAuth, superAdminOnly, async (req, res) => {
+  try {
+    const key = req.params.matric;
+    let stu;
+    if (mongoose.isValidObjectId(key)) stu = await Student.findById(key);
+    else {
+      const found = await findStudentsByIdentifier(key);
+      if (found.length > 1) return res.json({ success: false, deleted: 0, message: 'More than one student matches. Nothing was deleted — use the matric number.' });
+      stu = found[0];
+    }
+    if (!stu) return res.json({ success: false, deleted: 0, message: 'Student not found.' });
+    const sessions = await ExamSession.find({ student_id: stu._id }, { _id: 1 });
+    const vs = await Violation.find({ session_id: { $in: sessions.map(x => x._id) } });
+    for (const v of vs) await removeViolationMedia(v);
+    await Violation.deleteMany({ _id: { $in: vs.map(v => v._id) } });
+    await ExamSession.updateMany({ student_id: stu._id }, { $set: { violations: 0 } });
+    res.json({ success: true, deleted: vs.length });
+  } catch (e) { res.json({ success: false, deleted: 0, message: e.message }); }
 });
 
 app.post('/api/save-snapshot', upload.single('snapshot'), (req, res) => {
@@ -2489,7 +2611,7 @@ app.post('/api/admin/bulk-students', adminAuth, async (req, res) => {
 // ===== VIOLATIONS ==========
 // ===========================
 
-app.get('/api/admin/violations', async (req, res) => {
+app.get('/api/admin/violations', adminAuth, async (req, res) => {
   try {
     const { type, date_from, date_to, exam_id, matric, lecturer_id } = req.query;
 
@@ -2540,7 +2662,7 @@ app.get('/api/admin/violations', async (req, res) => {
 });
 
 // Student violation history
-app.get('/api/admin/violations/student/:matric', async (req, res) => {
+app.get('/api/admin/violations/student/:matric', adminAuth, async (req, res) => {
   try {
     const student = await Student.findOne({ matric: req.params.matric })
       .populate('department_id').populate('level_id');
