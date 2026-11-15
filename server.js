@@ -3291,10 +3291,14 @@ app.delete('/api/admin/semesters/:id', async (req, res) => {
 // ===== COURSES =============
 // ===========================
 
-app.post('/api/admin/courses', async (req, res) => {
+app.post('/api/admin/courses', adminAuth, async (req, res) => {
   try {
     const { name, code, department_id, level_id } = req.body;
-    const payload = { name, code };
+    if (!name || !String(name).trim()) return res.json({ success: false, message: 'Course name required.' });
+    const payload = { name: String(name).trim(), code: String(code || '').trim() };
+    const dupe = await Course.findOne({ name: new RegExp('^' + String(name).trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i'),
+      department_id: department_id ? toOID(department_id) : null, level_id: level_id ? toOID(level_id) : null });
+    if (dupe) return res.json({ success: false, message: 'This course already exists for that department and level.' });
     if (department_id) payload.department_id = toOID(department_id);
     if (level_id)      payload.level_id      = toOID(level_id);
     const c = await Course.create(payload);
@@ -3309,25 +3313,29 @@ app.post('/api/admin/courses', async (req, res) => {
     }});
   } catch(e) { res.json({ success: false, message: e.message }); }
 });
-app.put('/api/admin/courses/:id', async (req, res) => {
+app.put('/api/admin/courses/:id', adminAuth, async (req, res) => {
   try {
     const { name, code, department_id, level_id } = req.body;
-    const update = { name, code };
+    if (!name || !String(name).trim()) return res.json({ success: false, message: 'Course name required.' });
+    const update = { name: String(name).trim(), code: String(code || '').trim() };
     update.department_id = department_id ? toOID(department_id) : null;
     update.level_id      = level_id      ? toOID(level_id)      : null;
     await Course.findByIdAndUpdate(req.params.id, update);
     res.json({ success: true });
   } catch(e) { res.json({ success: false, message: e.message }); }
 });
-app.delete('/api/admin/courses/:id', async (req, res) => {
-  try { await Course.findByIdAndDelete(req.params.id); res.json({ success: true }); }
-  catch(e) { res.json({ success: false, message: e.message }); }
+app.delete('/api/admin/courses/:id', adminAuth, async (req, res) => {
+  try {
+    const used = await Exam.countDocuments({ course_id: toOID(req.params.id) });
+    if (used) return res.json({ success: false, message: `This course is used by ${used} exam${used > 1 ? 's' : ''}. Delete or change those exams first.` });
+    await Course.findByIdAndDelete(req.params.id); res.json({ success: true });
+  } catch(e) { res.json({ success: false, message: e.message }); }
 });
 
 // POST /api/admin/bulk-courses — JSON array of courses parsed from CSV on the client
 // Expected shape: { courses: [{ name, code, department, level }] }
 // department/level are matched by name (case-insensitive) against existing records.
-app.post('/api/admin/bulk-courses', async (req, res) => {
+app.post('/api/admin/bulk-courses', adminAuth, async (req, res) => {
   try {
     const { courses } = req.body;
     if (!Array.isArray(courses) || !courses.length)
@@ -3341,8 +3349,14 @@ app.post('/api/admin/bulk-courses', async (req, res) => {
         const dept  = (r.department || '').trim();
         const level = (r.level      || '').trim();
         if (!name) { skipped++; continue; }
+        const normLvl = x => String(x || '').toLowerCase().replace(/level|\s+/g, '').replace(/l$/, '');   // "100", "100L", "Level 100" all match
         const deptDoc  = dept  ? departments.find(d => d.name.toLowerCase() === dept.toLowerCase())  : null;
-        const levelDoc = level ? levels.find(l => l.name.toLowerCase() === level.toLowerCase()) : null;
+        const levelDoc = level ? levels.find(l => normLvl(l.name) === normLvl(level)) : null;
+        if (dept && !deptDoc)   { errors.push(`"${name}": department "${dept}" not found`); skipped++; continue; }
+        if (level && !levelDoc) { errors.push(`"${name}": level "${level}" not found`); skipped++; continue; }
+        const exists = await Course.findOne({ name: new RegExp('^' + name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i'),
+          department_id: deptDoc ? deptDoc._id : null, level_id: levelDoc ? levelDoc._id : null });
+        if (exists) { skipped++; continue; }
         const payload = { name };
         if (code) payload.code = code;
         if (deptDoc)  payload.department_id = deptDoc._id;
