@@ -383,7 +383,12 @@ body {
       </div>
 
       <div id="demoNote" style="display:none;margin:0 0 14px;padding:12px 14px;border-radius:12px;background:#fffbeb;border:1px solid #fde68a;color:#92400e;font-size:13px;line-height:1.5;">
-        <strong>Practice only.</strong> No access code is needed. Your camera is used like in a real exam, but your score, answers and violations are <strong>not recorded</strong>.
+        <strong>Practice only.</strong> Your camera is used like in a real exam, with the monitoring switched to full strength so you can see it work. Your score, answers and violations are <strong>not recorded</strong>.
+        <div style="margin-top:10px;padding:10px 12px;border-radius:10px;background:#fff;border:1px dashed #f59e0b;text-align:center;">
+          <div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#92400e;">Demo access code</div>
+          <div style="font-size:26px;font-weight:800;letter-spacing:6px;color:#1b1e45;margin-top:2px;" id="demoCodeShow">123456</div>
+        </div>
+        <div style="margin-top:8px;">Next you will confirm your face, then type this code to start.</div>
       </div>
 
       <button class="btn-start" id="startBtn" onclick="startExam()">
@@ -431,8 +436,9 @@ async function checkAIMonitoring() {
   try {
     const settings = await fetch('/api/settings/exam-engine').then(r => r.json());
     sessionStorage.setItem('examSettings', JSON.stringify(settings));
-  } catch(e) {}
-  aiMonitoringEnabled = false; // AI face/violation monitoring removed in MARGMOCOTH CBT
+    // Real face check (live face vs profile photo) happens after the access code when this is on
+    aiMonitoringEnabled = settings.face_verify_required === true;
+  } catch(e) { aiMonitoringEnabled = false; }
 }
 
 // The student must type the exam's access code. The server checks it (see /api/student/exam-start-check)
@@ -480,6 +486,7 @@ async function checkExam() {
       document.getElementById('examPreview').classList.add('show');
       document.getElementById('startBtn').classList.add('show');
       if (isDemo) {
+        if (data.access_code) document.getElementById('demoCodeShow').textContent = data.access_code;
         document.getElementById('demoNote').style.display = '';
         document.getElementById('startBtn').textContent = 'Start Demo Exam';
       } else {
@@ -557,7 +564,7 @@ async function startExam() {
 
   sessionStorage.setItem('student', JSON.stringify(student));
   sessionStorage.setItem('currentExam', JSON.stringify(examData));
-  window.location.href = aiMonitoringEnabled ? 'face-capture.html' : 'exam-page.html';
+  window.location.href = isDemo ? 'demo-check.html' : (aiMonitoringEnabled ? 'face-capture.html' : 'exam-page.html');
 }
 </script>
 <script src="/js/pending-submit.js"></script>
