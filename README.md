@@ -103,7 +103,7 @@ After signing in, change the password at **Admin → Settings → Change Admin P
 
 To open a real exam a student types the exam's **access code** on the Exam Access page (generate codes under *Access Code Restrictions / Exam Access Codes*). The server checks the code and gives the exam page a token; without it the questions will not load. An exam with no code yet cannot be started. After 8 wrong codes a student is paused for 10 minutes, and a code is needed again for a retake.
 
-Every student has a **Take Demo Exam** card on the dashboard. It is a 10-question practice exam that works like a real one (camera, timer, fullscreen, violation rules, your Violation Volume and AI settings) but **saves nothing**: no session, answers, violations, camera photos or result. The score is marked in the browser and the results page says it was not recorded. Edit the questions in `DEMO_EXAM` in `server.js`.
+Every student has a **Take Demo Exam** card on the dashboard. It is a 10-question practice exam that works like a real one (camera, timer, fullscreen, violation rules, your Violation Volume and AI settings) but **saves nothing to the server**: no session, answers, camera photos or result. Violations are detected exactly like a real exam (leaving the window, side look, no face, multiple faces, talking…) and kept only in the student's browser tab, so the results page can list them with their photos. Admins and lecturers never see them. The score is marked in the browser and the results page says it was not recorded. Every results page has a Back to Dashboard button. Edit the questions in `DEMO_EXAM` in `server.js`.
 
 ## Violations page
 

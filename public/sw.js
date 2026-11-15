@@ -6,7 +6,7 @@
      • Everything else                → Stale-While-Revalidate
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME    = 'margmocoth-cbt-v6';
+const CACHE_NAME    = 'margmocoth-cbt-v7';
 const SHELL_ASSETS  = [
   '/',
   '/index.html',

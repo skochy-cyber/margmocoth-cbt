@@ -255,7 +255,8 @@
   <div class="watermark-line">MARGMOCOTH CBT – i-CBT Examination System</div>
 
   <div class="action-section">
-    <button onclick="window.print()" class="btn-result primary">Print Result</button>
+    <a href="dashboard.html" class="btn-result primary" id="dashBtn">Back to Dashboard</a>
+    <button onclick="window.print()" class="btn-result secondary" id="printBtn">Print Result</button>
     <div class="btn-row">
       <button onclick="viewReview()" class="btn-result ghost" id="reviewBtn" style="display:none;">Review Answers</button>
       <a href="exam-access.html" class="btn-result secondary" id="newExamBtn">New Exam</a>
@@ -306,6 +307,8 @@ function renderResult() {
     hero.insertAdjacentHTML('beforebegin',
       '<div style="margin:14px 24px 0;padding:12px 14px;border-radius:12px;background:#fffbeb;border:1px solid #fde68a;color:#92400e;font-size:13px;line-height:1.5;">' +
       '<strong>Demo exam.</strong> This was practice only. Your score, answers and activity were <strong>not recorded</strong>.</div>');
+    const ne = document.getElementById('newExamBtn'); if (ne) ne.style.display = 'none';
+    renderDemoViolations();
   }
   document.getElementById('eTitle').textContent        = result.exam_title || '—';
 
@@ -423,6 +426,39 @@ function renderResult() {
   }
 
   initRetake();
+}
+
+
+// ── Demo exam: show the student the violations the exam would have recorded ──
+// These were kept only in this browser tab. They were NOT sent to admins or lecturers.
+function renderDemoViolations() {
+  const KIND = { focus_loss:'Left the exam window (minimized / switched app)', tab_switch:'Switched tab', fullscreen_exit:'Exited fullscreen',
+    face:'Face not matching', no_face:'No face visible', multiple_faces:'More than one face', side_look:'Looking away from the screen',
+    voice:'Talking / mouth movement', screenshot:'Screenshot attempt', back_nav:'Back navigation', duplicate_ip:'Duplicate login', other:'Other' };
+  const esc = t => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  let list = [];
+  try { list = JSON.parse(sessionStorage.getItem('demoViolations') || '[]'); } catch (e) {}
+  const counted = list.filter(v => v.type !== 'network_error').length;
+  let html = '<div style="margin:14px 24px 0;padding:14px;border-radius:14px;background:#fff;border:1px solid #e1e4f0;">' +
+    '<div style="font-size:14px;font-weight:800;color:#1b1e45;">Your violations in this demo</div>' +
+    '<div style="font-size:12px;color:#6b7280;margin:3px 0 10px;line-height:1.5;">In a real exam these would be saved with a photo and shown to your lecturer. Here they are shown only to you.</div>';
+  if (!list.length) {
+    html += '<div style="padding:12px;border-radius:10px;background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;font-size:13px;">No violations were detected. Well done! Keep your face in view and stay on the exam page.</div>';
+  } else {
+    html += '<div style="font-size:13px;font-weight:700;color:#b91c1c;margin-bottom:8px;">' + counted + ' counted violation' + (counted === 1 ? '' : 's') + (list.length > counted ? ' (+' + (list.length - counted) + ' network note' + (list.length - counted === 1 ? '' : 's') + ')' : '') + '</div>';
+    html += list.map((v, i) => {
+      const t = new Date(v.at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      const img = (v.capture && /^data:image\//.test(v.capture)) ? '<img src="' + v.capture + '" alt="Capture" style="width:64px;height:50px;object-fit:cover;border-radius:8px;flex:none;border:1px solid #e1e4f0;">' : '';
+      const kind = v.type === 'network_error' ? 'Network issue (not counted)' : (KIND[v.sub] || 'Violation');
+      return '<div style="display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-top:1px solid #eef0f7;">' + img +
+        '<div style="min-width:0;flex:1;"><div style="font-size:13px;font-weight:700;color:#1b1e45;">' + (i + 1) + '. ' + esc(kind) + '</div>' +
+        '<div style="font-size:12px;color:#4a4e73;margin-top:2px;word-break:break-word;">' + esc(v.reason) + '</div>' +
+        '<div style="font-size:11px;color:#8e92b3;margin-top:3px;">' + t + (v.has_clip ? ' · video clip taken' : '') + '</div></div></div>';
+    }).join('');
+  }
+  html += '</div>';
+  const actions = document.querySelector('.action-section');
+  if (actions) actions.insertAdjacentHTML('beforebegin', html);
 }
 
 function viewReview() { window.location.href = 'exam-review.html'; }

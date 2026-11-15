@@ -142,9 +142,29 @@ if (IS_DEMO) {
   let demoBank = null;
   const getBank = async () => demoBank || (demoBank = await realFetch('/api/demo-exam').then(r => r.json()));
   const reply = obj => new Response(JSON.stringify(obj), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  // Violations are kept ONLY in this browser tab so the student can review them on the results
+  // page. Nothing is sent to the server, so admins and lecturers never see demo violations.
+  function keepDemoViolation(p) {
+    let list = [];
+    try { list = JSON.parse(sessionStorage.getItem('demoViolations') || '[]'); } catch (e) {}
+    const entry = {
+      at: new Date().toISOString(),
+      reason: String(p.reason || 'Violation').slice(0, 300),
+      type: p.violation_type || 'rule_violation',
+      sub: p.sub_type || 'other',
+      count: p.count || 0,
+      has_clip: !!p.video_clip_data,
+      capture: (typeof p.capture_data === 'string' && p.capture_data.startsWith('data:image/') && p.capture_data.length < 200000 &&
+                list.filter(x => x.capture).length < 6) ? p.capture_data : null
+    };
+    list.push(entry);
+    try { sessionStorage.setItem('demoViolations', JSON.stringify(list)); }
+    catch (e) { entry.capture = null; try { sessionStorage.setItem('demoViolations', JSON.stringify(list)); } catch (e2) {} }
+  }
   window.fetch = async function (url, opts) {
     const u = typeof url === 'string' ? url : ((url && url.url) || '');
     if (u.startsWith('/api/exam-questions')) {
+      sessionStorage.removeItem('demoViolations');       // fresh attempt
       const b = await getBank();
       return reply({ success: true, questions: b.questions, session_id: 'demo-session', violations: 0 });
     }
@@ -160,7 +180,11 @@ if (IS_DEMO) {
         show_results: true, show_percentage: true, show_score_breakdown: true, show_grade: true,
         retake_request_allowed: false } });
     }
-    if (/^\/api\/(record-violation|save-progress|save-snapshot|save-face-capture|check-submission)/.test(u)) {
+    if (u.startsWith('/api/record-violation')) {
+      try { keepDemoViolation(JSON.parse((opts && opts.body) || '{}')); } catch (e) {}
+      return reply({ success: true, demo: true });        // kept in this tab only
+    }
+    if (/^\/api\/(save-progress|save-snapshot|save-face-capture|check-submission)/.test(u)) {
       return reply({ success: true, submitted: false, demo: true });   // nothing is stored
     }
     return realFetch(url, opts);
