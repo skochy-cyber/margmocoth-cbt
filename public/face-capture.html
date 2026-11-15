@@ -57,7 +57,7 @@ const exam    = JSON.parse(sessionStorage.getItem('currentExam') || 'null');
 const DEMO = !!(exam && exam.id === 'demo');
 if (!student || !exam || !exam.id) window.location.href = 'dashboard.html';
 
-const THRESHOLD = 0.5;        // must match the server (FACE_ENTRY_THRESHOLD)
+const THRESHOLD = 0.45;       // must match the server (FACE_ENTRY_THRESHOLD)
 const SAMPLES_NEEDED = 6;     // good frames measured before deciding
 const MODEL_URLS = ['/models', 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights',
                     'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights'];
@@ -65,7 +65,7 @@ const SCRIPT_URLS = ['https://cdn.jsdelivr.net/npm/face-api.js/dist/face-api.min
 
 const video = document.getElementById('video'), statusEl = document.getElementById('status'), oval = document.getElementById('oval');
 const bar = document.getElementById('bar'), retryBtn = document.getElementById('retryBtn'), backBtn = document.getElementById('backBtn');
-let stream = null, refDescriptor = null, running = false, samples = [], bestFrame = null, loopTimer = null, attempts = 0;
+let descs = [], stream = null, refDescriptor = null, running = false, samples = [], bestFrame = null, loopTimer = null, attempts = 0;
 
 document.getElementById('examName').textContent = exam.title || 'Confirm it is you before the exam opens';
 
@@ -140,7 +140,7 @@ async function init() {
     video.srcObject = stream; await video.play().catch(() => {});
   } catch (e) { return fail('Camera blocked. Allow camera access in your browser settings, then tap Try again.', true); }
 
-  samples = []; bestFrame = null; running = true;
+  samples = []; descs = []; bestFrame = null; running = true;
   setStatus('Look straight at the camera…');
   loop();
 }
@@ -151,8 +151,8 @@ async function loop() {
     if (video.readyState >= 2 && video.videoWidth) {
       const opts = new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 });
       const all = await faceapi.detectAllFaces(video, opts);
-      if (!all.length) { samples = []; bar.style.width = '0'; setStatus('No face detected. Face the camera.', 'warn'); }
-      else if (all.length > 1) { samples = []; bar.style.width = '0'; setStatus('More than one face in view. Only you should be in the picture.', 'warn'); }
+      if (!all.length) { samples = []; descs = []; bar.style.width = '0'; setStatus('No face detected. Face the camera.', 'warn'); }
+      else if (all.length > 1) { samples = []; descs = []; bar.style.width = '0'; setStatus('More than one face in view. Only you should be in the picture.', 'warn'); }
       else {
         const W = video.videoWidth, b = all[0].box;
         if (b.width / W < 0.22) setStatus('Move a little closer.', 'warn');
@@ -162,7 +162,7 @@ async function loop() {
           if (det) {
             const d = faceapi.euclideanDistance(refDescriptor, det.descriptor);
             if (!bestFrame || d < bestFrame.d) bestFrame = { d, desc: det.descriptor, image: snapshot() };
-            samples.push(d);
+            samples.push(d); descs.push(det.descriptor);
             bar.style.width = Math.min(100, Math.round(samples.length / SAMPLES_NEEDED * 100)) + '%';
             setStatus('Checking your face… hold still', 'good');
             if (samples.length >= SAMPLES_NEEDED) { running = false; return decide(); }
@@ -181,10 +181,10 @@ function snapshot() {
 }
 
 async function decide() {
-  const best = Math.min(...samples);
+  const sorted = samples.slice().sort((a, b) => a - b), best = sorted[Math.floor(sorted.length / 2)];   // median, not best frame
   setStatus('Verifying…');
   if (DEMO) {   // practice run: compare here, nothing is recorded
-    if (best <= THRESHOLD) {
+    if (best <= THRESHOLD && sorted[sorted.length - 1] <= 0.58) {
       sessionStorage.setItem('demoFaceOk', String(Date.now()));
       if (stream) stream.getTracks().forEach(t => t.stop());
       setStatus('Identity confirmed. Opening the demo…', 'good'); bar.style.width = '100%';
@@ -195,7 +195,7 @@ async function decide() {
   try {
     const res = await fetch('/api/issue-face-token', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ student_id: student.id, exam_id: exam.id, live_descriptor: Array.from(bestFrame.desc), ref_descriptor: Array.from(refDescriptor), snapshot: bestFrame.image })
+      body: JSON.stringify({ student_id: student.id, exam_id: exam.id, live_descriptors: descs.map(d => Array.from(d)), ref_descriptor: Array.from(refDescriptor), snapshot: bestFrame.image })
     });
     const data = await res.json();
     if (data.success && data.token) {
