@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#2e3192">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<title>Demo Exam – Identity Check</title>
+<!-- Face detector (same libraries the exam uses). Loaded early so it is ready by the time the camera is. -->
+<script>
+(function () {
+  function load(src, ok, fail) { var s = document.createElement('script'); s.src = src; s.async = true; s.onload = ok; s.onerror = fail; document.head.appendChild(s); }
+  function blaze() {
+    if (window.blazeface) return;
+    load('https://cdn.jsdelivr.net/npm/@tensorflow-models/blazeface@0.0.7/dist/blazeface.min.js', function(){}, function () {
+      load('https://unpkg.com/@tensorflow-models/blazeface@0.0.7/dist/blazeface.min.js', function(){}, function(){});
+    });
+  }
+  if (window.tf) { blaze(); return; }
+  load('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js', blaze, function () {
+    load('https://unpkg.com/@tensorflow/tfjs@4.10.0/dist/tf.min.js', blaze, function(){});
+  });
+})();
+</script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#f4f5fb;color:#1b1e45;min-height:100vh;display:flex;justify-content:center;padding:16px}
+.card{width:100%;max-width:480px;background:#fff;border-radius:20px;box-shadow:0 20px 50px -24px rgba(31,33,112,.45);overflow:hidden;align-self:flex-start}
+.head{background:linear-gradient(135deg,#2e3192,#1f2170);color:#fff;padding:18px 20px}
+.head h1{font-size:18px;font-weight:800}
+.head p{font-size:12.5px;color:rgba(255,255,255,.8);margin-top:3px}
+.steps{display:flex;gap:8px;padding:14px 20px 0}
+.step{flex:1;text-align:center;font-size:12px;font-weight:700;padding:8px 6px;border-radius:10px;background:#eef0f7;color:#8e92b3}
+.step.on{background:#2e3192;color:#fff}.step.done{background:#dcfce7;color:#166534}
+.body{padding:16px 20px 22px}
+.demo-tag{display:inline-block;margin-bottom:12px;padding:5px 10px;border-radius:99px;background:#fef3c7;color:#92400e;font-size:11px;font-weight:800;letter-spacing:.4px}
+.cam{position:relative;border-radius:16px;overflow:hidden;background:#0b0d22;aspect-ratio:4/3}
+.cam video,.cam img{width:100%;height:100%;object-fit:cover;display:block}
+.cam video{transform:scaleX(-1)}
+.oval{position:absolute;left:50%;top:50%;width:46%;height:74%;transform:translate(-50%,-50%);border:3px dashed rgba(255,255,255,.75);border-radius:50%;pointer-events:none;transition:border-color .2s}
+.oval.good{border:3px solid #22c55e}.oval.bad{border-color:#f59e0b}
+.status{margin-top:12px;padding:11px 14px;border-radius:12px;font-size:14px;font-weight:600;text-align:center;background:#eef0f7;color:#4a4e73}
+.status.good{background:#dcfce7;color:#166534}.status.warn{background:#fef3c7;color:#92400e}.status.bad{background:#fee2e2;color:#b91c1c}
+.btn{width:100%;margin-top:12px;border:none;border-radius:12px;padding:14px;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;background:#2e3192;color:#fff}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.ghost{background:#eef0f7;color:#2e3192}
+.row{display:flex;gap:10px}.row .btn{margin-top:12px}
+.hint{font-size:12px;color:#8e92b3;text-align:center;margin-top:10px;line-height:1.5}
+.code-show{margin:4px 0 14px;padding:12px;border-radius:12px;background:#fffbeb;border:1px dashed #f59e0b;text-align:center}
+.code-show small{display:block;font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#92400e}
+.code-show b{display:block;font-size:30px;letter-spacing:8px;color:#1b1e45;margin-top:2px}
+label{display:block;font-size:12px;font-weight:700;color:#5b5f80;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+input.code{width:100%;border:1.5px solid #d1d5db;border-radius:12px;padding:14px;font-size:22px;font-weight:800;letter-spacing:6px;text-align:center;font-family:inherit;color:#1b1e45;background:#fafafa}
+input.code:focus{outline:none;border-color:#2e3192;background:#fff}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="head">
+    <h1>Demo Exam — Getting ready</h1>
+    <p id="examName">Practice exam</p>
+  </div>
+  <div class="steps">
+    <div class="step on" id="st1">1 · Face check</div>
+    <div class="step" id="st2">2 · Access code</div>
+  </div>
+
+  <!-- STEP 1: face check -->
+  <div class="body" id="stage1">
+    <span class="demo-tag">DEMO · NOTHING IS RECORDED</span>
+    <div class="cam" id="camBox">
+      <video id="video" autoplay playsinline muted></video>
+      <img id="shot" class="hidden" alt="Your captured face">
+      <div class="oval" id="oval"></div>
+    </div>
+    <div class="status" id="status">Starting camera…</div>
+    <button class="btn" id="captureBtn" disabled onclick="capture()">Capture my face</button>
+    <div class="row hidden" id="confirmRow">
+      <button class="btn ghost" onclick="retake()">Retake</button>
+      <button class="btn" onclick="confirmFace()">Yes, this is me</button>
+    </div>
+    <div class="hint">Face the camera in good light. Only you should be in the picture. Like the real exam, the camera stays on while you write.</div>
+  </div>
+
+  <!-- STEP 2: access code -->
+  <div class="body hidden" id="stage2">
+    <span class="demo-tag">DEMO · NOTHING IS RECORDED</span>
+    <div class="code-show"><small>Demo access code</small><b id="demoCode">123456</b></div>
+    <label for="code">Enter the access code</label>
+    <input class="code" id="code" inputmode="numeric" maxlength="20" autocomplete="off" placeholder="••••••" onkeydown="if(event.key==='Enter')startDemo()">
+    <div class="status hidden" id="codeMsg"></div>
+    <button class="btn" id="startBtn" onclick="startDemo()">Start Demo Exam</button>
+    <div class="hint">In a real exam your lecturer gives you the access code on exam day.</div>
+  </div>
+</div>
+
+<script>
+const student = JSON.parse(sessionStorage.getItem('student') || 'null');
+if (!student) window.location.href = 'login.html';
+
+const video = document.getElementById('video'), shot = document.getElementById('shot');
+const statusEl = document.getElementById('status'), oval = document.getElementById('oval');
+const captureBtn = document.getElementById('captureBtn');
+let stream = null, model = null, loopTimer = null, goodFrames = 0, detectorFailed = false, captured = false;
+let demoCode = '123456';
+
+function setStatus(text, kind) { statusEl.textContent = text; statusEl.className = 'status ' + (kind || ''); oval.className = 'oval ' + (kind === 'good' ? 'good' : kind ? 'bad' : ''); }
+
+// Load the exam details (name + demo code)
+fetch('/api/demo-exam').then(r => r.json()).then(d => {
+  if (d && d.success) {
+    document.getElementById('examName').textContent = d.exam.title;
+    if (d.access_code) demoCode = String(d.access_code);
+    document.getElementById('demoCode').textContent = demoCode;
+    sessionStorage.setItem('currentExam', JSON.stringify(d.exam));
+  }
+}).catch(() => {});
+
+async function startCamera() {
+  setStatus('Starting camera…');
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }, audio: false });
+    video.srcObject = stream;
+    await video.play().catch(() => {});
+    setStatus('Loading face detector…');
+    loadDetector();
+  } catch (e) {
+    setStatus('Camera blocked. Allow camera access in your browser, then tap Try again.', 'bad');
+    captureBtn.disabled = false; captureBtn.textContent = 'Try again'; captureBtn.onclick = () => { captureBtn.textContent = 'Capture my face'; captureBtn.onclick = capture; captureBtn.disabled = true; startCamera(); };
+  }
+}
+
+async function loadDetector() {
+  const t0 = Date.now();
+  while (!(window.tf && window.blazeface)) {
+    if (Date.now() - t0 > 25000) { detectorFailed = true; break; }
+    await new Promise(r => setTimeout(r, 200));
+  }
+  if (!detectorFailed) {
+    try { model = await window.blazeface.load(); } catch (e) { detectorFailed = true; }
+  }
+  if (detectorFailed) {
+    // Never block the student because of a slow connection: let them capture manually.
+    setStatus('Face detector could not load. Make sure your face is clearly in the oval, then tap Capture.', 'warn');
+    captureBtn.disabled = false;
+    return;
+  }
+  setStatus('Look at the camera…');
+  loop();
+}
+
+async function loop() {
+  if (captured) return;
+  try {
+    if (video.readyState >= 2 && video.videoWidth) {
+      const faces = await model.estimateFaces(video, false);
+      const W = video.videoWidth, H = video.videoHeight;
+      let msg = null, kind = 'bad';
+      if (!faces.length) msg = 'No face detected. Face the camera.';
+      else if (faces.length > 1) msg = 'More than one face. Only you should be in view.';
+      else {
+        const f = faces[0], tl = f.topLeft, br = f.bottomRight;
+        const w = br[0] - tl[0], cx = (tl[0] + br[0]) / 2, cy = (tl[1] + br[1]) / 2;
+        if (w / W < 0.22) msg = 'Move a little closer.';
+        else if (w / W > 0.7) msg = 'Move back a little.';
+        else if (Math.abs(cx / W - 0.5) > 0.2 || Math.abs(cy / H - 0.5) > 0.22) msg = 'Centre your face in the oval.';
+        else kind = 'good';
+      }
+      if (kind === 'good') { goodFrames++; if (goodFrames >= 3) { setStatus('Face detected. Tap Capture.', 'good'); captureBtn.disabled = false; } }
+      else { goodFrames = 0; setStatus(msg, 'warn'); captureBtn.disabled = true; }
+    }
+  } catch (e) {}
+  loopTimer = setTimeout(loop, 130);
+}
+
+function capture() {
+  const c = document.createElement('canvas');
+  c.width = video.videoWidth || 640; c.height = video.videoHeight || 480;
+  const ctx = c.getContext('2d');
+  ctx.translate(c.width, 0); ctx.scale(-1, 1);          // mirror, like the preview
+  ctx.drawImage(video, 0, 0, c.width, c.height);
+  shot.src = c.toDataURL('image/jpeg', 0.85);
+  captured = true; clearTimeout(loopTimer);
+  video.classList.add('hidden'); shot.classList.remove('hidden');
+  captureBtn.classList.add('hidden'); document.getElementById('confirmRow').classList.remove('hidden');
+  setStatus('Is this you? Check the photo is clear, then confirm.', '');
+}
+function retake() {
+  captured = false; goodFrames = 0;
+  shot.classList.add('hidden'); video.classList.remove('hidden');
+  document.getElementById('confirmRow').classList.add('hidden'); captureBtn.classList.remove('hidden');
+  captureBtn.disabled = detectorFailed ? false : true;
+  if (detectorFailed) setStatus('Make sure your face is clearly in the oval, then tap Capture.', 'warn');
+  else { setStatus('Look at the camera…'); loop(); }
+}
+function confirmFace() {
+  // Release the camera so the exam page can open it.
+  if (stream) stream.getTracks().forEach(t => t.stop());
+  document.getElementById('stage1').classList.add('hidden');
+  document.getElementById('stage2').classList.remove('hidden');
+  document.getElementById('st1').className = 'step done'; document.getElementById('st1').textContent = '1 · Face ✓';
+  document.getElementById('st2').className = 'step on';
+  setTimeout(() => document.getElementById('code').focus(), 100);
+}
+
+function startDemo() {
+  const v = document.getElementById('code').value.trim();
+  const msg = document.getElementById('codeMsg');
+  if (!v) { msg.className = 'status bad'; msg.textContent = 'Please enter the access code.'; return; }
+  if (v !== demoCode) { msg.className = 'status bad'; msg.textContent = 'Wrong access code. The demo code is ' + demoCode + '.'; document.getElementById('code').select(); return; }
+  sessionStorage.removeItem('examResult');
+  sessionStorage.removeItem('examSessionSubmitted_demo');
+  sessionStorage.setItem('demoReady', String(Date.now()));
+  window.location.href = 'exam-page.html';
+}
+
+window.addEventListener('pagehide', () => { if (stream) stream.getTracks().forEach(t => t.stop()); });
+startCamera();
+</script>
+</body>
+</html>
