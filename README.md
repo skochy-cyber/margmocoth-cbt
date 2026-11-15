@@ -99,6 +99,12 @@ After signing in, change the password at **Admin → Settings → Change Admin P
 
 **Admin → Settings → Violation Volume** takes a value from 1 to 100. At 1 the AI checks the camera about once a second and forgives short movements (head turn flagged after ~5 s, no face after ~8 s, leaving the exam window after ~4 s). At 100 it checks about 10 times a second and flags a head turn after ~0.4 s, no face after ~1 s, talking after ~1.2 s and leaving the exam window after ~0.8 s. The AI toggles (Strict Face Anti-Cheat, Restrict Side Look, Restrict Voice) must still be switched on for the camera checks; leaving the exam window is always monitored.
 
+## Access codes and the demo exam
+
+To open a real exam a student types the exam's **access code** on the Exam Access page (generate codes under *Access Code Restrictions / Exam Access Codes*). The server checks the code and gives the exam page a token; without it the questions will not load. An exam with no code yet cannot be started. After 8 wrong codes a student is paused for 10 minutes, and a code is needed again for a retake.
+
+Every student has a **Take Demo Exam** card on the dashboard. It is a 10-question practice exam that works like a real one (camera, timer, fullscreen, violation rules, your Violation Volume and AI settings) but **saves nothing**: no session, answers, violations, camera photos or result. The score is marked in the browser and the results page says it was not recorded. Edit the questions in `DEMO_EXAM` in `server.js`.
+
 ## Violations page
 
 **Admin → Proctoring → Violations** lists every violation the exam page records, each with the webcam capture or mouth-movement clip taken at that moment. Filter by exam, type, kind, date or student, switch to the *By student* summary, view and download the evidence, and export a CSV. Only the super admin can delete violations. Evidence is stored on Cloudinary; if Cloudinary is not configured or fails, it is saved under `public/uploads/violations/` on the server instead (note: some hosts wipe that folder on redeploy). A student's violation count is stored on the server, so refreshing the exam page no longer resets it.

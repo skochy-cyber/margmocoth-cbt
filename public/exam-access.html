@@ -373,6 +373,19 @@ body {
         <div id="examDetails"></div>
       </div>
 
+      <div id="codeBox" style="display:none;margin:0 0 14px;">
+        <label for="accessCode" style="display:block;font-size:12px;font-weight:700;color:#5b5f80;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Access Code</label>
+        <input type="text" id="accessCode" maxlength="40" autocomplete="off" autocapitalize="characters" spellcheck="false"
+               placeholder="Enter the code from your lecturer"
+               style="width:100%;border:1.5px solid #d1d5db;border-radius:12px;padding:14px 16px;font-size:18px;font-weight:700;letter-spacing:3px;text-align:center;text-transform:uppercase;font-family:inherit;color:#1b1e45;background:#fafafa;"
+               onkeydown="if(event.key==='Enter')startExam()">
+        <div style="font-size:12px;color:#8e92b3;margin-top:6px;text-align:center;">Your lecturer gives you this code on exam day.</div>
+      </div>
+
+      <div id="demoNote" style="display:none;margin:0 0 14px;padding:12px 14px;border-radius:12px;background:#fffbeb;border:1px solid #fde68a;color:#92400e;font-size:13px;line-height:1.5;">
+        <strong>Practice only.</strong> No access code is needed. Your camera is used like in a real exam, but your score, answers and violations are <strong>not recorded</strong>.
+      </div>
+
       <button class="btn-start" id="startBtn" onclick="startExam()">
         Start Exam Now
       </button>
@@ -391,6 +404,7 @@ let aiMonitoringEnabled = false;
 const student = JSON.parse(localStorage.getItem('mcht_student') || 'null');
 const urlParams = new URLSearchParams(window.location.search);
 const examId    = urlParams.get('exam_id');
+const isDemo    = examId === 'demo';
 
 if (!student) {
   window.location.href = 'login.html';
@@ -421,8 +435,9 @@ async function checkAIMonitoring() {
   aiMonitoringEnabled = false; // AI face/violation monitoring removed in MARGMOCOTH CBT
 }
 
-// Access codes removed — the exam is validated directly by ID (passed from the
-// dashboard) instead of requiring the student to type in a code.
+// The student must type the exam's access code. The server checks it (see /api/student/exam-start-check)
+// and returns a token that the exam page needs to load the questions.
+// The demo exam needs no code and records nothing.
 async function checkExam() {
   const alertBox = document.getElementById('alertBox');
   const cardSub  = document.getElementById('cardSub');
@@ -435,12 +450,17 @@ async function checkExam() {
   }
 
   try {
-    const res  = await fetch('/api/student/exam-start-check', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ exam_id: examId, student_id: student.id })
-    });
-    const data = await res.json();
+    let data;
+    if (isDemo) {
+      data = await fetch('/api/demo-exam').then(r => r.json());
+    } else {
+      const res = await fetch('/api/student/exam-start-check', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ exam_id: examId, student_id: student.id })
+      });
+      data = await res.json();
+    }
 
     if (data.success) {
       examData    = data.exam;
@@ -450,25 +470,32 @@ async function checkExam() {
 
       sessionStorage.setItem('currentExam', JSON.stringify(examData));
 
-      cardSub.textContent = 'Review the details below and start when ready';
+      cardSub.textContent = isDemo ? 'Practice exam — nothing is recorded' : 'Enter your access code to begin';
       document.getElementById('examDetails').innerHTML = `
-        <div class="exam-row"><span class="exam-row-label">Exam Title</span><span class="exam-row-val">${examData.title}</span></div>
-        <div class="exam-row"><span class="exam-row-label">Course</span><span class="exam-row-val">${examData.course_name || '—'}</span></div>
-        <div class="exam-row"><span class="exam-row-label">Duration</span><span class="exam-row-val">${examData.duration} minutes</span></div>
-        <div class="exam-row"><span class="exam-row-label">Questions</span><span class="exam-row-val">${examData.question_count}</span></div>
+        <div class="exam-row"><span class="exam-row-label">Exam Title</span><span class="exam-row-val">${escapeHtml(examData.title)}</span></div>
+        <div class="exam-row"><span class="exam-row-label">Course</span><span class="exam-row-val">${escapeHtml(examData.course_name || '—')}</span></div>
+        <div class="exam-row"><span class="exam-row-label">Duration</span><span class="exam-row-val">${escapeHtml(examData.duration)} minutes</span></div>
+        <div class="exam-row"><span class="exam-row-label">Questions</span><span class="exam-row-val">${escapeHtml(examData.question_count)}</span></div>
       `;
       document.getElementById('examPreview').classList.add('show');
       document.getElementById('startBtn').classList.add('show');
+      if (isDemo) {
+        document.getElementById('demoNote').style.display = '';
+        document.getElementById('startBtn').textContent = 'Start Demo Exam';
+      } else {
+        document.getElementById('codeBox').style.display = '';
+        setTimeout(() => document.getElementById('accessCode').focus(), 150);
+      }
     } else {
       cardSub.textContent = 'Unable to start exam';
       if (data.face_photo_missing) {
         alertBox.innerHTML = `
           <div class="alert alert-danger" style="flex-direction:column;align-items:flex-start;gap:10px;">
-            <span>${data.message}</span>
+            <span>${escapeHtml(data.message)}</span>
             <a href="student-capture.html" class="face-link">Go to Face Capture →</a>
           </div>`;
       } else {
-        alertBox.innerHTML = `<div class="alert alert-danger">${data.message}</div>`;
+        alertBox.innerHTML = `<div class="alert alert-danger">${escapeHtml(data.message)}</div>`;
       }
     }
   } catch(e) {
@@ -477,17 +504,56 @@ async function checkExam() {
   }
 }
 
-function startExam() {
+function escapeHtml(t) {
+  return String(t == null ? '' : t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+let starting = false;
+async function startExam() {
+  if (starting) return;
   if (!examData || !examData.id) {
     alert('Exam data missing. Please go back to the dashboard and try again.');
     return;
   }
+  const alertBox = document.getElementById('alertBox');
+  const btn      = document.getElementById('startBtn');
+  alertBox.innerHTML = '';
+
   // Clear any stale submission data from a previous attempt so the
   // guardAlreadySubmitted check in exam-page.html does not redirect
   // the student back to results before the retake can begin.
-  const examKey = examData.id ? examData.id.toString() : null;
+  const examKey = examData.id.toString();
   sessionStorage.removeItem('examResult');
-  if (examKey) sessionStorage.removeItem('examSessionSubmitted_' + examKey);
+  sessionStorage.removeItem('examSessionSubmitted_' + examKey);
+
+  if (!isDemo) {
+    const code = document.getElementById('accessCode').value.trim();
+    if (!code) {
+      alertBox.innerHTML = '<div class="alert alert-danger">Please enter the access code.</div>';
+      document.getElementById('accessCode').focus();
+      return;
+    }
+    starting = true; btn.disabled = true; btn.textContent = 'Checking code…';
+    try {
+      const res  = await fetch('/api/student/exam-start-check', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ exam_id: examKey, student_id: student.id, access_code: code })
+      });
+      const data = await res.json();
+      if (!data.success || !data.access_token) {
+        alertBox.innerHTML = `<div class="alert alert-danger">${escapeHtml(data.message || 'Could not verify the access code.')}</div>`;
+        starting = false; btn.disabled = false; btn.textContent = 'Start Exam Now';
+        document.getElementById('accessCode').select();
+        return;
+      }
+      sessionStorage.setItem('accessToken_' + examKey, data.access_token);
+    } catch(e) {
+      alertBox.innerHTML = '<div class="alert alert-danger">Server error. Please try again.</div>';
+      starting = false; btn.disabled = false; btn.textContent = 'Start Exam Now';
+      return;
+    }
+  }
 
   sessionStorage.setItem('student', JSON.stringify(student));
   sessionStorage.setItem('currentExam', JSON.stringify(examData));

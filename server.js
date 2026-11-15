@@ -1148,7 +1148,67 @@ app.post('/api/verify-access-code', async (req, res) => {
 });
 
 
-// POST /api/student/exam-start-check — validate exam by ID from dashboard (no access code needed)
+// ===== ACCESS CODE GATE =====
+// A student must type the exam's access code (given by the lecturer on exam day). The server
+// checks it and hands back a token that /api/exam-questions requires, so the exam cannot be
+// opened by skipping the page.
+const accessTokenStore = new Map();   // "studentId:examId" → { token, expires }
+const accessCodeFails  = new Map();   // "studentId:examId" → { count, first }
+function accessCodeBlocked(key) {
+  const e = accessCodeFails.get(key);
+  if (!e) return false;
+  if (Date.now() - e.first > 10 * 60 * 1000) { accessCodeFails.delete(key); return false; }
+  return e.count >= 8;
+}
+function accessCodeFail(key) {
+  const e = accessCodeFails.get(key);
+  if (!e || Date.now() - e.first > 10 * 60 * 1000) accessCodeFails.set(key, { count: 1, first: Date.now() });
+  else e.count++;
+}
+setInterval(() => {
+  const now = Date.now();
+  for (const [k, v] of accessTokenStore) if (now > v.expires) accessTokenStore.delete(k);
+  for (const [k, e] of accessCodeFails)  if (now - e.first > 10 * 60 * 1000) accessCodeFails.delete(k);
+}, 10 * 60 * 1000).unref();
+
+// ===== DEMO EXAM =====
+// A practice exam that lives only in the code: nothing is saved (no session, result,
+// violation or capture). Students use it to learn how the real exam works.
+const DEMO_EXAM = {
+  id: 'demo', title: 'Demo Exam (Practice)', course_name: 'Practice', duration: 5, is_demo: true,
+  instructions: 'This is a practice exam. It works exactly like a real exam, including the camera and exam rules, but NOTHING is recorded: no score, no violations and no photos are saved. Use it to get comfortable before your real exam.',
+  questions: [
+    { q: 'Which organ pumps blood around the human body?', o: ['Liver', 'Heart', 'Kidney', 'Lung'], a: 'B' },
+    { q: 'What is the normal adult body temperature in degrees Celsius?', o: ['30 °C', '33 °C', '37 °C', '41 °C'], a: 'C' },
+    { q: 'Which blood vessels carry blood AWAY from the heart?', o: ['Veins', 'Arteries', 'Capillaries', 'Lymph vessels'], a: 'B' },
+    { q: 'Which vitamin is mainly made in the skin with sunlight?', o: ['Vitamin A', 'Vitamin B12', 'Vitamin C', 'Vitamin D'], a: 'D' },
+    { q: 'In first aid, what should you check FIRST for an unresponsive person?', o: ['Danger around you', 'Their pulse only', 'Their pockets', 'Their shoes'], a: 'A' },
+    { q: 'Which part of the cell contains the genetic material?', o: ['Nucleus', 'Cell wall', 'Ribosome', 'Cytoplasm'], a: 'A' },
+    { q: 'How many bones are in the normal adult human body?', o: ['106', '156', '206', '306'], a: 'C' },
+    { q: 'Which of these is used to measure blood pressure?', o: ['Stethoscope only', 'Sphygmomanometer', 'Otoscope', 'Thermometer'], a: 'B' },
+    { q: 'Washing hands with soap mainly helps to prevent...', o: ['Sunburn', 'Spread of germs', 'Hair loss', 'Tiredness'], a: 'B' },
+    { q: 'During this demo, what happens to your score?', o: ['It is saved in your records', 'It is sent to your lecturer', 'Nothing is recorded', 'It is added to your CA'], a: 'C' }
+  ]
+};
+
+// GET /api/demo-exam — exam details + questions (with answers, so the page can mark it locally)
+app.get('/api/demo-exam', (req, res) => {
+  const questions = DEMO_EXAM.questions.map((d, i) => ({
+    id: 'demo_q' + (i + 1), question: d.q, question_type: 'multiple_choice',
+    optionA: d.o[0], optionB: d.o[1], optionC: d.o[2], optionD: d.o[3]
+  }));
+  const answers = {};
+  DEMO_EXAM.questions.forEach((d, i) => { answers['demo_q' + (i + 1)] = d.a; });
+  res.json({
+    success: true,
+    exam: { id: DEMO_EXAM.id, title: DEMO_EXAM.title, course_name: DEMO_EXAM.course_name, duration: DEMO_EXAM.duration,
+            instructions: DEMO_EXAM.instructions, question_count: questions.length, is_demo: true,
+            shuffle_questions: false, shuffle_answers: false, allow_retake: true },
+    questions, answers
+  });
+});
+
+// POST /api/student/exam-start-check — validates the exam, and the access code once the student has typed it
 // Runs the same checks as verify-access-code: scheduling, face photo, retake
 app.post('/api/student/exam-start-check', async (req, res) => {
   try {
@@ -1196,10 +1256,31 @@ app.post('/api/student/exam-start-check', async (req, res) => {
       // Grant consumed in /api/submit-exam, not here — keeps it alive for /api/exam-questions check
     }
 
+    // ── Access code ──
+    if (!exam.access_code)
+      return res.json({ success: false, message: 'The access code for this exam has not been issued yet. Please ask your lecturer.' });
+    let access_token = null;
+    const supplied = String(req.body.access_code || '').trim();
+    if (supplied) {
+      if (!student_id) return res.json({ success: false, message: 'Please sign in again.' });
+      const key = `${student_id}:${exam._id}`;
+      if (accessCodeBlocked(key))
+        return res.json({ success: false, code_invalid: true, message: 'Too many wrong codes. Please wait 10 minutes and ask your lecturer to confirm the code.' });
+      if (supplied.toUpperCase() !== String(exam.access_code).trim().toUpperCase()) {
+        accessCodeFail(key);
+        return res.json({ success: false, code_invalid: true, message: 'Invalid access code. Please check it and try again.' });
+      }
+      accessCodeFails.delete(key);
+      access_token = crypto.randomBytes(24).toString('hex');
+      accessTokenStore.set(key, { token: access_token, expires: Date.now() + 6 * 60 * 60 * 1000 });
+    }
+
     const poolSize   = exam.question_pool_size || 0;
     const servedCount = poolSize > 0 && poolSize < qCount ? poolSize : qCount;
     res.json({
       success: true,
+      code_required: true,
+      access_token,
       exam: {
         id: exam._id.toString(), title: exam.title, duration: exam.duration,
         instructions: exam.instructions, question_count: servedCount,
@@ -1213,11 +1294,20 @@ app.post('/api/student/exam-start-check', async (req, res) => {
 
 app.get('/api/exam-questions', async (req, res) => {
   try {
-    const { exam_id, student_id, face_token } = req.query;
+    const { exam_id, student_id, face_token, access_token } = req.query;
     const examOID = toOID(exam_id);
     if (!examOID) return res.json({ success: false, message: 'Invalid exam ID' });
     const exam = await Exam.findById(examOID);
     if (!exam) return res.json({ success: false, message: 'Exam not found' });
+
+    // ── Access code gate: the student must have entered the correct code ──
+    {
+      const ak = student_id ? accessTokenStore.get(`${student_id}:${exam._id}`) : null;
+      if (!exam.access_code || !ak || ak.token !== access_token || Date.now() > ak.expires) {
+        return res.json({ success: false, access_code_required: true,
+          message: 'Access code required. Please go back to your dashboard, open the exam and enter the access code.' });
+      }
+    }
 
     // ── Face verification gate ────────────────────────────────────────────────
     // If face verification is enabled, require a valid server-issued face token.
@@ -1688,6 +1778,7 @@ async function scoreAndSaveResult({ session, sessionOID, studentOID, examOID, an
     const percentage = total > 0 ? Math.round((correct / total) * 100) : 0;
     const result = await ExamResult.create({ student_id: studentOID, exam_id: examOID, session_id: sessionOID, total, correct, wrong, percentage, time_taken: time_taken || 0 });
     await ExamSession.findByIdAndUpdate(sessionOID, { status: 'submitted', submitted_at: new Date() });
+    accessTokenStore.delete(`${studentOID}:${examOID}`); // a retake needs the code again
 
     // Consume the individual retake grant now that the exam is fully submitted
     try {

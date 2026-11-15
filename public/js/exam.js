@@ -130,6 +130,49 @@ if (!student || !examData) {
   window.location.href = 'login.html';
 }
 
+// ═══════════════════════════════════════════════════════════════
+// * DEMO MODE — "Take Demo Exam" from the student dashboard.
+// The exam runs exactly like a real one (camera, fullscreen, violation rules, timer) but every
+// call that would SAVE something is answered locally: no session, answers, violations,
+// camera snapshots or result are stored, and the score is marked in the browser only.
+// ═══════════════════════════════════════════════════════════════
+const IS_DEMO = !!(examData && (examData.id === 'demo' || examData.is_demo));
+if (IS_DEMO) {
+  const realFetch = window.fetch.bind(window);
+  let demoBank = null;
+  const getBank = async () => demoBank || (demoBank = await realFetch('/api/demo-exam').then(r => r.json()));
+  const reply = obj => new Response(JSON.stringify(obj), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  window.fetch = async function (url, opts) {
+    const u = typeof url === 'string' ? url : ((url && url.url) || '');
+    if (u.startsWith('/api/exam-questions')) {
+      const b = await getBank();
+      return reply({ success: true, questions: b.questions, session_id: 'demo-session', violations: 0 });
+    }
+    if (u.startsWith('/api/submit-exam')) {
+      const b = await getBank();
+      let payload = {}; try { payload = JSON.parse((opts && opts.body) || '{}'); } catch (e) {}
+      const given = payload.answers || {};
+      const total = b.questions.length;
+      const correct = b.questions.filter(q => given[q.id] === b.answers[q.id]).length;
+      return reply({ success: true, result: {
+        total, correct, wrong: total - correct, percentage: Math.round((correct / total) * 1000) / 10,
+        time_taken: payload.time_taken || 0, exam_title: b.exam.title, demo: true,
+        show_results: true, show_percentage: true, show_score_breakdown: true, show_grade: true,
+        retake_request_allowed: false } });
+    }
+    if (/^\/api\/(record-violation|save-progress|save-snapshot|save-face-capture|check-submission)/.test(u)) {
+      return reply({ success: true, submitted: false, demo: true });   // nothing is stored
+    }
+    return realFetch(url, opts);
+  };
+  document.addEventListener('DOMContentLoaded', () => {
+    const tag = document.createElement('div');
+    tag.textContent = 'DEMO MODE — nothing is recorded';
+    tag.style.cssText = 'position:fixed;top:6px;left:50%;transform:translateX(-50%);z-index:99998;background:#f59e0b;color:#1b1e45;font:700 11px/1 system-ui,sans-serif;letter-spacing:.04em;padding:5px 12px;border-radius:99px;box-shadow:0 2px 8px rgba(0,0,0,.25);pointer-events:none;';
+    document.body.appendChild(tag);
+  });
+}
+
 // * FIX: Redirect to results if already submitted — unless this is a legitimate retake.
 (function guardAlreadySubmitted() {
   const examKey = examData?.id || examData?._id;
@@ -1618,7 +1661,8 @@ async function loadQuestions() {
       return;
     }
     const faceToken = sessionStorage.getItem('faceToken') || '';
-    const res  = await fetch(`/api/exam-questions?exam_id=${examId}&student_id=${student.id}&face_token=${encodeURIComponent(faceToken)}`);
+    const accessToken = sessionStorage.getItem('accessToken_' + examId) || '';
+    const res  = await fetch(`/api/exam-questions?exam_id=${examId}&student_id=${student.id}&face_token=${encodeURIComponent(faceToken)}&access_token=${encodeURIComponent(accessToken)}`);
     const data = await res.json();
     if (data.success) {
       questions = data.questions;
@@ -1664,6 +1708,9 @@ async function loadQuestions() {
       // Redirect student back to face-capture to re-verify.
       alert('Identity verification is required to enter this exam. You will be redirected to complete face verification.');
       window.location.href = 'face-capture.html';
+    } else if (data.access_code_required) {
+      alert(data.message);
+      window.location.href = 'dashboard.html';
     } else {
       alert('Failed to load questions: ' + data.message);
     }

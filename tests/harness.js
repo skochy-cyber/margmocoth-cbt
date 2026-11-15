@@ -81,6 +81,7 @@ function reset() {
 const routes = {}; const intervals = []; const mails = [];
 const logs = [];
 const ctx = {
+  accessTokenStore: new Map(),   // submit clears the student's exam access token
   OID, Date, Promise, Object, String, Set, Map, JSON, Math, Array, Number, Error,
   console: { log() {}, warn: (...a) => logs.push(['warn', ...a]), error: (...a) => logs.push(['error', ...a]) },
   app: { post: (p, h) => { routes['POST ' + p] = h; }, get: (p, h) => { routes['GET ' + p] = h; }, put() {}, delete() {} },

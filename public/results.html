@@ -299,6 +299,14 @@ function renderResult() {
 
   // ── Always show: exam title, student info, date, time ──
   document.getElementById('examTitleDisp').textContent = result.exam_title || 'Exam Result';
+
+  // Demo exam: make it obvious that nothing was saved
+  if (result.demo) {
+    const hero = document.getElementById('resultHero');
+    hero.insertAdjacentHTML('beforebegin',
+      '<div style="margin:14px 24px 0;padding:12px 14px;border-radius:12px;background:#fffbeb;border:1px solid #fde68a;color:#92400e;font-size:13px;line-height:1.5;">' +
+      '<strong>Demo exam.</strong> This was practice only. Your score, answers and activity were <strong>not recorded</strong>.</div>');
+  }
   document.getElementById('eTitle').textContent        = result.exam_title || '—';
 
   if (student) {
