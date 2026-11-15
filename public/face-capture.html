@@ -94,6 +94,26 @@ async function loadModels() {
   throw new Error('models');
 }
 
+// Profile photos are often dark/low-res: try several sizes, thresholds and brightness boosts.
+function boosted(img, gain) {
+  const c = document.createElement('canvas'); c.width = img.naturalWidth || img.width; c.height = img.naturalHeight || img.height;
+  const ctx = c.getContext('2d'); ctx.filter = 'brightness(' + gain + ') contrast(1.15)'; ctx.drawImage(img, 0, 0, c.width, c.height);
+  return c;
+}
+async function detectRef(img) {
+  const sources = [img, () => boosted(img, 1.4), () => boosted(img, 1.9)];
+  for (const src of sources) {
+    const input = typeof src === 'function' ? src() : src;
+    for (const size of [416, 512, 320, 608]) {
+      for (const th of [0.4, 0.25, 0.15]) {
+        const det = await faceapi.detectSingleFace(input, new faceapi.TinyFaceDetectorOptions({ inputSize: size, scoreThreshold: th })).withFaceLandmarks().withFaceDescriptor();
+        if (det) return det;
+      }
+    }
+  }
+  return null;
+}
+
 async function init() {
   retryBtn.classList.add('hidden'); backBtn.classList.add('hidden'); bar.style.width = '0';
   setStatus('Loading face verification… this can take a few seconds on slow data.');
@@ -104,9 +124,9 @@ async function init() {
   if (!refDescriptor) {
     setStatus('Reading your profile photo…');
     try {
-      const img = await faceapi.fetchImage('/api/student/profile-photo-proxy/' + encodeURIComponent(student.id));
+      const img = await faceapi.fetchImage('/api/student/profile-photo-proxy/' + encodeURIComponent(student.id) + '?t=' + Date.now());
       document.getElementById('refImg').src = img.src; document.getElementById('refImg').classList.remove('hidden');
-      const det = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.4 })).withFaceLandmarks().withFaceDescriptor();
+      const det = await detectRef(img);
       if (!det) return fail('No face could be found in your profile photo. Ask your administrator to reset your Face Capture, then take a clear photo.', false);
       refDescriptor = det.descriptor;
     } catch (e) {
