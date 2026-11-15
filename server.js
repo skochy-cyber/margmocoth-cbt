@@ -94,6 +94,7 @@ const StudentSchema = new mongoose.Schema({
   profile_photo_url:       { type: String, default: null },
   profile_photo_public_id: { type: String, default: null },
   capture_locked:          { type: Boolean, default: false },
+  face_descriptor:         { type: [Number], default: undefined },   // 128-number face signature of the profile photo (never sent to clients)
   created_at:      { type: Date, default: Date.now }
 });
 
@@ -686,7 +687,7 @@ app.get('/api/settings/exam-engine', async (req, res) => {
       show_percentage:        obj.show_percentage        !== undefined ? obj.show_percentage        : true,
       show_score_breakdown:   obj.show_score_breakdown   !== undefined ? obj.show_score_breakdown   : true,
       show_grade:             obj.show_grade             !== undefined ? obj.show_grade             : true,
-      face_verify_required:   obj.face_verify_required === true,   // real face check against the profile photo
+      face_verify_required:   true,   // identity check against the profile photo is always on
       calculator_enabled:     obj.calculator_enabled     !== undefined ? obj.calculator_enabled     : false,
     });
   } catch(e) {
@@ -1105,7 +1106,7 @@ app.post('/api/verify-access-code', async (req, res) => {
 
     // ── Face photo verification requirement ──
     if (student_id) {
-      const faceVerifyRequired = await getSetting('face_verify_required', false);
+      const faceVerifyRequired = true;
       if (faceVerifyRequired) {
         const student = await Student.findById(toOID(student_id));
         if (student && !student.profile_photo_url) {
@@ -1242,7 +1243,7 @@ app.post('/api/student/exam-start-check', async (req, res) => {
 
     if (student_id) {
       // Face photo check
-      const faceVerifyRequired = await getSetting('face_verify_required', false);
+      const faceVerifyRequired = true;
       if (faceVerifyRequired) {
         const student = await Student.findById(toOID(student_id));
         if (student && !student.profile_photo_url)
@@ -1267,7 +1268,7 @@ app.post('/api/student/exam-start-check', async (req, res) => {
     }
 
     // ── Face photo must be registered before the face check can work ──
-    if (student_id && await getSetting('face_verify_required', false)) {
+    if (student_id && true) {
       const stu = await Student.findById(toOID(student_id));
       if (stu && !stu.profile_photo_url) {
         return res.json({
@@ -1334,7 +1335,7 @@ app.get('/api/exam-questions', async (req, res) => {
     // If face verification is enabled, require a valid server-issued face token.
     // This prevents a different student from bypassing face-capture.html entirely.
     if (student_id) {
-      const faceVerifyRequired = await getSetting('face_verify_required', false);
+      const faceVerifyRequired = true;
       if (faceVerifyRequired) {
         // A student who already verified and is mid-exam may refresh the page without a new face check.
         const running = await ExamSession.findOne({ student_id: toOID(student_id), exam_id: examOID, status: 'active' });
@@ -4372,7 +4373,7 @@ app.get('/api/student/capture-status', async (req, res) => {
   try {
     const { student_id } = req.query;
     const enabled = await getSetting('student_capture_enabled', false);
-    const face_verify_required = await getSetting('face_verify_required', false);
+    const face_verify_required = true;
     if (!student_id) return res.json({ enabled, locked: false, has_photo: false, face_verify_required });
     const s = await Student.findById(toOID(student_id));
     if (!s) return res.json({ enabled, locked: false, has_photo: false, face_verify_required });
@@ -4386,10 +4387,13 @@ app.get('/api/student/capture-status', async (req, res) => {
   } catch(e) { res.json({ enabled: false, locked: false, has_photo: false, face_verify_required: false }); }
 });
 
+function validDescriptor(d) { return Array.isArray(d) && d.length === 128 && d.every(x => typeof x === 'number' && isFinite(x)); }
+function descriptorDistance(a, b) { let t = 0; for (let i = 0; i < 128; i++) { const x = a[i] - b[i]; t += x * x; } return Math.sqrt(t); }
+
 // POST /api/student/upload-profile-photo — upload face photo; locks after first upload
 app.post('/api/student/upload-profile-photo', async (req, res) => {
   try {
-    const { student_id, photo_data } = req.body;
+    const { student_id, photo_data, face_descriptor } = req.body;
     if (!student_id || !photo_data) return res.json({ success: false, message: 'student_id and photo_data required.' });
     const s = await Student.findById(toOID(student_id));
     if (!s) return res.json({ success: false, message: 'Student not found.' });
@@ -4424,7 +4428,8 @@ app.post('/api/student/upload-profile-photo', async (req, res) => {
     await Student.findByIdAndUpdate(toOID(student_id), {
       profile_photo_url:       result.secure_url,
       profile_photo_public_id: result.public_id,
-      capture_locked:          true
+      capture_locked:          true,
+      face_descriptor:         validDescriptor(face_descriptor) ? face_descriptor : undefined
     });
     res.json({ success: true, url: result.secure_url });
   } catch(e) { res.json({ success: false, message: e.message }); }
@@ -4493,15 +4498,23 @@ const FACE_ENTRY_THRESHOLD = 0.5;   // Euclidean distance between face descripto
 const FACE_MAX_FAILS       = 5;     // failed face checks per student + exam within 30 minutes
 app.post('/api/issue-face-token', async (req, res) => {
   try {
-    const { student_id, exam_id, distance, snapshot } = req.body || {};
+    const { student_id, exam_id, live_descriptor, ref_descriptor, snapshot } = req.body || {};
     if (!student_id || !exam_id) return res.json({ success: false, message: 'Missing parameters.' });
-    const dist = Number(distance);
-    if (!isFinite(dist) || dist < 0 || dist > 2) return res.json({ success: false, message: 'No face match was measured. Please try the face check again.' });
+    if (!validDescriptor(live_descriptor)) return res.json({ success: false, message: 'No face was measured. Please try the face check again.' });
     if (typeof snapshot !== 'string' || !snapshot.startsWith('data:image/'))
       return res.json({ success: false, message: 'A photo of your face is required for verification.' });
 
     const s = await Student.findById(toOID(student_id));
     if (!s || !s.profile_photo_url) return res.json({ success: false, message: 'No registered face photo.' });
+    // Reference signature: the one stored on the server. Older students without one are enrolled
+    // from their profile photo on first check (signature supplied by the page, never trusted for distance).
+    let refSig = validDescriptor(s.face_descriptor) ? Array.from(s.face_descriptor) : null;
+    let enrollNow = false;
+    if (!refSig) {
+      if (!validDescriptor(ref_descriptor)) return res.json({ success: false, message: 'Your profile photo could not be read. Ask your administrator to reset your Face Capture.' });
+      refSig = ref_descriptor; enrollNow = true;
+    }
+    const dist = descriptorDistance(refSig, live_descriptor);   // computed here, not by the browser
     const exam = await Exam.findById(toOID(exam_id));
     if (!exam) return res.json({ success: false, message: 'Exam not found.' });
 
@@ -4526,6 +4539,7 @@ app.post('/api/issue-face-token', async (req, res) => {
     if (!matched)
       return res.json({ success: false, mismatch: true, message: 'Your face does not match the photo on your profile. Make sure it is you, face the camera in good light and try again.' });
 
+    if (enrollNow) await Student.findByIdAndUpdate(s._id, { face_descriptor: refSig }).catch(() => {});
     const expires = Date.now() + 10 * 60 * 1000; // 10-minute window
     const raw     = `${student_id}:${exam_id}:${expires}:${crypto.randomBytes(8).toString('hex')}`;
     const token   = crypto.createHmac('sha256', FACE_TOKEN_SECRET).update(raw).digest('hex');
@@ -4545,7 +4559,7 @@ app.post('/api/admin/student/reset-capture', adminAuth, async (req, res) => {
       await cloudinary.uploader.destroy(s.profile_photo_public_id).catch(() => {});
     }
     await Student.findByIdAndUpdate(toOID(student_id), {
-      profile_photo_url: null, profile_photo_public_id: null, capture_locked: false
+      profile_photo_url: null, profile_photo_public_id: null, capture_locked: false, $unset: { face_descriptor: 1 }
     });
     res.json({ success: true });
   } catch(e) { res.json({ success: false, message: e.message }); }
