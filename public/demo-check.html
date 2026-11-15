@@ -99,6 +99,7 @@ input.code:focus{outline:none;border-color:#2e3192;background:#fff}
 <script>
 const student = JSON.parse(sessionStorage.getItem('student') || 'null');
 if (!student) window.location.href = 'login.html';
+if (!sessionStorage.getItem('demoFaceOk')) window.location.href = 'face-capture.html';   // must pass the profile-photo face check first
 
 const video = document.getElementById('video'), shot = document.getElementById('shot');
 const statusEl = document.getElementById('status'), oval = document.getElementById('oval');
