@@ -556,6 +556,14 @@ async function initDB() {
   }
   console.log('[OK] Database seeded');
 
+  // One-time: real face verification (profile photo vs the person taking the exam) is now ON by
+  // default. Runs once, so an admin who later switches it off in Settings stays switched off.
+  if (!(await Setting.findOne({ key: 'face_verify_migrated_v1' }))) {
+    await Setting.findOneAndUpdate({ key: 'face_verify_required' }, { $set: { value: true } }, { upsert: true });
+    await Setting.create({ key: 'face_verify_migrated_v1', value: true });
+    console.log('[OK] Face verification enabled (one-time default)');
+  }
+
   // NOTE: Migration block removed — it was forcing face_anticheat_enabled / restrict_side_look /
   // restrict_voice back to true on every server reboot, overriding admin toggle saves.
   // Seeds above use $setOnInsert so they only write on first boot; subsequent admin changes
@@ -678,7 +686,7 @@ app.get('/api/settings/exam-engine', async (req, res) => {
       show_percentage:        obj.show_percentage        !== undefined ? obj.show_percentage        : true,
       show_score_breakdown:   obj.show_score_breakdown   !== undefined ? obj.show_score_breakdown   : true,
       show_grade:             obj.show_grade             !== undefined ? obj.show_grade             : true,
-      face_verify_required:   false, // AI face verification removed
+      face_verify_required:   obj.face_verify_required === true,   // real face check against the profile photo
       calculator_enabled:     obj.calculator_enabled     !== undefined ? obj.calculator_enabled     : false,
     });
   } catch(e) {
@@ -1174,6 +1182,7 @@ setInterval(() => {
 // ===== DEMO EXAM =====
 // A practice exam that lives only in the code: nothing is saved (no session, result,
 // violation or capture). Students use it to learn how the real exam works.
+const DEMO_ACCESS_CODE = '123456';   // shown to students on the demo pages
 const DEMO_EXAM = {
   id: 'demo', title: 'Demo Exam (Practice)', course_name: 'Practice', duration: 5, is_demo: true,
   instructions: 'This is a practice exam. It works exactly like a real exam, including the camera and exam rules, but NOTHING is recorded: no score, no violations and no photos are saved. Use it to get comfortable before your real exam.',
@@ -1204,7 +1213,8 @@ app.get('/api/demo-exam', (req, res) => {
     exam: { id: DEMO_EXAM.id, title: DEMO_EXAM.title, course_name: DEMO_EXAM.course_name, duration: DEMO_EXAM.duration,
             instructions: DEMO_EXAM.instructions, question_count: questions.length, is_demo: true,
             shuffle_questions: false, shuffle_answers: false, allow_retake: true },
-    questions, answers
+    questions, answers,
+    access_code: DEMO_ACCESS_CODE
   });
 });
 
@@ -1254,6 +1264,17 @@ app.post('/api/student/exam-start-check', async (req, res) => {
           return res.json({ success: false, message: 'You have already completed this exam and retakes are not allowed.' });
       }
       // Grant consumed in /api/submit-exam, not here — keeps it alive for /api/exam-questions check
+    }
+
+    // ── Face photo must be registered before the face check can work ──
+    if (student_id && await getSetting('face_verify_required', false)) {
+      const stu = await Student.findById(toOID(student_id));
+      if (stu && !stu.profile_photo_url) {
+        return res.json({
+          success: false, face_photo_missing: true,
+          message: 'You must register your face photo before taking any exam. Please go to your dashboard and complete Face Capture first.'
+        });
+      }
     }
 
     // ── Access code ──
@@ -1314,19 +1335,20 @@ app.get('/api/exam-questions', async (req, res) => {
     // This prevents a different student from bypassing face-capture.html entirely.
     if (student_id) {
       const faceVerifyRequired = await getSetting('face_verify_required', false);
-      const aiMonitoring = exam.webcam_enabled || exam.face_anticheat_enabled ||
-                           exam.restrict_side_look || exam.restrict_voice;
-      if (faceVerifyRequired && aiMonitoring) {
-        const key   = `${student_id}:${exam_id}`;
-        const entry = faceTokenStore.get(key);
-        if (!entry || entry.token !== face_token || Date.now() > entry.expires) {
-          return res.json({
-            success: false,
-            message: 'Identity verification required. Please complete face verification before entering this exam.',
-            face_verify_required: false
-          });
+      if (faceVerifyRequired) {
+        // A student who already verified and is mid-exam may refresh the page without a new face check.
+        const running = await ExamSession.findOne({ student_id: toOID(student_id), exam_id: examOID, status: 'active' });
+        if (!running) {
+          const key   = `${student_id}:${exam_id}`;
+          const entry = faceTokenStore.get(key);
+          if (!entry || entry.token !== face_token || Date.now() > entry.expires) {
+            return res.json({
+              success: false, face_verify_required: true,
+              message: 'Identity verification required. Please complete the face check before entering this exam.'
+            });
+          }
+          faceTokenStore.delete(key); // one-use token — consumed when the session starts
         }
-        faceTokenStore.delete(key); // one-use token — consumed on first question load
       }
     }
     // ─────────────────────────────────────────────────────────────────────────
@@ -2963,7 +2985,9 @@ app.get('/api/admin/face-captures', async (req, res) => {
     res.json(captures.map(c => ({
       id: c._id.toString(), student_name: c.student_name, matric: c.matric,
       exam_title: c.exam_title, cloudinary_url: c.cloudinary_url,
-      public_id: c.public_id, captured_at: c.captured_at
+      public_id: c.public_id, captured_at: c.captured_at,
+      face_verified: !!c.face_verified, match_score: c.match_score || 0,
+      flagged: !!c.flagged, flag_reason: c.flag_reason || null
     })));
   } catch(e) { res.json([]); }
 });
@@ -4460,19 +4484,52 @@ setInterval(() => {
   }
 }, 15 * 60 * 1000);
 
-// POST /api/issue-face-token — client calls this after a successful face match
+// POST /api/issue-face-token — the face-check page sends the best match distance it measured
+// between the live face and the student's profile photo, plus the snapshot it took.
+// The server only issues a token if the distance is good enough, keeps the snapshot as evidence
+// (visible to admins under Face Captures), and blocks repeated failed attempts.
+const FACE_ENTRY_THRESHOLD = 0.5;   // Euclidean distance between face descriptors (lower = stricter)
+const FACE_MAX_FAILS       = 5;     // failed face checks per student + exam within 30 minutes
 app.post('/api/issue-face-token', async (req, res) => {
   try {
-    const { student_id, exam_id, match_score } = req.body;
+    const { student_id, exam_id, distance, snapshot } = req.body || {};
     if (!student_id || !exam_id) return res.json({ success: false, message: 'Missing parameters.' });
-    // Verify the student actually has a profile photo before issuing token
+    const dist = Number(distance);
+    if (!isFinite(dist) || dist < 0 || dist > 2) return res.json({ success: false, message: 'No face match was measured. Please try the face check again.' });
+    if (typeof snapshot !== 'string' || !snapshot.startsWith('data:image/'))
+      return res.json({ success: false, message: 'A photo of your face is required for verification.' });
+
     const s = await Student.findById(toOID(student_id));
     if (!s || !s.profile_photo_url) return res.json({ success: false, message: 'No registered face photo.' });
+    const exam = await Exam.findById(toOID(exam_id));
+    if (!exam) return res.json({ success: false, message: 'Exam not found.' });
+
+    // The access code must have been entered first
+    const ak = accessTokenStore.get(`${student_id}:${exam._id}`);
+    if (!ak || Date.now() > ak.expires)
+      return res.json({ success: false, message: 'Please enter the exam access code first.' });
+
+    const since = new Date(Date.now() - 30 * 60 * 1000);
+    const fails = await FaceCapture.countDocuments({ student_id: s._id, exam_id: exam._id, face_verified: false, captured_at: { $gte: since } });
+    if (fails >= FACE_MAX_FAILS)
+      return res.json({ success: false, locked: true, message: 'Too many failed face checks. Please see your lecturer or invigilator.' });
+
+    const matched = dist <= FACE_ENTRY_THRESHOLD;
+    const stored  = await storeViolationMedia(snapshot, 'image', `facecheck_${s._id}_${Date.now()}`);
+    await FaceCapture.create({
+      student_id: s._id, exam_id: exam._id, student_name: s.name, matric: s.matric || '', exam_title: exam.title,
+      cloudinary_url: stored ? stored.url : null, public_id: stored ? stored.public_id : null,
+      face_verified: matched, match_score: Math.round(dist * 1000) / 1000,
+      flagged: !matched, flag_reason: matched ? null : `Face did not match the profile photo (distance ${dist.toFixed(2)})`
+    });
+    if (!matched)
+      return res.json({ success: false, mismatch: true, message: 'Your face does not match the photo on your profile. Make sure it is you, face the camera in good light and try again.' });
+
     const expires = Date.now() + 10 * 60 * 1000; // 10-minute window
-    const raw     = `${student_id}:${exam_id}:${expires}`;
+    const raw     = `${student_id}:${exam_id}:${expires}:${crypto.randomBytes(8).toString('hex')}`;
     const token   = crypto.createHmac('sha256', FACE_TOKEN_SECRET).update(raw).digest('hex');
-    faceTokenStore.set(`${student_id}:${exam_id}`, { token, expires, match_score: match_score || 0 });
-    res.json({ success: true, token });
+    faceTokenStore.set(`${student_id}:${exam_id}`, { token, expires, match_score: dist });
+    res.json({ success: true, token, match_percent: Math.max(0, Math.round((1 - dist) * 100)) });
   } catch(e) { res.json({ success: false, message: e.message }); }
 });
 
