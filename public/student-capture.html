@@ -618,6 +618,24 @@ function retake() {
   setStep(0);
 }
 
+async function computeDescriptor(dataUrl) {
+  try {
+    const SCRIPTS = ['https://cdn.jsdelivr.net/npm/face-api.js/dist/face-api.min.js', 'https://unpkg.com/face-api.js@0.22.2/dist/face-api.min.js'];
+    const MODELS  = ['/models', 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights', 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights'];
+    if (!window.faceapi) { for (const u of SCRIPTS) { await new Promise(r => { const e = document.createElement('script'); e.src = u; e.onload = r; e.onerror = r; document.head.appendChild(e); }); if (window.faceapi) break; } }
+    if (!window.faceapi) return null;
+    let ok = false;
+    for (const m of MODELS) { try { await Promise.all([faceapi.nets.tinyFaceDetector.loadFromUri(m), faceapi.nets.faceLandmark68Net.loadFromUri(m), faceapi.nets.faceRecognitionNet.loadFromUri(m)]); ok = true; break; } catch (e) {} }
+    if (!ok) return null;
+    const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = dataUrl; });
+    for (const size of [416, 512, 320]) for (const th of [0.4, 0.25]) {
+      const d = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions({ inputSize: size, scoreThreshold: th })).withFaceLandmarks().withFaceDescriptor();
+      if (d) return Array.from(d.descriptor);
+    }
+  } catch (e) {}
+  return null;
+}
+
 async function savePhoto() {
   if (!capturedDataUrl) return;
   const btn = document.getElementById('saveBtn');
@@ -627,7 +645,7 @@ async function savePhoto() {
     const res  = await fetch('/api/student/upload-profile-photo', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ student_id: student.id, photo_data: capturedDataUrl })
+      body:    JSON.stringify({ student_id: student.id, photo_data: capturedDataUrl, face_descriptor: await computeDescriptor(capturedDataUrl) })
     });
     const data = await res.json();
 
