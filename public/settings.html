@@ -980,6 +980,41 @@
         </div>
       </div>
 
+      <!-- DANGER ZONE -->
+      <div class="settings-section" id="dangerZone" style="border:1.5px solid #fecaca;">
+        <div class="section-head danger-head">
+          <div class="section-head-icon" style="background:#fee2e2;"><svg viewBox="0 0 16 16" fill="none" width="18" height="18"><path d="M8 2L2 13h12L8 2z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M8 6v4M8 11.5v.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div>
+          <div class="section-head-text">
+            <h3>Danger Zone</h3>
+            <p>Irreversible actions. Super admin only.</p>
+          </div>
+        </div>
+        <div class="setting-row" style="padding:20px 24px;align-items:flex-start;flex-wrap:wrap;gap:14px;">
+          <div class="setting-info" style="min-width:240px;flex:1;">
+            <div class="setting-title" style="color:#991b1b;">Reset all site data</div>
+            <div class="setting-desc">Permanently deletes <strong>all students</strong> and everything about them: accounts, profile photos, face captures, exam results, sessions, violations, retake requests, complaints, messages and logs. Exams, questions, courses, departments, levels, staff accounts and settings are kept. This cannot be undone.</div>
+          </div>
+          <button type="button" onclick="openResetModal()" style="background:#dc2626;color:#fff;border:none;border-radius:10px;padding:11px 18px;font-weight:800;font-size:13px;cursor:pointer;">Reset all site data</button>
+        </div>
+      </div>
+
+      <div class="lec-modal-backdrop" id="resetModal">
+        <div class="lec-modal">
+          <h4 style="color:#991b1b;">Reset all site data?</h4>
+          <p style="font-size:13px;color:#4a4e73;line-height:1.55;margin:0 0 14px;">Every student and all their results and records will be permanently deleted. Download any results you need first.</p>
+          <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:4px;">Type <code>RESET ALL DATA</code> to confirm</label>
+          <input id="resetConfirmText" class="lec-input" type="text" autocomplete="off" style="width:100%;margin-bottom:12px;">
+          <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:4px;">Your admin password</label>
+          <input id="resetPassword" class="lec-input" type="password" autocomplete="current-password" style="width:100%;">
+          <div id="resetMsg" style="margin-top:10px;font-size:13px;font-weight:600;"></div>
+          <div class="lec-modal-footer">
+            <button type="button" onclick="closeResetModal()" class="btn btn-secondary btn-sm">Cancel</button>
+            <button type="button" id="resetGoBtn" onclick="doResetSiteData()" style="background:#dc2626;color:#fff;border:none;border-radius:10px;padding:9px 18px;font-weight:800;font-size:13px;cursor:pointer;">Delete everything</button>
+          </div>
+        </div>
+      </div>
+
+
 
 
     </div>
@@ -1036,6 +1071,26 @@
 
 <script src="js/admin.js"></script>
 <script>
+// ── Danger zone: reset all site data (super admin only) ──
+(function () {
+  try { const a = JSON.parse(sessionStorage.getItem('admin') || '{}'); if (a.role && a.role !== 'super') { const z = document.getElementById('dangerZone'); if (z) z.style.display = 'none'; } } catch (e) {}
+})();
+function openResetModal() { document.getElementById('resetConfirmText').value = ''; document.getElementById('resetPassword').value = ''; document.getElementById('resetMsg').textContent = ''; document.getElementById('resetModal').classList.add('open'); }
+function closeResetModal() { document.getElementById('resetModal').classList.remove('open'); }
+async function doResetSiteData() {
+  const msg = document.getElementById('resetMsg'), btn = document.getElementById('resetGoBtn');
+  msg.style.color = '#b91c1c';
+  if (document.getElementById('resetConfirmText').value !== 'RESET ALL DATA') { msg.textContent = 'Type RESET ALL DATA exactly to confirm.'; return; }
+  btn.disabled = true; btn.textContent = 'Deleting…'; msg.textContent = '';
+  try {
+    const res = await fetch('/api/admin/danger/reset-site-data', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Admin-Token': getAdminToken() },
+      body: JSON.stringify({ confirm_text: document.getElementById('resetConfirmText').value, password: document.getElementById('resetPassword').value }) });
+    const d = await res.json();
+    if (d.success) { msg.style.color = '#166534'; msg.textContent = 'Done. ' + (d.deleted.students || 0) + ' students and ' + (d.deleted.results || 0) + ' results deleted.'; btn.textContent = 'Deleted'; setTimeout(closeResetModal, 2500); }
+    else { msg.textContent = d.message || 'Reset failed.'; btn.disabled = false; btn.textContent = 'Delete everything'; }
+  } catch (e) { msg.textContent = 'Server error. Nothing may have been deleted; check and retry.'; btn.disabled = false; btn.textContent = 'Delete everything'; }
+}
+
 document.getElementById('sidebarContainer').innerHTML = getSidebarHTML('settings.html');
 document.getElementById('topbarContainer').innerHTML  = getTopbarHTML('Settings');
 checkAdmin();
