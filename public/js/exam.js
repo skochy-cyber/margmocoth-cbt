@@ -109,7 +109,7 @@ function aiProfile() {
     v,
     intervalMs:      Math.round(geo(1000, 100)),  // time between face checks
     minFacePx:       Math.round(lin(80, 35)),     // smallest face the AI will count
-    startupGraceMs:  Math.round(lin(15000, 5000)),// quiet period after the camera starts
+    startupGraceMs:  (typeof IS_DEMO !== 'undefined' && IS_DEMO) ? 2500 : Math.round(lin(15000, 5000)), // quiet period after the camera starts
     noFaceGraceMs:   Math.round(geo(8000, 1000)), // no face for this long = violation
     multiFaceFrames: Math.max(2, Math.round(lin(6, 2))),
     sideHoldMs:      Math.round(geo(5000, 400)),  // head turned for this long = violation
@@ -120,6 +120,14 @@ function aiProfile() {
     cooldownMs:      Math.round(geo(6000, 1500)), // gap between AI violations
     leaveGraceMs:    Math.round(geo(4000, 800))   // away from the exam window this long = violation
   };
+  // The demo is deliberately at maximum sharpness so students can see every check working.
+  if (typeof IS_DEMO !== 'undefined' && IS_DEMO) {
+    Object.assign(_aiProfileCache, {
+      intervalMs: 90, minFacePx: 34, startupGraceMs: 2000, noFaceGraceMs: 900, multiFaceFrames: 2,
+      sideHoldMs: 300, eyeRatioMax: 0.27, noseOffsetMin: 0.19, voiceThreshold: 0.03, voiceHoldMs: 900,
+      cooldownMs: 1200, leaveGraceMs: 600
+    });
+  }
   return _aiProfileCache;
 }
 
@@ -138,6 +146,11 @@ if (!student || !examData) {
 // ═══════════════════════════════════════════════════════════════
 const IS_DEMO = !!(examData && (examData.id === 'demo' || examData.is_demo));
 if (IS_DEMO) {
+  // The student must pass the face check + demo access code (demo-check.html) first.
+  const _ready = parseInt(sessionStorage.getItem('demoReady') || '0', 10);
+  if (!_ready || Date.now() - _ready > 30 * 60 * 1000) {
+    window.location.replace('exam-access.html?exam_id=demo');
+  }
   const realFetch = window.fetch.bind(window);
   let demoBank = null;
   const getBank = async () => demoBank || (demoBank = await realFetch('/api/demo-exam').then(r => r.json()));
@@ -161,8 +174,18 @@ if (IS_DEMO) {
     try { sessionStorage.setItem('demoViolations', JSON.stringify(list)); }
     catch (e) { entry.capture = null; try { sessionStorage.setItem('demoViolations', JSON.stringify(list)); } catch (e2) {} }
   }
+  // The demo always shows the camera monitoring at full strength so students see it working,
+  // whatever the admin has set for real exams.
+  const DEMO_SETTINGS = { webcam_enabled: true, anticheat_enabled: true, face_anticheat_enabled: true,
+                          restrict_side_look: true, restrict_voice: true, violation_volume: 100,
+                          face_verify_required: false };   // the demo has no profile-photo identity check
   window.fetch = async function (url, opts) {
     const u = typeof url === 'string' ? url : ((url && url.url) || '');
+    if (u.startsWith('/api/settings/exam-engine')) {
+      let d = {};
+      try { d = await (await realFetch(url, opts)).json(); } catch (e) {}
+      return reply({ ...d, ...DEMO_SETTINGS });
+    }
     if (u.startsWith('/api/exam-questions')) {
       sessionStorage.removeItem('demoViolations');       // fresh attempt
       const b = await getBank();
@@ -188,6 +211,20 @@ if (IS_DEMO) {
       return reply({ success: true, submitted: false, demo: true });   // nothing is stored
     }
     return realFetch(url, opts);
+  };
+  // Live monitor chip: shows what the camera AI sees right now (faces in view, looking away or not)
+  let _hudFaces = null, _hudAway = false, _hudEl = null;
+  window.__demoHud = (faces, away) => {
+    if (faces !== null && faces !== undefined) _hudFaces = faces;
+    if (away !== null && away !== undefined) _hudAway = away;
+    if (!_hudEl) {
+      _hudEl = document.createElement('div');
+      _hudEl.style.cssText = 'position:fixed;left:8px;bottom:8px;z-index:99998;background:rgba(20,22,63,.92);color:#fff;font:600 11px/1.4 system-ui,sans-serif;padding:7px 10px;border-radius:10px;pointer-events:none;box-shadow:0 2px 10px rgba(0,0,0,.3);';
+      document.body.appendChild(_hudEl);
+    }
+    const f = _hudFaces, bad = f === 0 || f > 1 || _hudAway;
+    _hudEl.style.borderLeft = '4px solid ' + (bad ? '#ef4444' : '#22c55e');
+    _hudEl.innerHTML = 'AI monitor: <b>' + (f === null ? 'starting…' : f === 0 ? 'no face' : f === 1 ? '1 face' : f + ' faces!') + '</b> · ' + (_hudAway ? '<b style="color:#fca5a5">looking away</b>' : 'looking at screen');
   };
   document.addEventListener('DOMContentLoaded', () => {
     const tag = document.createElement('div');
@@ -286,13 +323,16 @@ async function initExam() {
   // On slow connections (mobile Nigeria), TF.js + BlazeFace can take 10-30s to load.
   // Awaiting it left students staring at "Loading question..." and 00:00 timer.
   // The engine sets faceEngineReady=true when it's ready; detection loop starts then.
-  if (examSettings.webcam_enabled && (
+  const _aiOn = examSettings.webcam_enabled && (
         examSettings.face_anticheat_enabled ||
         examSettings.restrict_side_look     ||
         examSettings.restrict_voice
-      )) {
-    initFaceAntiCheat(); // intentionally NOT awaited
-    if (student && student.id) initializeFaceVerification(student.id); // intentionally NOT awaited
+      );
+  if (_aiOn) initFaceAntiCheat(); // intentionally NOT awaited
+  // Real identity check (live face vs profile photo) keeps running during the exam when face
+  // verification is required, so the person cannot be swapped after the start. Not used in the demo.
+  if (!IS_DEMO && examSettings.webcam_enabled && (_aiOn || examSettings.face_verify_required === true) && student && student.id) {
+    initializeFaceVerification(student.id); // intentionally NOT awaited
   }
 
   // Load questions and start timer IMMEDIATELY — don't wait for AI
@@ -988,7 +1028,7 @@ async function initFaceAntiCheat() {
       catch(__) { await tf.setBackend('cpu'); await tf.ready(); }
     }
     console.log('[ICBT] TF backend:', tf.getBackend());
-    blazeFaceModel = await blazeface.load();
+    blazeFaceModel = (typeof IS_DEMO !== 'undefined' && IS_DEMO) ? await blazeface.load(10, 128, 128, 0.3, 0.6) : await blazeface.load();
     faceEngineReady = true;
     console.log('[OK] BlazeFace model loaded — AI proctoring active');
     showFaceEngineToast('AI Proctoring Active', '#0f6b30');
@@ -1118,6 +1158,7 @@ async function runFaceDetection() {
     // Always call handleFaceResult so no-face/multi-face state is tracked
     // even when face_anticheat_enabled is off (needed by side-look & voice).
     handleFaceResult(validFaces.length);
+    if (IS_DEMO && window.__demoHud) window.__demoHud(validFaces.length, validFaces.length ? undefined : false);
 
     if (validFaces.length > 0) {
       if (examSettings.restrict_side_look) handleSideLookResult(validFaces[0]);
@@ -1347,6 +1388,7 @@ function handleSideLookResult(prediction) {
   // noseOffset > 0.25 = clear lateral shift (was 0.30 — too lenient)
   const prof = aiProfile();
   const isSideLook = eyeRatio < prof.eyeRatioMax || noseOffset > prof.noseOffsetMin;
+  if (IS_DEMO && window.__demoHud) window.__demoHud(undefined, isSideLook);
 
   if (isSideLook) {
     sideLookFrames++;
