@@ -4403,12 +4403,13 @@ app.post('/api/student/upload-profile-photo', async (req, res) => {
 
     // Delete old photo from Cloudinary if exists
     if (s.profile_photo_public_id) {
-      await cloudinary.uploader.destroy(s.profile_photo_public_id).catch(() => {});
+      await cloudinary.uploader.destroy(s.profile_photo_public_id, { invalidate: true }).catch(() => {});
     }
     const result = await cloudinary.uploader.upload(photo_data, {
       folder: 'student_profiles',
       public_id: `student_${student_id}`,
       overwrite: true,
+      invalidate: true,
       resource_type: 'image',
       // Auto-enhance brightness/contrast and standardise size on upload.
       // This significantly improves face-api.js detection on dark passport photos
@@ -4457,7 +4458,7 @@ app.get('/api/student/profile-photo-proxy/:student_id', async (req, res) => {
       }
       const contentType = imgRes.headers['content-type'] || 'image/jpeg';
       res.setHeader('Content-Type', contentType);
-      res.setHeader('Cache-Control', 'private, max-age=300'); // cache 5 min on client
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate'); // always serve the latest photo
       res.setHeader('Access-Control-Allow-Origin', '*');
       imgRes.pipe(res);
     }).on('error', (err) => {
