@@ -2861,7 +2861,7 @@ app.get('/api/admin/results/debug', async (req, res) => {
   }
 });
 
-app.get('/api/admin/results', async (req, res) => {
+app.get('/api/admin/results', adminAuth, async (req, res) => {
   try {
     const { lecturer_id, exam_id, department, sub_department } = req.query;
     let resultFilter = {};
@@ -2873,9 +2873,9 @@ app.get('/api/admin/results', async (req, res) => {
       const oid = toOID(exam_id);
       if (oid) resultFilter.exam_id = oid;
     }
-    const results = await ExamResult.find(resultFilter).sort({ submitted_at: -1 }).limit(500)
+    const results = await ExamResult.find(resultFilter).sort({ submitted_at: -1 }).limit(10000)
       .populate({ path: 'student_id', populate: [{ path: 'department_id' }, { path: 'level_id' }] })
-      .populate('exam_id');
+      .populate({ path: 'exam_id', populate: { path: 'course_id', select: 'name code' } });
     let mapped = results.map(r => ({
       id: r._id.toString(), percentage: r.percentage ?? 0, correct: r.correct ?? 0,
       wrong: r.wrong ?? 0, total: r.total ?? 0, time_taken: r.time_taken ?? 0,
@@ -2884,7 +2884,9 @@ app.get('/api/admin/results', async (req, res) => {
       department_name:  r.student_id?.department_id?.name || '-',
       sub_department:   r.student_id?.sub_department || null,
       level_name:       r.student_id?.level_id?.name || '-',
-      exam_title:       r.exam_id?.title || '-'
+      exam_title:       r.exam_id?.title || '-',
+      course_name:      r.exam_id?.course_id?.name || '',
+      course_code:      r.exam_id?.course_id?.code || ''
     }));
     if (department) mapped = mapped.filter(r => r.department_name === department);
     if (sub_department) mapped = mapped.filter(r => r.sub_department === sub_department);
@@ -4553,6 +4555,46 @@ app.post('/api/issue-face-token', async (req, res) => {
     faceTokenStore.set(`${student_id}:${exam_id}`, { token, expires, match_score: dist });
     res.json({ success: true, token, match_percent: Math.max(0, Math.round((1 - dist) * 100)) });
   } catch(e) { res.json({ success: false, message: e.message }); }
+});
+
+// POST /api/admin/danger/reset-site-data — SUPER ADMIN ONLY. Permanently deletes every student and
+// everything tied to students (results, sessions, violations, face captures, photos, requests, logs).
+// Exams, questions, courses, departments, levels, staff accounts and settings are kept.
+app.post('/api/admin/danger/reset-site-data', adminAuth, async (req, res) => {
+  try {
+    const token = req.headers['x-admin-token'] || req.query._t;
+    const admin = await Admin.findOne({ activeToken: token });
+    if (!admin || admin.role !== 'super')
+      return res.status(403).json({ success: false, message: 'Only the super admin can reset site data.' });
+    const { confirm_text, password } = req.body || {};
+    if (confirm_text !== 'RESET ALL DATA')
+      return res.json({ success: false, message: 'Type RESET ALL DATA exactly to confirm.' });
+    if (!password || !bcrypt.compareSync(String(password), admin.password))
+      return res.json({ success: false, message: 'Incorrect password.' });
+
+    // Remove stored media (Cloudinary / local) first, best-effort
+    const media = [];
+    for (const st of await Student.find({ profile_photo_public_id: { $ne: null } }, { profile_photo_public_id: 1 }).lean())
+      media.push(cloudinary.uploader.destroy(st.profile_photo_public_id).catch(() => {}));
+    for (const fc of await FaceCapture.find({ public_id: { $nin: [null, ''] } }, { public_id: 1 }).lean())
+      media.push(cloudinary.uploader.destroy(fc.public_id).catch(() => {}));
+    for (const v of await Violation.find({}).lean()) media.push(removeViolationMedia(v).catch(() => {}));
+    await Promise.all(media);
+
+    const models = { students: Student, exam_sessions: ExamSession, results: ExamResult, exam_reviews: ExamReview,
+      violations: Violation, face_captures: FaceCapture, retake_grants: RetakeGrant, retake_requests: RetakeRequest,
+      generated_passwords: GeneratedPassword, password_audit: PasswordAuditLog, login_audit: LoginAudit,
+      name_change_requests: NameChangeRequest, support_conversations: SupportConversation,
+      login_conversations: LoginConversation, complaints: Complaint, password_reset_requests: PasswordResetRequest,
+      password_contact_requests: PasswordContactRequest, webauthn_credentials: WebAuthnCredential };
+    const deleted = {};
+    for (const [k, M] of Object.entries(models)) deleted[k] = (await M.deleteMany({})).deletedCount || 0;
+    faceTokenStore.clear(); accessTokenStore.clear();
+
+    await logActivity(admin._id, admin.display_name || admin.username, 'reset_site_data',
+      `Deleted ${deleted.students} students and ${deleted.results} results`);
+    res.json({ success: true, deleted });
+  } catch (e) { console.error('reset-site-data error:', e); res.json({ success: false, message: e.message }); }
 });
 
 // POST /api/admin/student/reset-capture — admin resets a student's capture lock so they can retake
