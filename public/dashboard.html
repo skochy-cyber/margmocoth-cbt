@@ -1341,7 +1341,7 @@ async function fetchFreshProfile(){
       fillProfileSheet(data.student);
       checkSubDepartmentAction();
       const nameEl=document.getElementById('studentName'),matricEl=document.getElementById('studentMatric');
-      if(nameEl)nameEl.textContent=student.name||'—';if(matricEl)matricEl.textContent=student.matric||'—';
+      if(nameEl)nameEl.textContent=student.name||'—';if(matricEl)matricEl.textContent=[student.level,student.department].filter(Boolean).join(' · ')||'—';
       const topEl=document.getElementById('topbarInitials'),wAvatar=document.getElementById('welcomeAvatar');
       if(data.student.profile_photo_url){
         if(topEl)topEl.innerHTML=`<img src="${data.student.profile_photo_url}" alt="profile">`;
