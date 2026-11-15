@@ -619,6 +619,18 @@
           </div>
         </div>
 
+        <!-- Real face verification -->
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-title">Require Face Verification <span class="face-anticheat-badge">AI Powered</span> <span class="status-chip off" id="chip_face_verify_required">Off</span></div>
+            <div class="setting-desc">Before an exam starts, the student's live face is compared with the face photo in their profile. If it is not the same person, the exam will not open, and the attempt is saved with a photo under Face Captures. Students must register their face photo (Dashboard &rarr; Face Capture) first.</div>
+          </div>
+          <div class="toggle-wrap" onclick="toggleSetting('face_verify_required')">
+            <div class="toggle-track" id="track_face_verify_required"></div>
+            <div class="toggle-knob" id="knob_face_verify_required"></div>
+          </div>
+        </div>
+
         <!-- Violation Volume -->
         <div class="setting-row" id="volumeRow" style="flex-direction:column;align-items:stretch;gap:12px;">
           <div class="setting-info">
@@ -1043,6 +1055,7 @@ const TOGGLES = {
   fullscreen_enabled:      true,
   anticheat_enabled:       true,
   face_anticheat_enabled:  false,
+  face_verify_required:    true,
   student_capture_enabled: true,
   restrict_side_look:      false,
   reshuffle_on_violation:  false,
