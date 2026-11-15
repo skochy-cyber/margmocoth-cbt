@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#2e3192">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<title>Face Verification – MARGMOCOTH CBT</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#f4f5fb;color:#1b1e45;min-height:100vh;display:flex;justify-content:center;padding:16px}
+.card{width:100%;max-width:480px;background:#fff;border-radius:20px;box-shadow:0 20px 50px -24px rgba(31,33,112,.45);overflow:hidden;align-self:flex-start}
+.head{background:linear-gradient(135deg,#2e3192,#1f2170);color:#fff;padding:18px 20px}
+.head h1{font-size:18px;font-weight:800}.head p{font-size:12.5px;color:rgba(255,255,255,.8);margin-top:3px}
+.body{padding:16px 20px 22px}
+.pair{display:flex;gap:10px;align-items:stretch}
+.cam{position:relative;flex:1;border-radius:16px;overflow:hidden;background:#0b0d22;aspect-ratio:4/3}
+.cam video{width:100%;height:100%;object-fit:cover;display:block;transform:scaleX(-1)}
+.oval{position:absolute;left:50%;top:50%;width:46%;height:74%;transform:translate(-50%,-50%);border:3px dashed rgba(255,255,255,.75);border-radius:50%;pointer-events:none;transition:border-color .2s}
+.oval.good{border:3px solid #22c55e}.oval.bad{border-color:#f59e0b}
+.ref{width:84px;flex:none;border-radius:14px;overflow:hidden;background:#eef0f7;border:1px solid #e1e4f0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#5b5f80;text-align:center}
+.ref img{width:100%;height:84px;object-fit:cover;display:block}
+.ref span{padding:6px 4px}
+.status{margin-top:12px;padding:11px 14px;border-radius:12px;font-size:14px;font-weight:600;text-align:center;background:#eef0f7;color:#4a4e73;line-height:1.45}
+.status.good{background:#dcfce7;color:#166534}.status.warn{background:#fef3c7;color:#92400e}.status.bad{background:#fee2e2;color:#b91c1c}
+.bar{height:8px;border-radius:99px;background:#e6e8f3;overflow:hidden;margin-top:10px}
+.bar i{display:block;height:100%;width:0;background:#2e3192;border-radius:99px;transition:width .2s}
+.btn{width:100%;margin-top:12px;border:none;border-radius:12px;padding:14px;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;background:#2e3192;color:#fff}
+.btn.ghost{background:#eef0f7;color:#2e3192}
+.hint{font-size:12px;color:#8e92b3;text-align:center;margin-top:10px;line-height:1.5}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="head">
+    <h1>Identity check</h1>
+    <p id="examName">Confirm it is you before the exam opens</p>
+  </div>
+  <div class="body">
+    <div class="pair">
+      <div class="cam"><video id="video" autoplay playsinline muted></video><div class="oval" id="oval"></div></div>
+      <div class="ref"><img id="refImg" class="hidden" alt="Your profile photo"><span id="refLabel">Your profile photo</span></div>
+    </div>
+    <div class="status" id="status">Starting…</div>
+    <div class="bar"><i id="bar"></i></div>
+    <button class="btn hidden" id="retryBtn" onclick="restart()">Try again</button>
+    <a class="btn ghost hidden" id="backBtn" href="dashboard.html" style="display:block;text-align:center;text-decoration:none;">Back to dashboard</a>
+    <div class="hint">Face the camera in good light, alone in the picture. Your face is compared with the photo on your profile so nobody can take the exam for someone else.</div>
+  </div>
+</div>
+
+<script>
+const student = JSON.parse(sessionStorage.getItem('student') || localStorage.getItem('mcht_student') || 'null');
+const exam    = JSON.parse(sessionStorage.getItem('currentExam') || 'null');
+if (!student || !exam || !exam.id || exam.id === 'demo') window.location.href = 'dashboard.html';
+
+const THRESHOLD = 0.5;        // must match the server (FACE_ENTRY_THRESHOLD)
+const SAMPLES_NEEDED = 6;     // good frames measured before deciding
+const MODEL_URLS = ['/models', 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights',
+                    'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights'];
+const SCRIPT_URLS = ['https://cdn.jsdelivr.net/npm/face-api.js/dist/face-api.min.js', 'https://unpkg.com/face-api.js@0.22.2/dist/face-api.min.js'];
+
+const video = document.getElementById('video'), statusEl = document.getElementById('status'), oval = document.getElementById('oval');
+const bar = document.getElementById('bar'), retryBtn = document.getElementById('retryBtn'), backBtn = document.getElementById('backBtn');
+let stream = null, refDescriptor = null, running = false, samples = [], bestFrame = null, loopTimer = null, attempts = 0;
+
+document.getElementById('examName').textContent = exam.title || 'Confirm it is you before the exam opens';
+
+function setStatus(text, kind) { statusEl.textContent = text; statusEl.className = 'status ' + (kind || ''); oval.className = 'oval ' + (kind === 'good' ? 'good' : (kind === 'warn' || kind === 'bad') ? 'bad' : ''); }
+function fail(text, canRetry) {
+  running = false; clearTimeout(loopTimer); setStatus(text, 'bad');
+  if (canRetry) retryBtn.classList.remove('hidden');
+  backBtn.classList.remove('hidden');
+}
+function loadScript(urls) {
+  return new Promise((resolve, reject) => {
+    if (window.faceapi) return resolve();
+    let i = 0;
+    (function next() {
+      if (i >= urls.length) return reject(new Error('script'));
+      const s = document.createElement('script'); s.src = urls[i++]; s.onload = () => window.faceapi ? resolve() : next(); s.onerror = next; document.head.appendChild(s);
+    })();
+  });
+}
+async function loadModels() {
+  for (const u of MODEL_URLS) {
+    try {
+      await Promise.all([faceapi.nets.tinyFaceDetector.loadFromUri(u), faceapi.nets.faceLandmark68Net.loadFromUri(u), faceapi.nets.faceRecognitionNet.loadFromUri(u)]);
+      return;
+    } catch (e) {}
+  }
+  throw new Error('models');
+}
+
+async function init() {
+  retryBtn.classList.add('hidden'); backBtn.classList.add('hidden'); bar.style.width = '0';
+  setStatus('Loading face verification… this can take a few seconds on slow data.');
+  try { await loadScript(SCRIPT_URLS); await loadModels(); }
+  catch (e) { return fail('Face verification could not load. Check your internet connection and try again.', true); }
+
+  // Reference: the photo registered on the student's profile
+  if (!refDescriptor) {
+    setStatus('Reading your profile photo…');
+    try {
+      const img = await faceapi.fetchImage('/api/student/profile-photo-proxy/' + encodeURIComponent(student.id));
+      document.getElementById('refImg').src = img.src; document.getElementById('refImg').classList.remove('hidden');
+      const det = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.4 })).withFaceLandmarks().withFaceDescriptor();
+      if (!det) return fail('No face could be found in your profile photo. Ask your administrator to reset your Face Capture, then take a clear photo.', false);
+      refDescriptor = det.descriptor;
+    } catch (e) {
+      return fail('Your profile photo could not be loaded. Go to your dashboard and complete Face Capture first.', false);
+    }
+  }
+
+  try {
+    if (!stream) stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }, audio: false });
+    video.srcObject = stream; await video.play().catch(() => {});
+  } catch (e) { return fail('Camera blocked. Allow camera access in your browser settings, then tap Try again.', true); }
+
+  samples = []; bestFrame = null; running = true;
+  setStatus('Look straight at the camera…');
+  loop();
+}
+
+async function loop() {
+  if (!running) return;
+  try {
+    if (video.readyState >= 2 && video.videoWidth) {
+      const opts = new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 });
+      const all = await faceapi.detectAllFaces(video, opts);
+      if (!all.length) { samples = []; bar.style.width = '0'; setStatus('No face detected. Face the camera.', 'warn'); }
+      else if (all.length > 1) { samples = []; bar.style.width = '0'; setStatus('More than one face in view. Only you should be in the picture.', 'warn'); }
+      else {
+        const W = video.videoWidth, b = all[0].box;
+        if (b.width / W < 0.22) setStatus('Move a little closer.', 'warn');
+        else if (b.width / W > 0.75) setStatus('Move back a little.', 'warn');
+        else {
+          const det = await faceapi.detectSingleFace(video, opts).withFaceLandmarks().withFaceDescriptor();
+          if (det) {
+            const d = faceapi.euclideanDistance(refDescriptor, det.descriptor);
+            if (!bestFrame || d < bestFrame.d) bestFrame = { d, image: snapshot() };
+            samples.push(d);
+            bar.style.width = Math.min(100, Math.round(samples.length / SAMPLES_NEEDED * 100)) + '%';
+            setStatus('Checking your face… hold still', 'good');
+            if (samples.length >= SAMPLES_NEEDED) { running = false; return decide(); }
+          }
+        }
+      }
+    }
+  } catch (e) {}
+  loopTimer = setTimeout(loop, 150);
+}
+
+function snapshot() {
+  const c = document.createElement('canvas'); c.width = video.videoWidth; c.height = video.videoHeight;
+  const ctx = c.getContext('2d'); ctx.translate(c.width, 0); ctx.scale(-1, 1); ctx.drawImage(video, 0, 0);
+  return c.toDataURL('image/jpeg', 0.8);
+}
+
+async function decide() {
+  const best = Math.min(...samples);
+  setStatus('Verifying…');
+  try {
+    const res = await fetch('/api/issue-face-token', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ student_id: student.id, exam_id: exam.id, distance: best, snapshot: bestFrame.image })
+    });
+    const data = await res.json();
+    if (data.success && data.token) {
+      sessionStorage.setItem('faceToken', data.token);
+      sessionStorage.setItem('faceVerified', '1');
+      sessionStorage.setItem('faceMatchScore', String(data.match_percent || ''));
+      if (stream) stream.getTracks().forEach(t => t.stop());
+      setStatus('Identity confirmed' + (data.match_percent ? ' (' + data.match_percent + '% match)' : '') + '. Opening your exam…', 'good');
+      bar.style.width = '100%';
+      setTimeout(() => { window.location.href = 'exam-page.html'; }, 700);
+      return;
+    }
+    attempts++;
+    if (data.locked) return fail(data.message, false);
+    fail(data.message || 'Face check failed.', attempts < 5);
+  } catch (e) { fail('Server error. Please try again.', true); }
+}
+
+function restart() { running = false; clearTimeout(loopTimer); init(); }
+window.addEventListener('pagehide', () => { if (stream) stream.getTracks().forEach(t => t.stop()); });
+init();
+</script>
+</body>
+</html>
