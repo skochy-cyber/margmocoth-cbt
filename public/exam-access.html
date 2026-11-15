@@ -564,7 +564,7 @@ async function startExam() {
 
   sessionStorage.setItem('student', JSON.stringify(student));
   sessionStorage.setItem('currentExam', JSON.stringify(examData));
-  window.location.href = isDemo ? 'demo-check.html' : (aiMonitoringEnabled ? 'face-capture.html' : 'exam-page.html');
+  window.location.href = 'face-capture.html';   // demo and real exams both verify the face against the profile photo
 }
 </script>
 <script src="/js/pending-submit.js"></script>
