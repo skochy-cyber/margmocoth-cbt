@@ -139,6 +139,7 @@ const ExamSessionSchema = new mongoose.Schema({
   exam_id:             { type: mongoose.Schema.Types.ObjectId, ref: 'Exam' },
   answers:             { type: mongoose.Schema.Types.Mixed, default: {} },
   violations:          { type: Number, default: 0 },
+  face_verified:       { type: Boolean, default: false },   // session was opened after a passed face check
   shuffled_answer_map: { type: mongoose.Schema.Types.Mixed, default: {} }, // per-student shuffled answer keys
   shuffled_options_map: { type: mongoose.Schema.Types.Mixed, default: {} }, // per-student shuffled option order { qid: ['text_A','text_B','text_C','text_D'] }
   started_at:          { type: Date, default: Date.now },
@@ -1339,7 +1340,7 @@ app.get('/api/exam-questions', async (req, res) => {
       if (faceVerifyRequired) {
         // A student who already verified and is mid-exam may refresh the page without a new face check.
         const running = await ExamSession.findOne({ student_id: toOID(student_id), exam_id: examOID, status: 'active' });
-        if (!running) {
+        if (!running || !running.face_verified) {
           const key   = `${student_id}:${exam_id}`;
           const entry = faceTokenStore.get(key);
           if (!entry || entry.token !== face_token || Date.now() > entry.expires) {
@@ -1349,6 +1350,7 @@ app.get('/api/exam-questions', async (req, res) => {
             });
           }
           faceTokenStore.delete(key); // one-use token — consumed when the session starts
+          if (running) await ExamSession.updateOne({ _id: running._id }, { $set: { face_verified: true } });
         }
       }
     }
@@ -1493,6 +1495,7 @@ app.get('/api/exam-questions', async (req, res) => {
       session = new ExamSession({
         student_id:           toOID(student_id),
         exam_id:              examOID,
+        face_verified:        true,   // only reachable after the face gate above
         shuffled_answer_map:  shuffledAnswerMap,
         shuffled_options_map: shuffledOptionsMap
       });
@@ -4494,13 +4497,14 @@ setInterval(() => {
 // between the live face and the student's profile photo, plus the snapshot it took.
 // The server only issues a token if the distance is good enough, keeps the snapshot as evidence
 // (visible to admins under Face Captures), and blocks repeated failed attempts.
-const FACE_ENTRY_THRESHOLD = 0.5;   // Euclidean distance between face descriptors (lower = stricter)
+const FACE_ENTRY_THRESHOLD = 0.45;  // median distance across the live samples must be at or below this (lower = stricter)
+const FACE_SAMPLE_MAX      = 0.58;  // and no single sample may be worse than this
 const FACE_MAX_FAILS       = 5;     // failed face checks per student + exam within 30 minutes
 app.post('/api/issue-face-token', async (req, res) => {
   try {
-    const { student_id, exam_id, live_descriptor, ref_descriptor, snapshot } = req.body || {};
+    const { student_id, exam_id, live_descriptors, ref_descriptor, snapshot } = req.body || {};
     if (!student_id || !exam_id) return res.json({ success: false, message: 'Missing parameters.' });
-    if (!validDescriptor(live_descriptor)) return res.json({ success: false, message: 'No face was measured. Please try the face check again.' });
+    if (!Array.isArray(live_descriptors) || live_descriptors.length < 5 || live_descriptors.length > 12 || !live_descriptors.every(validDescriptor)) return res.json({ success: false, message: 'No face was measured. Please try the face check again.' });
     if (typeof snapshot !== 'string' || !snapshot.startsWith('data:image/'))
       return res.json({ success: false, message: 'A photo of your face is required for verification.' });
 
@@ -4514,7 +4518,10 @@ app.post('/api/issue-face-token', async (req, res) => {
       if (!validDescriptor(ref_descriptor)) return res.json({ success: false, message: 'Your profile photo could not be read. Ask your administrator to reset your Face Capture.' });
       refSig = ref_descriptor; enrollNow = true;
     }
-    const dist = descriptorDistance(refSig, live_descriptor);   // computed here, not by the browser
+    // Distances are computed here, not by the browser. Median of all samples decides, so one lucky frame cannot pass.
+    const ds = live_descriptors.map(d => descriptorDistance(refSig, d)).sort((a, b) => a - b);
+    const dist = ds[Math.floor(ds.length / 2)];
+    const worst = ds[ds.length - 1];
     const exam = await Exam.findById(toOID(exam_id));
     if (!exam) return res.json({ success: false, message: 'Exam not found.' });
 
@@ -4528,7 +4535,7 @@ app.post('/api/issue-face-token', async (req, res) => {
     if (fails >= FACE_MAX_FAILS)
       return res.json({ success: false, locked: true, message: 'Too many failed face checks. Please see your lecturer or invigilator.' });
 
-    const matched = dist <= FACE_ENTRY_THRESHOLD;
+    const matched = dist <= FACE_ENTRY_THRESHOLD && worst <= FACE_SAMPLE_MAX;
     const stored  = await storeViolationMedia(snapshot, 'image', `facecheck_${s._id}_${Date.now()}`);
     await FaceCapture.create({
       student_id: s._id, exam_id: exam._id, student_name: s.name, matric: s.matric || '', exam_title: exam.title,
