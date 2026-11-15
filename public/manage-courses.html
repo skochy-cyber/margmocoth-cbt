@@ -45,6 +45,9 @@
  margin-top: 18px;
  justify-content: flex-end;
  }
+  .mc-grid2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media (max-width: 700px) { .mc-grid2 { grid-template-columns:1fr !important; } .modal-box .mc-grid2 { gap:0; } }
+  .table-wrapper { overflow-x:auto; -webkit-overflow-scrolling:touch; }
 </style>
 </head>
 <body>
@@ -59,7 +62,7 @@
  <div class="card" style="margin-bottom:22px;">
  <div class="card-header">Add New Course</div>
  <div class="card-body">
- <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+ <div class="mc-grid2">
  <div class="form-group">
  <label class="form-label">Course Name *</label>
  <input type="text" id="courseName" class="form-control" placeholder="e.g. Anatomy, Radiography">
@@ -89,7 +92,7 @@
  <div class="card" style="margin-bottom:22px;">
  <div class="card-header">Bulk Upload Courses (CSV)</div>
  <div class="card-body">
- <div style="display:grid;grid-template-columns:1fr 1fr;gap:22px;">
+ <div class="mc-grid2" style="gap:22px;">
  <div>
  <div class="upload-zone" onclick="document.getElementById('courseCsv').click()">
  <div style="font-size:16px;font-weight:700;color:#1b1e45;margin-bottom:6px;">Select CSV File</div>
@@ -165,7 +168,7 @@ Physiology,PHYS102,CHEW,100</div>
  <label class="form-label">Course Code</label>
  <input type="text" id="editCourseCode" class="form-control" placeholder="e.g. ANAT101">
  </div>
- <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+ <div class="mc-grid2" style="gap:12px;">
  <div class="form-group">
  <label class="form-label">Department</label>
  <select id="editCourseDept" class="form-control">
@@ -224,32 +227,35 @@ async function loadLevels() {
  });
 }
 
+let coursesCache = [];
+function esc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 async function loadCourses() {
- const deptId = document.getElementById('filterDept').value;
- const url  = deptId ? `/api/courses?dept_id=${deptId}` : '/api/courses';
- const data  = await apiGet(url);
- const tbody  = document.getElementById('coursesList');
- if (!data.length) {
- tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:#5b5f80;">No courses yet.</td></tr>';
- return;
- }
- tbody.innerHTML = data.map((c, i) => `
- <tr>
- <td>${i+1}</td>
- <td><strong>${c.name}</strong></td>
- <td>${c.code || '-'}</td>
- <td>${c.department_name || '<span style="color:#8e92b3;font-style:italic;">None</span>'}</td>
- <td>${c.level_name || '<span style="color:#8e92b3;font-style:italic;">None</span>'}</td>
- <td style="white-space:nowrap;">
- <button onclick="openEditModal('${c.id}','${escStr(c.name)}','${escStr(c.code||'')}','${c.department_id||''}','${c.level_id||''}')"
- class="btn btn-secondary btn-xs" style="margin-right:6px;">Edit</button>
- <button onclick="deleteCourse('${c.id}')" class="btn btn-secondary btn-xs">Delete</button>
- </td>
- </tr>`).join('');
-}
-
-function escStr(s) {
- return (s || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+  const tbody = document.getElementById('coursesList');
+  try {
+    const deptId = document.getElementById('filterDept').value;
+    const url  = deptId ? `/api/courses?dept_id=${encodeURIComponent(deptId)}` : '/api/courses';
+    const data = await apiGet(url);
+    if (!Array.isArray(data)) throw new Error((data && data.message) || 'Could not load courses.');
+    coursesCache = data;
+    if (!data.length) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:#5b5f80;">No courses yet.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = data.map((c, i) => `
+      <tr>
+        <td>${i+1}</td>
+        <td><strong>${esc(c.name)}</strong></td>
+        <td>${esc(c.code) || '-'}</td>
+        <td>${c.department_name ? esc(c.department_name) : '<span style="color:#8e92b3;font-style:italic;">None</span>'}</td>
+        <td>${c.level_name ? esc(c.level_name) : '<span style="color:#8e92b3;font-style:italic;">None</span>'}</td>
+        <td style="white-space:nowrap;">
+          <button onclick="openEditModal(${i})" class="btn btn-secondary btn-xs" style="margin-right:6px;">Edit</button>
+          <button onclick="deleteCourse(${i})" class="btn btn-secondary btn-xs">Delete</button>
+        </td>
+      </tr>`).join('');
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:32px;color:#dc2626;">${esc(e.message || 'Failed to load courses.')} <a href="#" onclick="loadCourses();return false;">Retry</a></td></tr>`;
+  }
 }
 
 async function addCourse() {
@@ -262,8 +268,10 @@ async function addCourse() {
  if (!level_id) { showAlert('Please select a level.', 'danger'); return; }
  const btn = document.querySelector('button[onclick="addCourse()"]');
  btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2m6-2a10 10 0 11-20 0 10 10 0 0120 0z"/></svg> Adding...'; btn.disabled = true;
- const data = await apiPost('/api/admin/courses', { name, code, department_id: dept_id, level_id });
- btn.innerHTML = ' Add Course'; btn.disabled = false;
+ let data;
+ try { data = await apiPost('/api/admin/courses', { name, code, department_id: dept_id, level_id }); }
+ catch (e) { data = { success: false, message: 'Server error. Please try again.' }; }
+ btn.innerHTML = 'Add Course'; btn.disabled = false;
  if (data.success) {
  showAlert('Course added successfully!', 'success');
  document.getElementById('courseName').value  = '';
@@ -274,12 +282,13 @@ async function addCourse() {
  } else showAlert(data.message, 'danger');
 }
 
-function openEditModal(id, name, code, deptId, levelId) {
- currentEditId = id;
- document.getElementById('editCourseName').value  = name;
- document.getElementById('editCourseCode').value  = code;
- document.getElementById('editCourseDept').value  = deptId  || '';
- document.getElementById('editCourseLevel').value = levelId || '';
+function openEditModal(i) {
+ const c = coursesCache[i]; if (!c) return;
+ currentEditId = c.id;
+ document.getElementById('editCourseName').value  = c.name || '';
+ document.getElementById('editCourseCode').value  = c.code || '';
+ document.getElementById('editCourseDept').value  = c.department_id || '';
+ document.getElementById('editCourseLevel').value = c.level_id || '';
  document.getElementById('editModal').classList.add('active');
 }
 
@@ -307,8 +316,10 @@ async function saveEdit() {
  department_id: dept_id  || null,
  level_id:  level_id || null
  };
- const data = await apiPut(`/api/admin/courses/${currentEditId}`, payload);
- saveBtn.innerHTML = ' Save Changes'; saveBtn.disabled = false;
+ let data;
+ try { data = await apiPut(`/api/admin/courses/${currentEditId}`, payload); }
+ catch (e) { data = { success: false, message: 'Server error. Please try again.' }; }
+ saveBtn.innerHTML = 'Save Changes'; saveBtn.disabled = false;
  if (data.success) {
  showAlert('Course updated!', 'success');
  closeEditModal();
@@ -316,9 +327,11 @@ async function saveEdit() {
  } else showAlert(data.message || 'Update failed.', 'danger');
 }
 
-async function deleteCourse(id) {
- if (!confirmDelete('Delete this course?')) return;
- const data = await apiDelete(`/api/admin/courses/${id}`);
+async function deleteCourse(i) {
+ const c = coursesCache[i]; if (!c) return;
+ if (!confirmDelete(`Delete "${c.name}"?`)) return;
+ let data;
+ try { data = await apiDelete(`/api/admin/courses/${c.id}`); } catch (e) { data = { success: false, message: 'Server error.' }; }
  if (data.success) { showAlert('Course deleted.', 'success'); loadCourses(); }
  else showAlert(data.message, 'danger');
 }
@@ -333,7 +346,7 @@ function previewCourses(file) {
  fileInfo.textContent = file.name;
  const reader = new FileReader();
  reader.onload = e => {
- const lines = e.target.result.trim().split('\n');
+ const lines = e.target.result.replace(/^\uFEFF/, '').trim().split(/\r?\n/);
  parsedCourses = [];
  for (let i = 1; i < lines.length; i++) {
  if (!lines[i].trim()) continue;
@@ -346,10 +359,10 @@ function previewCourses(file) {
  parsedCourses.slice(0,20).map((c,i) => `
  <tr>
  <td>${i+1}</td>
- <td>${c.name}</td>
- <td>${c.code || '-'}</td>
- <td>${c.department || '-'}</td>
- <td>${c.level || '-'}</td>
+ <td>${esc(c.name)}</td>
+ <td>${esc(c.code) || '-'}</td>
+ <td>${esc(c.department) || '-'}</td>
+ <td>${esc(c.level) || '-'}</td>
  </tr>`).join('') +
  (parsedCourses.length > 20 ? `<tr><td colspan="5" style="text-align:center;padding:14px;color:#71717a;">...and ${parsedCourses.length-20} more</td></tr>` : '');
  showAlert(`Parsed ${parsedCourses.length} courses. Click Upload to save.`, 'success');
@@ -361,10 +374,11 @@ async function uploadCourses() {
  if (!parsedCourses.length) { showAlert('No courses to upload.', 'danger'); return; }
  const btn = document.querySelector('button[onclick="uploadCourses()"]');
  btn.textContent = 'Uploading...'; btn.disabled = true;
- const data = await apiPost('/api/admin/bulk-courses', { courses: parsedCourses });
+ let data;
+ try { data = await apiPost('/api/admin/bulk-courses', { courses: parsedCourses }); } catch (e) { data = { success: false, message: 'Server error. Please try again.' }; }
  btn.textContent = 'Upload Courses'; btn.disabled = false;
  if (data.success) {
- showAlert(`Uploaded ${data.count} courses (${data.skipped} skipped).`, 'success');
+ showAlert(`Uploaded ${data.count} courses (${data.skipped} skipped).` + ((data.errors && data.errors.length) ? ' ' + data.errors.map(esc).join('; ') : ''), data.count ? 'success' : 'danger');
  parsedCourses = [];
  document.getElementById('coursePreview').innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:#0f6b30;font-weight:600;">Upload complete!</td></tr>';
  document.getElementById('courseCsvFileInfo').style.display = 'none';
