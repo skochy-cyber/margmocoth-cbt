@@ -281,6 +281,9 @@ function renderCaptures(list) {
         <div class="capture-matric">${esc(c.matric)}</div>
         <div class="capture-exam">${esc(c.exam_title)}</div>
         <div class="capture-time">${formatDateTime(c.captured_at)}</div>
+        ${c.flagged
+          ? `<div style="margin:6px 0;padding:5px 8px;border-radius:8px;background:#fee2e2;color:#b91c1c;font-size:11px;font-weight:700;">&#9888; MISMATCH — ${esc(c.flag_reason || 'face did not match profile photo')}</div>`
+          : (c.face_verified ? `<div style="margin:6px 0;padding:5px 8px;border-radius:8px;background:#dcfce7;color:#166534;font-size:11px;font-weight:700;">&#10003; Matched profile photo${c.match_score ? ' (distance ' + Number(c.match_score).toFixed(2) + ')' : ''}</div>` : '')}
         <div class="capture-actions">
           <button class="btn-view-capture"
             onclick="openLightbox('${esc(c.cloudinary_url)}','${esc(c.student_name)}','${esc(c.matric)}','${esc(c.exam_title)}','${formatDateTime(c.captured_at)}')">
