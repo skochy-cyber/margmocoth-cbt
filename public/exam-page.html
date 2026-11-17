@@ -258,6 +258,11 @@ body, .question-text, .options-list, .exam-body {
 * { -webkit-user-drag: none; user-drag: none; }
 /* Chrome/Edge screenshot API hint — discourage compositing capture */
 body { -webkit-touch-callout: none; }
+.qimg{display:block;max-width:100%;height:auto;max-height:340px;object-fit:contain;border-radius:10px;margin:10px auto;}
+.option-text .qimg{max-height:180px;margin:6px 0;}
+#questionText .qimg{cursor:zoom-in;}
+.qimg-zoom{position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:99999;display:flex;align-items:center;justify-content:center;cursor:zoom-out;}
+.qimg-zoom img{max-width:96vw;max-height:92vh;border-radius:6px;}
 </style>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
