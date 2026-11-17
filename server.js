@@ -294,6 +294,15 @@ const Semester          = mongoose.model('Semester',          SemesterSchema);
 const Student           = mongoose.model('Student',           StudentSchema);
 const Exam              = mongoose.model('Exam',              ExamSchema);
 const Question          = mongoose.model('Question',          QuestionSchema);
+
+// Question pictures are stored in MongoDB (not on Cloudinary / local disk) so they survive
+// restarts, redeploys and logouts, and are always available to students.
+const QuestionImageSchema = new mongoose.Schema({
+  data:         { type: Buffer, required: true },
+  content_type: { type: String, default: 'image/jpeg' },
+  created_at:   { type: Date, default: Date.now }
+});
+const QuestionImage = mongoose.model('QuestionImage', QuestionImageSchema);
 const ExamSession       = mongoose.model('ExamSession',       ExamSessionSchema);
 const ExamResult        = mongoose.model('ExamResult',        ExamResultSchema);
 const Violation         = mongoose.model('Violation',         ViolationSchema);
@@ -2496,7 +2505,8 @@ app.delete('/api/admin/exams/:id/allowed-students', adminAuth, async (req, res) 
 
 
 
-// POST /api/admin/upload-question-image — JPEG picture for a question or option. Returns the hosted URL.
+// POST /api/admin/upload-question-image — JPEG picture for a question or option.
+// Saved in MongoDB; returns a permanent URL served by this app.
 app.post('/api/admin/upload-question-image', adminAuth, async (req, res) => {
   try {
     const { image_data } = req.body || {};
@@ -2504,9 +2514,23 @@ app.post('/api/admin/upload-question-image', adminAuth, async (req, res) => {
       return res.json({ success: false, message: 'Only JPEG pictures are accepted.' });
     if (image_data.length > 4 * 1024 * 1024)
       return res.json({ success: false, message: 'Picture is too large. Choose a smaller one.' });
-    const result = await cloudinary.uploader.upload(image_data, { folder: 'question_images', resource_type: 'image', format: 'jpg' });
-    res.json({ success: true, url: result.secure_url });
+    const buf = Buffer.from(image_data.split(',')[1], 'base64');
+    if (!buf.length) return res.json({ success: false, message: 'Picture could not be read.' });
+    const img = await QuestionImage.create({ data: buf, content_type: 'image/jpeg' });
+    res.json({ success: true, url: '/api/question-image/' + img._id.toString() });
   } catch (e) { console.error('upload-question-image error:', e.message); res.json({ success: false, message: 'Upload failed. Try again.' }); }
+});
+
+// GET /api/question-image/:id — public (students need it during the exam)
+app.get('/api/question-image/:id', async (req, res) => {
+  try {
+    if (!/^[a-f0-9]{24}$/i.test(req.params.id)) return res.status(404).end();
+    const img = await QuestionImage.findById(req.params.id);
+    if (!img) return res.status(404).end();
+    res.set('Content-Type', img.content_type || 'image/jpeg');
+    res.set('Cache-Control', 'public, max-age=31536000, immutable');
+    res.send(img.data);
+  } catch (e) { res.status(404).end(); }
 });
 
 app.get('/api/admin/questions', async (req, res) => {
