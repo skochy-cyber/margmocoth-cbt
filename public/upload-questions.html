@@ -175,6 +175,14 @@ function handleFile(file) {
  answer:  headers.findIndex(h => h === 'answer'),
  question_type: headers.findIndex(h => h === 'question_type' || h === 'type')
  };
+ // Optional picture columns: question_image, optionA_image ... optionD_image (a direct link to a picture)
+ const nh = headers.map(h => h.replace(/[\s_\-]/g, ''));
+ const imgIdx = {
+  question: nh.findIndex(h => h === 'questionimage' || h === 'image'),
+  optionA:  nh.indexOf('optionaimage'), optionB: nh.indexOf('optionbimage'),
+  optionC:  nh.indexOf('optioncimage'), optionD: nh.indexOf('optiondimage')
+ };
+ const getImg = (cols, k) => imgIdx[k] >= 0 ? (cols[imgIdx[k]] || '').trim() : '';
 
  for (let i = 1; i < allRows.length; i++) {
  const cols = allRows[i].map(c => c.replace(/^"|"$/g,''));
@@ -189,11 +197,12 @@ function handleFile(file) {
  const optD  = colIdx.optionD >= 0  ? (cols[colIdx.optionD] || '') : (cols[4] || '');
 
  // Detect true/false: explicit column OR missing C/D
- const isTF = qt_raw === 'true_false' || qt_raw === 'truefalse' || qt_raw === 'tf' || (!optC && !optD);
+ const im = { question: getImg(cols,'question'), optionA: getImg(cols,'optionA'), optionB: getImg(cols,'optionB'), optionC: getImg(cols,'optionC'), optionD: getImg(cols,'optionD') };
+ const isTF = qt_raw === 'true_false' || qt_raw === 'truefalse' || qt_raw === 'tf' || (!optC && !optD && !im.optionC && !im.optionD);
  const question_type = isTF ? 'true_false' : 'multiple_choice';
 
- if (!question || !['A','B','C','D'].includes(answer)) { errors.push(i+1); continue; }
- if (!isTF && (!optC || !optD)) { errors.push(i+1); continue; }
+ if ((!question && !im.question) || !['A','B','C','D'].includes(answer)) { errors.push(i+1); continue; }
+ if (!isTF && ((!optC && !im.optionC) || (!optD && !im.optionD))) { errors.push(i+1); continue; }
 
  const row = {
  question, question_type,
@@ -201,7 +210,9 @@ function handleFile(file) {
  optionB: optB || (isTF ? 'False' : ''),
  optionC: isTF ? '' : optC,
  optionD: isTF ? '' : optD,
- answer
+ answer,
+ question_image: im.question, optionA_image: im.optionA, optionB_image: im.optionB,
+ optionC_image: isTF ? '' : im.optionC, optionD_image: isTF ? '' : im.optionD
  };
  parsedData.push(row);
  valid.push({ ...row, rowNum: i + 1 });
@@ -253,7 +264,7 @@ async function uploadQuestions() {
  btn.innerHTML = ' Upload Questions'; btn.disabled = false;
 
  if (data.success) {
- showAlert(`Successfully uploaded ${data.count} questions!`, 'success');
+ showAlert(`Successfully uploaded ${data.count} questions!` + (data.images_failed ? ` ${data.images_failed} picture link(s) could not be downloaded (use a direct link to a .jpg/.png file).` : ''), data.images_failed ? 'danger' : 'success');
  parsedData = [];
  document.getElementById('previewTable').innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:#0f6b30;font-weight:600;">Upload complete!</td></tr>';
  document.getElementById('fileInfo').style.display = 'none';
