@@ -6,7 +6,7 @@
      • Everything else                → Stale-While-Revalidate
 ════════════════════════════════════════════════════════ */
 
-const CACHE_NAME    = 'margmocoth-cbt-v9';
+const CACHE_NAME    = 'margmocoth-cbt-v10';
 const SHELL_ASSETS  = [
   '/',
   '/index.html',
@@ -109,7 +109,20 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  /* 4. Static assets → Cache-first, update in background */
+  /* 4a. Scripts and styles → Network-first so a new deploy is never masked by a stale
+         admin.js / style.css (a stale admin.js was hiding session handling and showed a bare
+         "Unauthorized"). Falls back to cache only when offline. */
+  if (/\.(js|css)$/.test(url.pathname)) {
+    e.respondWith(
+      fetch(e.request).then(res => {
+        if (res.ok) { const clone = res.clone(); caches.open(CACHE_NAME).then(c => c.put(e.request, clone)); }
+        return res;
+      }).catch(() => caches.match(e.request))
+    );
+    return;
+  }
+
+  /* 4b. Other static assets (images, icons) → Cache-first, update in background */
   e.respondWith(
     caches.match(e.request).then(cached => {
       const networkFetch = fetch(e.request).then(res => {
