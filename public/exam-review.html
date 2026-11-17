@@ -47,6 +47,11 @@ body { background:#f1f2fa; min-height:100vh; padding:20px 16px 80px; font-family
 
 /* KaTeX support */
 .katex-display { overflow-x:auto; }
+.qimg{display:block;max-width:100%;height:auto;max-height:340px;object-fit:contain;border-radius:10px;margin:10px auto;}
+.option-text .qimg{max-height:180px;margin:6px 0;}
+#questionText .qimg{cursor:zoom-in;}
+.qimg-zoom{position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:99999;display:flex;align-items:center;justify-content:center;cursor:zoom-out;}
+.qimg-zoom img{max-width:96vw;max-height:92vh;border-radius:6px;}
 </style>
 </head>
 <body>
