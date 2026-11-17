@@ -761,9 +761,10 @@
           <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:16px;">
             <div class="setting-info">
               <div class="setting-title">Individual Retake Grant</div>
-              <div class="setting-desc">Search for a specific student by name or matric number and grant them a one-time retake permission.</div>
+              <div class="setting-desc">Choose the exam, then search for a student by name or matric number and grant a one-time retake for that exam only.</div>
             </div>
           </div>
+          <select id="retakeExam" class="retake-search-input" style="width:100%;margin-bottom:10px;"><option value="">Loading exams…</option></select>
 
           <div class="retake-search-wrap" style="padding:0 0 16px;">
             <div class="retake-search-row">
@@ -1284,11 +1285,22 @@ function hideSearchDrop() {
   document.getElementById('searchResultsDrop').classList.remove('show');
 }
 
-async function grantRetake(studentId, name, matric) {
+async function loadRetakeExams() {
   try {
-    const res = await apiPost('/api/admin/retake-grant', { student_id: studentId });
+    const exams = await apiGet('/api/admin/exams');
+    document.getElementById('retakeExam').innerHTML = '<option value="">Select the exam…</option>' +
+      exams.map(e => `<option value="${e.id}">${String(e.title).replace(/</g, '&lt;')}${e.course_name ? ' (' + String(e.course_name).replace(/</g, '&lt;') + ')' : ''}</option>`).join('');
+  } catch (e) { document.getElementById('retakeExam').innerHTML = '<option value="">Could not load exams</option>'; }
+}
+
+async function grantRetake(studentId, name, matric) {
+  const examId = document.getElementById('retakeExam').value;
+  if (!examId) { showAlert('Select the exam first.', 'danger'); return; }
+  const examName = document.getElementById('retakeExam').selectedOptions[0].textContent;
+  try {
+    const res = await apiPost('/api/admin/retake-grant', { student_id: studentId, exam_id: examId });
     if (res.success) {
-      showAlert(`Retake granted to <strong>${name}</strong> (${matric}).`, 'success');
+      showAlert(`Retake granted to <strong>${name}</strong> (${matric}) for <strong>${examName}</strong> only.`, 'success');
       hideSearchDrop();
       document.getElementById('retakeSearch').value = '';
       await loadGrantedRetakes();
@@ -1315,7 +1327,7 @@ function renderGrantedList(list) {
     <div class="granted-item" id="grant-${g.id}">
       <div class="granted-item-info">
         <div class="granted-item-name">${g.student_name}</div>
-        <div class="granted-item-matric">${g.matric}</div>
+        <div class="granted-item-matric">${g.matric} · ${String(g.exam_title).replace(/</g, '&lt;')}</div>
       </div>
       <button class="btn-revoke" onclick="revokeRetake('${g.id}', '${g.student_name}')">
         Revoke
@@ -1340,6 +1352,7 @@ document.addEventListener('click', e => {
   if (!e.target.closest('.retake-search-wrap')) hideSearchDrop();
 });
 
+loadRetakeExams();
 loadSettings();
 loadLecturers();
 loadDeptDropdowns();
