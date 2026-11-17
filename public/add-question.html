@@ -731,18 +731,7 @@ function escHtml(s) {
  .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// apiPut helper (if not in admin.js)
-async function apiPut(url, body) {
- try {
- const admin = JSON.parse(sessionStorage.getItem('admin') || '{}');
- const res = await fetch(url, {
- method: 'PUT',
- headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${admin.token || ''}` },
- body: JSON.stringify(body)
- });
- return await res.json();
- } catch(e) { return { success: false, message: e.message }; }
-}
+// apiPut / apiPost / apiGet / apiDelete come from js/admin.js (they send the X-Admin-Token header).
 
 // ── Keyboard shortcuts ────────────────────────────────────────
 document.addEventListener('keydown', e => {
