@@ -404,6 +404,8 @@ const upload = multer({
 });
 
 // ===== MIDDLEWARE =====
+// Render terminates HTTPS at its proxy; without this the secure session cookie is never set.
+app.set('trust proxy', 1);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(session({
@@ -2593,6 +2595,33 @@ app.post('/api/admin/upload-questions', upload.single('csv'), async (req, res) =
 });
 
 // POST /api/admin/bulk-questions-json — accepts pre-parsed questions array from upload-questions.html
+// Downloads a picture from a link (or accepts an existing /api/question-image/ link) and stores
+// it permanently in MongoDB, so CSV uploads can carry pictures that never expire.
+async function resolveCsvImage(v, cache) {
+  v = String(v || '').trim();
+  if (!v) return { url: '' };
+  if (/^\/api\/question-image\/[a-f0-9]{24}$/i.test(v)) return { url: v };
+  if (!/^https?:\/\//i.test(v)) return { url: '', error: 'not a link' };
+  if (cache.has(v)) return cache.get(v);
+  let out;
+  try {
+    const r = await fetch(v, { signal: AbortSignal.timeout(15000), redirect: 'follow' });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const ct = (r.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
+    if (!/^image\/(jpeg|png|webp|gif)$/.test(ct)) throw new Error('not a direct picture link');
+    const buf = Buffer.from(await r.arrayBuffer());
+    if (!buf.length || buf.length > 4 * 1024 * 1024) throw new Error('empty or over 4MB');
+    const img = await QuestionImage.create({ data: buf, content_type: ct });
+    out = { url: '/api/question-image/' + img._id.toString() };
+  } catch (e) { out = { url: '', error: e.message }; }
+  cache.set(v, out);
+  return out;
+}
+function joinCsvImg(text, url) {
+  text = String(text || '').trim();
+  return url ? (text ? text + '<br>' : '') + '<img class="qimg" src="' + url + '">' : text;
+}
+
 app.post('/api/admin/bulk-questions-json', async (req, res) => {
   try {
     const { exam_id, questions } = req.body;
@@ -2600,24 +2629,44 @@ app.post('/api/admin/bulk-questions-json', async (req, res) => {
     if (!questions?.length) return res.json({ success: false, message: 'No questions provided.' });
     const examOID = toOID(exam_id);
     if (!examOID) return res.json({ success: false, message: 'Invalid exam ID.' });
-    const docs = questions
-      .filter(q => q.question && q.optionA && q.optionB && ['A','B','C','D'].includes((q.answer||'').toUpperCase()))
-      .map(q => {
-        const isTF = (q.question_type === 'true_false') || (!q.optionC && !q.optionD);
+
+    const cache = new Map();
+    let imgFailed = 0;
+    const KEYS = ['question', 'optionA', 'optionB', 'optionC', 'optionD'];
+    const built = [];
+    // Resolve pictures a few rows at a time
+    for (let i = 0; i < questions.length; i += 5) {
+      const chunk = questions.slice(i, i + 5);
+      const done = await Promise.all(chunk.map(async q => {
+        const f = {};
+        for (const k of KEYS) {
+          const r = await resolveCsvImage(q[k + '_image'], cache);
+          if (q[k + '_image'] && !r.url) imgFailed++;
+          f[k] = joinCsvImg(q[k], r.url);
+        }
+        return { q, f };
+      }));
+      built.push(...done);
+    }
+
+    const docs = built
+      .filter(({ q, f }) => f.question && f.optionA && f.optionB && ['A','B','C','D'].includes((q.answer||'').toUpperCase()))
+      .map(({ q, f }) => {
+        const isTF = (q.question_type === 'true_false') || (!f.optionC && !f.optionD);
         return {
           exam_id:       examOID,
-          question:      q.question,
+          question:      f.question,
           question_type: isTF ? 'true_false' : 'multiple_choice',
-          optionA:       q.optionA,
-          optionB:       q.optionB,
-          optionC:       isTF ? '' : (q.optionC || ''),
-          optionD:       isTF ? '' : (q.optionD || ''),
+          optionA:       f.optionA,
+          optionB:       f.optionB,
+          optionC:       isTF ? '' : (f.optionC || ''),
+          optionD:       isTF ? '' : (f.optionD || ''),
           answer:        q.answer.toUpperCase()
         };
       });
     if (!docs.length) return res.json({ success: false, message: 'No valid questions found. Check that each row has a question, four options, and a valid answer (A/B/C/D).' });
     await Question.insertMany(docs);
-    res.json({ success: true, count: docs.length });
+    res.json({ success: true, count: docs.length, images_failed: imgFailed });
   } catch(e) { res.json({ success: false, message: e.message }); }
 });
 
