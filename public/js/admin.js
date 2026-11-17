@@ -3,7 +3,7 @@
 
 function checkAdmin() {
  const admin = JSON.parse(sessionStorage.getItem('admin') || 'null');
- if (!admin) { window.location.href = 'admin-login.html'; return null; }
+ if (!admin || !sessionStorage.getItem('adminToken')) { sessionStorage.removeItem('admin'); window.location.href = 'admin-login.html'; return null; }
  const el = document.getElementById('adminName');
  if (el) el.textContent = admin.display_name || admin.username;
  return admin;
@@ -37,6 +37,7 @@ function requireSuper() {
 
 function adminLogout() {
  sessionStorage.removeItem('admin');
+ sessionStorage.removeItem('adminToken');
  window.location.href = 'admin-login.html';
 }
 
@@ -56,6 +57,17 @@ function showAlert(msg, type = 'success', containerId = 'alertBox') {
  setTimeout(() => { if (el) el.innerHTML = ''; }, 5000);
 }
 
+// If the server says the admin session is invalid, send the admin back to log in
+// instead of showing a bare "Unauthorized" error.
+async function adminJson(res) {
+ if (res.status === 401) {
+  sessionStorage.removeItem('admin'); sessionStorage.removeItem('adminToken');
+  alert('Your session has expired. Please log in again.');
+  window.location.href = 'admin-login.html';
+  return { success: false, message: 'Session expired. Please log in again.' };
+ }
+ return res.json();
+}
 function getAdminToken() {
  return sessionStorage.getItem('adminToken') || '';
 }
@@ -63,7 +75,7 @@ async function apiGet(url) {
  const res = await fetch(url, {
  headers: { 'X-Admin-Token': getAdminToken() }
  });
- return res.json();
+ return adminJson(res);
 }
 async function apiPost(url, data) {
  const res = await fetch(url, {
@@ -71,7 +83,7 @@ async function apiPost(url, data) {
  headers: { 'Content-Type': 'application/json', 'X-Admin-Token': getAdminToken() },
  body: JSON.stringify(data)
  });
- return res.json();
+ return adminJson(res);
 }
 async function apiPut(url, data) {
  const res = await fetch(url, {
@@ -79,14 +91,14 @@ async function apiPut(url, data) {
  headers: { 'Content-Type': 'application/json', 'X-Admin-Token': getAdminToken() },
  body: JSON.stringify(data)
  });
- return res.json();
+ return adminJson(res);
 }
 async function apiDelete(url) {
  const res = await fetch(url, {
  method: 'DELETE',
  headers: { 'X-Admin-Token': getAdminToken() }
  });
- return res.json();
+ return adminJson(res);
 }
 
 function formatDate(d) {
