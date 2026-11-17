@@ -168,6 +168,12 @@
  font-size: 13px; color: #92400e; margin-top: 16px; text-decoration: none;
 }
 .upload-alt:hover { background: #fef3c7; }
+  .qimg { display:block; max-width:100%; max-height:150px; border-radius:8px; margin:6px 0; border:1px solid #e6e8f3; }
+  .img-ctl { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:6px 0; }
+  .img-btn { font-size:12px; font-weight:700; padding:6px 10px; border-radius:8px; border:1.5px dashed #9aa0c6; background:#f6f7fd; color:#2b3180; cursor:pointer; }
+  .img-btn[disabled] { opacity:.6; cursor:wait; }
+  .img-thumb { width:56px; height:56px; object-fit:cover; border-radius:8px; border:1px solid #d7daee; }
+  .img-x { border:none; background:#fee2e2; color:#b91c1c; border-radius:50%; width:22px; height:22px; font-weight:800; cursor:pointer; }
 </style>
 </head>
 <body>
@@ -309,6 +315,70 @@ let  answerSelected = false; // true only when admin deliberately clicks a lette
 let  editingId  = null;  // id of question being edited
 let  allQuestions  = [];
 
+
+// ── Pictures (JPEG) in questions and options ─────────────────
+// A picture is stored inside the question/option text as <img class="qimg" src="URL">,
+// so shuffling, marking and the exam page keep working unchanged.
+const IMG_RE = /<img class="qimg" src="([^"]+)">/;
+function splitImg(s) {
+  const str = String(s || ''), m = str.match(IMG_RE);
+  return { text: str.replace(IMG_RE, '').replace(/<br>\s*$/, '').trim(), url: m ? m[1] : '' };
+}
+function joinImg(text, url) { return url ? (text ? text + '<br>' : '') + `<img class="qimg" src="${url}">` : text; }
+function renderQ(s, small) {
+  const p = splitImg(s);
+  return renderMath(p.text) + (p.url ? `<img class="qimg" src="${p.url}" style="${small ? 'max-height:70px;' : ''}">` : '');
+}
+function pickJpeg(maxSide) {
+  return new Promise((resolve) => {
+    const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*';
+    inp.onchange = () => {
+      const file = inp.files && inp.files[0]; if (!file) return resolve(null);
+      const img = new Image(), objUrl = URL.createObjectURL(file);
+      img.onload = async () => {
+        const k = Math.min(1, maxSide / Math.max(img.width, img.height));
+        const c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+        const ctx = c.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height); ctx.drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(objUrl);
+        try {
+          const r = await apiPost('/api/admin/upload-question-image', { image_data: c.toDataURL('image/jpeg', 0.82) });
+          if (r.success) resolve(r.url); else { showAlert(r.message || 'Upload failed.', 'danger'); resolve(null); }
+        } catch (e) { showAlert('Upload failed. Check your connection.', 'danger'); resolve(null); }
+      };
+      img.onerror = () => { showAlert('That file is not a readable picture.', 'danger'); resolve(null); };
+      img.src = objUrl;
+    };
+    inp.click();
+  });
+}
+function imgControl(get, set, maxSide) {
+  const wrap = document.createElement('div'); wrap.className = 'img-ctl'; wrap.onclick = e => e.stopPropagation();
+  const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'img-btn';
+  const th = document.createElement('img'); th.className = 'img-thumb'; th.style.display = 'none';
+  const x = document.createElement('button'); x.type = 'button'; x.className = 'img-x'; x.textContent = '×'; x.style.display = 'none'; x.title = 'Remove picture';
+  const paint = () => { const u = get(); th.src = u || ''; th.style.display = u ? '' : 'none'; x.style.display = u ? '' : 'none'; btn.textContent = u ? 'Change picture' : '+ Picture (JPEG)'; };
+  btn.onclick = async () => { btn.disabled = true; btn.textContent = 'Uploading…'; const u = await pickJpeg(maxSide); if (u) set(u); btn.disabled = false; paint(); };
+  x.onclick = () => { set(''); paint(); };
+  wrap.append(btn, th, x); wrap._paint = paint; paint(); return wrap;
+}
+const newImgs = { q: '', A: '', B: '', C: '', D: '' };
+const editImgs = {};
+function initNewImgControls() {
+  document.getElementById('question').insertAdjacentElement('afterend', imgControl(() => newImgs.q, v => newImgs.q = v, 1000));
+  ['A','B','C','D'].forEach(l => document.getElementById('row' + l).appendChild(imgControl(() => newImgs[l], v => newImgs[l] = v, 600)));
+}
+function initEditImgControls() {
+  allQuestions.forEach(q => {
+    const id = q.id; if (!document.getElementById('eq-' + id)) return;
+    editImgs[id] = { q: splitImg(q.question).url };
+    document.getElementById('eq-' + id).insertAdjacentElement('afterend', imgControl(() => editImgs[id].q, v => editImgs[id].q = v, 1000));
+    ['A','B','C','D'].forEach(l => {
+      editImgs[id][l] = splitImg(q['option' + l]).url;
+      document.getElementById(`erow${l}-${id}`).appendChild(imgControl(() => editImgs[id][l], v => editImgs[id][l] = v, 600));
+    });
+  });
+}
+
 // ── Exam load ─────────────────────────────────────────────────
 async function loadExams() {
  const admin = JSON.parse(sessionStorage.getItem('admin') || '{}');
@@ -407,13 +477,13 @@ function renderList() {
  <div class="q-card" id="qcard-${q.id}">
  <div class="q-card-top">
  <div class="q-num">${i + 1}</div>
- <div class="q-text">${renderMath(q.question)}</div>
+<div class="q-text">${renderQ(q.question)}</div>
  </div>
  <div class="q-opts">
  ${['A','B','C','D'].map(l => `
  <div class="q-opt${q.answer === l ? ' ans' : ''}">
  <span class="ol">${l}.</span>
- <span>${renderMath(q['option' + l] || '')}</span>
+<span>${renderQ(q['option' + l] || '', true)}</span>
  </div>`).join('')}
  </div>
  <div class="q-actions">
@@ -425,13 +495,13 @@ function renderList() {
  <div class="edit-panel" id="ep-${q.id}">
  <div class="form-group">
  <label class="form-label" style="font-size:11px;">Question Text</label>
- <textarea class="form-control" id="eq-${q.id}" rows="2">${escHtml(q.question)}</textarea>
+ <textarea class="form-control"id="eq-${q.id}" rows="2">${escHtml(splitImg(q.question).text)}</textarea>
  </div>
  <div class="options-grid">
  ${['A','B','C','D'].map(l => `
  <div class="opt-row${q.answer === l ? ' correct' : ''}" id="erow${l}-${q.id}" onclick="selectEditAnswer('${l}','${q.id}')">
  <div class="opt-letter" id="elbl${l}-${q.id}">${l}</div>
- <input class="opt-input" id="eopt${l}-${q.id}" value="${escHtml(q['option' + l] || '')}"
+ <input class="opt-input" id="eopt${l}-${q.id}" value="${escHtml(splitImg(q['option' + l]).text)}"
  placeholder="Option ${l}" onclick="event.stopPropagation()">
  </div>`).join('')}
  </div>
@@ -443,7 +513,8 @@ function renderList() {
  </div>
  </div>`).join('')}</div>`;
   // Render math symbols in the list
-  setTimeout(applyMathToList, 0);
+setTimeout(applyMathToList, 0);
+ initEditImgControls();
 }
 
 function updateCounter() {
@@ -524,13 +595,13 @@ async function addQuestion() {
  const examId = document.getElementById('examSelect').value;
  if (!examId) { showAlert('Please select an exam first.', 'danger'); return; }
 
- const q  = document.getElementById('question').value.trim();
- const qt  = document.getElementById('questionType').value;
+const qt  = document.getElementById('questionType').value;
  const isTF  = qt === 'true_false';
- const oA = document.getElementById('optionA').value.trim();
- const oB = document.getElementById('optionB').value.trim();
- const oC = isTF ? '' : document.getElementById('optionC').value.trim();
- const oD = isTF ? '' : document.getElementById('optionD').value.trim();
+ const q  = joinImg(document.getElementById('question').value.trim(), newImgs.q);
+ const oA = joinImg(document.getElementById('optionA').value.trim(), newImgs.A);
+ const oB = joinImg(document.getElementById('optionB').value.trim(), newImgs.B);
+ const oC = isTF ? '' : joinImg(document.getElementById('optionC').value.trim(), newImgs.C);
+ const oD = isTF ? '' : joinImg(document.getElementById('optionD').value.trim(), newImgs.D);
 
  if (!q || !oA || !oB || (!isTF && (!oC || !oD))) {
  showAlert(isTF ? 'Please fill in the question.' : 'Please fill in the question and all four options.', 'danger'); return;
@@ -594,11 +665,12 @@ function cancelEdit(id) {
 }
 
 async function saveEdit(id) {
- const q  = document.getElementById(`eq-${id}`).value.trim();
- const oA = document.getElementById(`eoptA-${id}`).value.trim();
- const oB = document.getElementById(`eoptB-${id}`).value.trim();
- const oC = document.getElementById(`eoptC-${id}`).value.trim();
- const oD = document.getElementById(`eoptD-${id}`).value.trim();
+const im = editImgs[id] || {};
+ const q  = joinImg(document.getElementById(`eq-${id}`).value.trim(), im.q);
+ const oA = joinImg(document.getElementById(`eoptA-${id}`).value.trim(), im.A);
+ const oB = joinImg(document.getElementById(`eoptB-${id}`).value.trim(), im.B);
+ const oC = joinImg(document.getElementById(`eoptC-${id}`).value.trim(), im.C);
+ const oD = joinImg(document.getElementById(`eoptD-${id}`).value.trim(), im.D);
  const ans = document.getElementById(`eans-${id}`).value;
  if (!q || !oA || !oB || !oC || !oD) {
  showAlert('All fields required.', 'danger'); return;
@@ -632,6 +704,8 @@ async function deleteQuestion(id) {
 
 // ── Clear form ────────────────────────────────────────────────
 function clearForm() {
+ Object.keys(newImgs).forEach(k => newImgs[k] = '');
+ document.querySelectorAll('.img-ctl').forEach(c => { if (c._paint && !c.closest('.edit-panel')) c._paint(); });
  document.getElementById('question').value = '';
  ['A','B','C','D'].forEach(l => {
  document.getElementById(`option${l}`).value = '';
@@ -686,6 +760,7 @@ document.addEventListener('keydown', e => {
 });
 
 // ── Init ──────────────────────────────────────────────────────
+initNewImgControls();
 loadExams();
 // Do NOT pre-select any answer — admin must explicitly click the correct option
 document.getElementById('answerHint').innerHTML =
