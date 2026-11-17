@@ -2490,6 +2490,19 @@ app.delete('/api/admin/exams/:id/allowed-students', adminAuth, async (req, res) 
 
 
 
+// POST /api/admin/upload-question-image — JPEG picture for a question or option. Returns the hosted URL.
+app.post('/api/admin/upload-question-image', adminAuth, async (req, res) => {
+  try {
+    const { image_data } = req.body || {};
+    if (typeof image_data !== 'string' || !image_data.startsWith('data:image/jpeg;base64,'))
+      return res.json({ success: false, message: 'Only JPEG pictures are accepted.' });
+    if (image_data.length > 4 * 1024 * 1024)
+      return res.json({ success: false, message: 'Picture is too large. Choose a smaller one.' });
+    const result = await cloudinary.uploader.upload(image_data, { folder: 'question_images', resource_type: 'image', format: 'jpg' });
+    res.json({ success: true, url: result.secure_url });
+  } catch (e) { console.error('upload-question-image error:', e.message); res.json({ success: false, message: 'Upload failed. Try again.' }); }
+});
+
 app.get('/api/admin/questions', async (req, res) => {
   try {
     const { exam_id } = req.query;
@@ -2498,7 +2511,7 @@ app.get('/api/admin/questions', async (req, res) => {
   } catch(e) { res.json([]); }
 });
 
-app.post('/api/admin/add-question', async (req, res) => {
+app.post('/api/admin/add-question', adminAuth, async (req, res) => {
   try {
     const body = { ...req.body };
     if (body.exam_id) body.exam_id = toOID(body.exam_id);
@@ -2507,14 +2520,14 @@ app.post('/api/admin/add-question', async (req, res) => {
   } catch(e) { res.json({ success: false, message: e.message }); }
 });
 
-app.put('/api/admin/questions/:id', async (req, res) => {
+app.put('/api/admin/questions/:id', adminAuth, async (req, res) => {
   try {
     await Question.findByIdAndUpdate(req.params.id, req.body);
     res.json({ success: true });
   } catch(e) { res.json({ success: false, message: e.message }); }
 });
 
-app.delete('/api/admin/questions/:id', async (req, res) => {
+app.delete('/api/admin/questions/:id', adminAuth, async (req, res) => {
   try {
     await Question.findByIdAndDelete(req.params.id);
     res.json({ success: true });
