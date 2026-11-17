@@ -1905,6 +1905,14 @@ function renderQuestion(index) {
     });
   }
 
+// Tap a question picture to zoom
+  document.querySelectorAll('#questionText img.qimg').forEach(im => {
+    im.onclick = () => {
+      const z = document.createElement('div'); z.className = 'qimg-zoom';
+      z.innerHTML = '<img src="' + im.src + '">'; z.onclick = () => z.remove(); document.body.appendChild(z);
+    };
+  });
+
   // Render math expressions if KaTeX auto-render is available
   if (window.renderMathInElement) {
     try {
