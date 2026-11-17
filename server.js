@@ -195,14 +195,11 @@ const SettingSchema = new mongoose.Schema({
 });
 
 const RetakeGrantSchema = new mongoose.Schema({
-  student_id: {
-    type:     mongoose.Schema.Types.ObjectId,
-    ref:      'Student',
-    unique:   true,
-    required: true
-  },
+  student_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Student', required: true },
+  exam_id:    { type: mongoose.Schema.Types.ObjectId, ref: 'Exam', default: null },   // the one exam this retake is for (null = old all-exams grant)
   granted_at: { type: Date, default: Date.now }
 });
+RetakeGrantSchema.index({ student_id: 1, exam_id: 1 }, { unique: true });
 
 const FaceCaptureSchema = new mongoose.Schema({
   student_id:     { type: mongoose.Schema.Types.ObjectId, ref: 'Student' },
@@ -302,6 +299,11 @@ const ExamResult        = mongoose.model('ExamResult',        ExamResultSchema);
 const Violation         = mongoose.model('Violation',         ViolationSchema);
 const Setting           = mongoose.model('Setting',           SettingSchema);
 const RetakeGrant       = mongoose.model('RetakeGrant',       RetakeGrantSchema);
+// Old databases have a unique index on student_id alone (one grant per student). Drop it so a student can hold one grant per exam.
+const fixRetakeIndexes = () => RetakeGrant.collection.dropIndex('student_id_1').catch(() => {}).then(() => RetakeGrant.syncIndexes()).catch(() => {});
+if (mongoose.connection.readyState === 1) fixRetakeIndexes(); else mongoose.connection.once('open', fixRetakeIndexes);
+// A grant applies to this exam only (or to every exam if it is an old grant with no exam_id).
+const findRetakeGrant = (studentOID, examOID) => RetakeGrant.findOne({ student_id: studentOID, $or: [{ exam_id: examOID }, { exam_id: null }, { exam_id: { $exists: false } }] });
 const FaceCapture       = mongoose.model('FaceCapture',       FaceCaptureSchema);
 const GeneratedPassword = mongoose.model('GeneratedPassword', GeneratedPasswordSchema);
 const PasswordAuditLog  = mongoose.model('PasswordAuditLog',  PasswordAuditLogSchema);
@@ -993,13 +995,15 @@ app.get('/api/student/available-exams', async (req, res) => {
 
     // Check global retake setting and individual grant once for this student
     const globalRetake    = await getSetting('global_allow_retake', false);
-    const individualGrant = await RetakeGrant.findOne({ student_id: toOID(student_id) });
-    const hasRetakePrivilege = globalRetake || !!individualGrant;
+    const studentGrants = await RetakeGrant.find({ student_id: toOID(student_id) });
+    const grantAll = studentGrants.some(g => !g.exam_id);
+    const grantedExamIds = new Set(studentGrants.filter(g => g.exam_id).map(g => g.exam_id.toString()));
 
     const available = exams.filter(e => {
       if (e.department_id && e.department_id._id.toString() !== student.department_id?.toString()) return false;
       if (e.level_id && e.level_id._id.toString() !== student.level_id?.toString()) return false;
       // Hide done exam only if no retake privilege of any kind applies
+      const hasRetakePrivilege = globalRetake || grantAll || grantedExamIds.has(e._id.toString());
       if (doneIds.has(e._id.toString()) && !e.allow_retake && !hasRetakePrivilege) return false;
       // Hide exam if access restriction is set and student IS in the restricted list
       if (e.allowed_students && e.allowed_students.length > 0) {
@@ -1012,7 +1016,7 @@ app.get('/api/student/available-exams', async (req, res) => {
       id: e._id.toString(), title: e.title,
       course: e.course_id?.name || null, course_code: e.course_id?.code || null,
       duration: e.duration, start_date: e.start_date || null, end_date: e.end_date || null,
-      allow_retake: e.allow_retake || hasRetakePrivilege,
+      allow_retake: e.allow_retake || globalRetake || grantAll || grantedExamIds.has(e._id.toString()),
       already_done: doneIds.has(e._id.toString()),
       instructions: e.instructions || null
     })));
@@ -1130,7 +1134,7 @@ app.post('/api/verify-access-code', async (req, res) => {
 
     const globalRetake    = await getSetting('global_allow_retake', false);
     const individualGrant = student_id
-      ? await RetakeGrant.findOne({ student_id: toOID(student_id) })
+      ? await findRetakeGrant(toOID(student_id), exam._id)
       : null;
     const allowRetake = globalRetake || !!individualGrant || exam.allow_retake;
     if (!allowRetake && student_id) {
@@ -1258,7 +1262,7 @@ app.post('/api/student/exam-start-check', async (req, res) => {
       }
       // Retake check
       const globalRetake    = await getSetting('global_allow_retake', false);
-      const individualGrant = await RetakeGrant.findOne({ student_id: toOID(student_id) });
+      const individualGrant = await findRetakeGrant(toOID(student_id), exam._id);
       const allowRetake     = globalRetake || !!individualGrant || exam.allow_retake;
       if (!allowRetake) {
         const existing = await ExamResult.findOne({ student_id: toOID(student_id), exam_id: exam._id });
@@ -1387,7 +1391,7 @@ app.get('/api/exam-questions', async (req, res) => {
       const existingResult = await ExamResult.findOne({ student_id: toOID(student_id), exam_id: examOID });
       if (existingResult) {
         const globalRetake    = await getSetting('global_allow_retake', false);
-        const individualGrant = await RetakeGrant.findOne({ student_id: toOID(student_id) });
+        const individualGrant = await findRetakeGrant(toOID(student_id), examOID);
         const allowRetake     = globalRetake || !!individualGrant || exam.allow_retake;
         if (!allowRetake) {
           return res.json({ success: false, message: 'You have already completed this exam and retakes are not allowed.' });
@@ -1810,7 +1814,8 @@ async function scoreAndSaveResult({ session, sessionOID, studentOID, examOID, an
     try {
       const globalRetake = await getSetting('global_allow_retake', false);
       if (!globalRetake) {
-        await RetakeGrant.findOneAndDelete({ student_id: studentOID });
+        const used = await RetakeGrant.findOneAndDelete({ student_id: studentOID, exam_id: examOID });
+        if (!used) await RetakeGrant.findOneAndDelete({ student_id: studentOID, exam_id: null });   // old all-exams grant
       }
     } catch(_) {}
 
@@ -3402,20 +3407,22 @@ app.post('/api/admin/settings', async (req, res) => {
 
 app.get('/api/admin/retake-grants', async (req, res) => {
   try {
-    const grants = await RetakeGrant.find().populate('student_id');
+    const grants = await RetakeGrant.find().populate('student_id').populate('exam_id', 'title');
     res.json(grants.map(g => ({
       id: g._id.toString(), student_id: g.student_id?._id.toString(),
-      student_name: g.student_id?.name, matric: g.student_id?.matric, granted_at: g.granted_at
+      student_name: g.student_id?.name, matric: g.student_id?.matric, granted_at: g.granted_at,
+      exam_id: g.exam_id?._id?.toString() || null, exam_title: g.exam_id?.title || 'All exams (old grant)'
     })));
   } catch(e) { res.json([]); }
 });
 
 app.post('/api/admin/retake-grant', async (req, res) => {
   try {
-    const { student_id } = req.body;
+    const { student_id, exam_id } = req.body;
+    if (!student_id || !exam_id) return res.json({ success: false, message: 'Choose the exam this retake is for.' });
     await RetakeGrant.findOneAndUpdate(
-      { student_id: toOID(student_id) },
-      { student_id: toOID(student_id), granted_at: new Date() },
+      { student_id: toOID(student_id), exam_id: toOID(exam_id) },
+      { student_id: toOID(student_id), exam_id: toOID(exam_id), granted_at: new Date() },
       { upsert: true }
     );
     res.json({ success: true });
@@ -3508,8 +3515,8 @@ app.put('/api/admin/retake-requests/:id/approve', async (req, res) => {
 
     // Grant retake via RetakeGrant
     await RetakeGrant.findOneAndUpdate(
-      { student_id: request.student_id._id },
-      { student_id: request.student_id._id, granted_at: new Date() },
+      { student_id: request.student_id._id, exam_id: request.exam_id._id },
+      { student_id: request.student_id._id, exam_id: request.exam_id._id, granted_at: new Date() },
       { upsert: true }
     );
 
